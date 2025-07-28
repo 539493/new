@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: tutoring-platform
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: node backend/production-server.cjs
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+    healthCheckPath: /api/health
+    autoDeploy: true 
