@@ -3,7 +3,7 @@ services:
     name: tutoring-platform
     env: node
     buildCommand: npm install && npm run build
-    startCommand: node backend/production-server.cjs
+    startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
