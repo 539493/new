@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Lock, User, BookOpen, UserCheck, Github, Chrome, Phone } from 'lucide-react';
+import { Mail, Lock, User, BookOpen, UserCheck, Phone } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface AuthFormProps {
@@ -53,11 +53,6 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleSocialLogin = (provider: string) => {
-    // Здесь можно добавить логику для социальных сетей
-    console.log(`Login with ${provider}`);
   };
 
   // Если это регистрация и нужно выбрать роль
@@ -175,7 +170,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
         <div className="max-w-md w-full space-y-8">
           {/* Логотип */}
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-500 rounded"></div>
+            <img src="/nauchi-logo.svg" alt="Nauchi" className="w-8 h-8" />
             <span className="text-2xl font-bold text-gray-900">nauchi</span>
           </div>
 
@@ -184,43 +179,6 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
             <h1 className="text-3xl font-bold text-gray-900">
               {isLogin ? 'Войти в аккаунт' : 'Создать аккаунт'}
             </h1>
-          </div>
-
-          {/* Социальные кнопки */}
-          <div className="space-y-3">
-            <button
-              onClick={() => handleSocialLogin('google')}
-              className="w-full flex items-center justify-center space-x-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 px-4 rounded-lg transition-colors duration-200"
-            >
-              <Chrome className="h-5 w-5" />
-              <span>Продолжить с Google</span>
-            </button>
-
-            <button
-              onClick={() => handleSocialLogin('github')}
-              className="w-full flex items-center justify-center space-x-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 px-4 rounded-lg transition-colors duration-200"
-            >
-              <Github className="h-5 w-5" />
-              <span>Продолжить с GitHub</span>
-            </button>
-
-            <button
-              onClick={() => handleSocialLogin('x')}
-              className="w-full flex items-center justify-center space-x-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 px-4 rounded-lg transition-colors duration-200"
-            >
-              <span className="text-lg font-bold">𝕏</span>
-              <span>Продолжить с X</span>
-            </button>
-          </div>
-
-          {/* Разделитель */}
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">Или</span>
-            </div>
           </div>
 
           {/* Форма */}
@@ -363,12 +321,22 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
       {/* Правая часть - маркетинг */}
       <div className="flex-1 bg-gray-900 flex flex-col items-center justify-center p-8 relative overflow-hidden">
         {/* Логотип */}
-        <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-500 rounded mb-8"></div>
+        <img src="/nauchi-logo.svg" alt="Nauchi" className="w-8 h-8 mb-8" />
         
         {/* Заголовок */}
         <h2 className="text-4xl font-bold text-white mb-8 text-center">
-          От идеи к приложению, быстро
+          Платформа для обучения
         </h2>
+
+        {/* Цитата Толстого */}
+        <div className="text-center mb-8">
+          <blockquote className="text-lg text-gray-300 italic leading-relaxed">
+            "Важно не количество знаний, а качество их. Можно знать очень многое не зная самого нужного."
+          </blockquote>
+          <cite className="text-sm text-gray-400 mt-2 block">
+            — Л. Толстой
+          </cite>
+        </div>
 
         {/* Изображение Земли */}
         <div className="relative w-full h-64 rounded-lg overflow-hidden">
