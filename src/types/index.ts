@@ -4,6 +4,7 @@ export interface User {
   name: string;
   nickname: string;
   role: 'student' | 'teacher';
+  phone?: string;
   avatar?: string;
   profile?: StudentProfile | TeacherProfile;
 }

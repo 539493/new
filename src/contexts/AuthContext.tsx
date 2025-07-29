@@ -5,7 +5,7 @@ import { User } from '../types';
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<boolean>;
-  register: (email: string, password: string, name: string, nickname: string, role: 'student' | 'teacher') => Promise<boolean>;
+  register: (email: string, password: string, name: string, nickname: string, role: 'student' | 'teacher', phone: string) => Promise<boolean>;
   logout: () => void;
   updateProfile: (profile: any) => void;
   clearAllUsers: () => void;
@@ -89,7 +89,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     password: string, 
     name: string, 
     nickname: string, 
-    role: 'student' | 'teacher'
+    role: 'student' | 'teacher',
+    phone: string
   ): Promise<boolean> => {
     // Симуляция API вызова
     await new Promise(resolve => setTimeout(resolve, 1000));
@@ -116,6 +117,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       name,
       nickname,
       role,
+      phone,
     };
     
     const updatedUsers = [...users, newUser];
