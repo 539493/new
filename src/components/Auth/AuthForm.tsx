@@ -168,24 +168,24 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
       {/* Левая часть - форма */}
       <div className="flex-1 bg-white flex items-center justify-center p-8">
         <div className="max-w-md w-full space-y-8">
-          {/* Логотип */}
-          <div className="flex items-center space-x-2">
-            <img src="/nauchi-logo.svg" alt="Nauchi" className="w-8 h-8" />
-            <span className="text-2xl font-bold text-gray-900">nauchi</span>
-          </div>
-
-          {/* Заголовок */}
+          {/* Большой анимированный логотип */}
           <div className="text-center">
-            <h1 className="text-3xl font-bold text-gray-900">
-              {isLogin ? 'Войти в аккаунт' : 'Создать аккаунт'}
+            <div className="mx-auto mb-6">
+              <img src="/nauchi-logo.svg" alt="Nauchi" className="w-32 h-32 mx-auto drop-shadow-lg" />
+            </div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">
+              Добро пожаловать в nauchi
             </h1>
+            <p className="text-lg text-gray-600">
+              {isLogin ? 'Войдите в свой аккаунт' : 'Создайте новый аккаунт'}
+            </p>
           </div>
 
           {/* Форма */}
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-6">
             {!isLogin && (
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
                   Имя
                 </label>
                 <div className="relative">
@@ -196,7 +196,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required={!isLogin}
-                    className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors duration-200"
+                    className="w-full pl-10 pr-3 py-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors duration-200 text-lg"
                     placeholder="Введите ваше имя"
                   />
                 </div>
@@ -205,7 +205,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
 
             {!isLogin && (
               <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
                   Номер телефона
                 </label>
                 <div className="relative">
@@ -216,7 +216,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     required={!isLogin}
-                    className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors duration-200"
+                    className="w-full pl-10 pr-3 py-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors duration-200 text-lg"
                     placeholder="+7 (999) 123-45-67"
                   />
                 </div>
@@ -224,7 +224,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
             )}
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                 Email
               </label>
               <div className="relative">
@@ -235,14 +235,14 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors duration-200"
+                  className="w-full pl-10 pr-3 py-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors duration-200 text-lg"
                   placeholder="Введите ваш email"
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
                 Пароль
               </label>
               <div className="relative">
@@ -253,7 +253,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors duration-200"
+                  className="w-full pl-10 pr-3 py-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors duration-200 text-lg"
                   placeholder={isLogin ? "Введите пароль" : "Создайте пароль"}
                 />
               </div>
@@ -262,7 +262,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 px-6 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-lg shadow-lg hover:shadow-xl transform hover:scale-105"
             >
               {loading 
                 ? (isLogin ? 'Вход...' : 'Создание аккаунта...') 
@@ -320,20 +320,22 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
 
       {/* Правая часть - маркетинг */}
       <div className="flex-1 bg-gray-900 flex flex-col items-center justify-center p-8 relative overflow-hidden">
-        {/* Логотип */}
-        <img src="/nauchi-logo.svg" alt="Nauchi" className="w-8 h-8 mb-8" />
+        {/* Большой логотип */}
+        <div className="mb-8">
+          <img src="/nauchi-logo.svg" alt="Nauchi" className="w-40 h-40 drop-shadow-2xl" />
+        </div>
         
         {/* Заголовок */}
-        <h2 className="text-4xl font-bold text-white mb-8 text-center">
+        <h2 className="text-5xl font-bold text-white mb-8 text-center">
           Платформа для обучения
         </h2>
 
         {/* Цитата Толстого */}
         <div className="text-center mb-8">
-          <blockquote className="text-lg text-gray-300 italic leading-relaxed">
+          <blockquote className="text-xl text-gray-300 italic leading-relaxed">
             "Важно не количество знаний, а качество их. Можно знать очень многое не зная самого нужного."
           </blockquote>
-          <cite className="text-sm text-gray-400 mt-2 block">
+          <cite className="text-sm text-gray-400 mt-4 block">
             — Л. Толстой
           </cite>
         </div>
