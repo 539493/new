@@ -80,7 +80,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onBackToLogin })
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
-                    className="w-full pl-10 pr-3 py-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors duration-200 text-lg"
+                    className="w-full pl-10 pr-3 py-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0D3C69] focus:border-[#0D3C69] transition-colors duration-200 text-lg"
                     placeholder="Введите ваше имя"
                   />
                 </div>
@@ -98,7 +98,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onBackToLogin })
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     required
-                    className="w-full pl-10 pr-3 py-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors duration-200 text-lg"
+                    className="w-full pl-10 pr-3 py-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0D3C69] focus:border-[#0D3C69] transition-colors duration-200 text-lg"
                     placeholder="+7 (999) 123-45-67"
                   />
                 </div>
@@ -116,7 +116,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onBackToLogin })
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="w-full pl-10 pr-3 py-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors duration-200 text-lg"
+                    className="w-full pl-10 pr-3 py-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0D3C69] focus:border-[#0D3C69] transition-colors duration-200 text-lg"
                     placeholder="Введите ваш email"
                   />
                 </div>
@@ -134,7 +134,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onBackToLogin })
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="w-full pl-10 pr-3 py-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors duration-200 text-lg"
+                    className="w-full pl-10 pr-3 py-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0D3C69] focus:border-[#0D3C69] transition-colors duration-200 text-lg"
                     placeholder="Создайте пароль"
                   />
                 </div>
@@ -143,7 +143,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onBackToLogin })
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 px-6 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-lg shadow-lg hover:shadow-xl transform hover:scale-105"
+                className="w-full bg-[#0D3C69] hover:bg-[#0A2F56] text-white font-bold py-4 px-6 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-lg shadow-lg hover:shadow-xl transform hover:scale-105"
               >
                 {loading ? 'Создание аккаунта...' : 'Создать аккаунт'}
               </button>
@@ -152,9 +152,9 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onBackToLogin })
             {/* Правовая информация */}
             <p className="text-xs text-gray-500 text-center">
               Продолжая, вы соглашаетесь с{' '}
-              <a href="#" className="text-orange-500 hover:underline">Условиями использования</a>
+              <a href="#" className="text-[#0D3C69] hover:underline">Условиями использования</a>
               {' '}и{' '}
-              <a href="#" className="text-orange-500 hover:underline">Политикой конфиденциальности</a>
+              <a href="#" className="text-[#0D3C69] hover:underline">Политикой конфиденциальности</a>
             </p>
 
             {/* Ссылка на вход */}
@@ -162,7 +162,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onBackToLogin })
               <span className="text-gray-600">Уже есть аккаунт? </span>
               <button
                 onClick={onBackToLogin}
-                className="text-orange-500 hover:text-orange-600 font-medium"
+                className="text-[#0D3C69] hover:text-[#0A2F56] font-medium"
               >
                 Войти
               </button>
@@ -170,7 +170,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onBackToLogin })
 
             {/* Помощь */}
             <div className="text-center">
-              <button className="text-orange-500 hover:text-orange-600 text-sm">
+              <button className="text-[#0D3C69] hover:text-[#0A2F56] text-sm">
                 Получить помощь
               </button>
             </div>
@@ -178,9 +178,9 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onBackToLogin })
             {/* reCAPTCHA */}
             <p className="text-xs text-gray-400 text-center">
               Этот сайт защищен reCAPTCHA Enterprise и применяются{' '}
-              <a href="#" className="text-orange-500 hover:underline">Политика конфиденциальности</a>
+              <a href="#" className="text-[#0D3C69] hover:underline">Политика конфиденциальности</a>
               {' '}и{' '}
-              <a href="#" className="text-orange-500 hover:underline">Условия использования</a>
+              <a href="#" className="text-[#0D3C69] hover:underline">Условия использования</a>
               {' '}Google.
             </p>
           </div>
@@ -234,7 +234,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onBackToLogin })
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <div className="mx-auto h-12 w-12 bg-gradient-to-r from-orange-500 to-red-500 rounded-xl flex items-center justify-center mb-4">
+          <div className="mx-auto h-12 w-12 bg-[#0D3C69] rounded-xl flex items-center justify-center mb-4">
             <BookOpen className="h-6 w-6 text-white" />
           </div>
           <h2 className="text-3xl font-bold text-gray-900">Выберите роль</h2>
@@ -246,13 +246,13 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onBackToLogin })
             onClick={() => setRole('student')}
             className={`w-full p-6 rounded-xl border-2 transition-all duration-200 ${
               role === 'student'
-                ? 'border-orange-500 bg-orange-50 shadow-lg'
+                ? 'border-[#0D3C69] bg-blue-50 shadow-lg'
                 : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
             }`}
           >
             <div className="flex items-center space-x-4">
-              <div className={`p-3 rounded-lg ${role === 'student' ? 'bg-orange-100' : 'bg-gray-100'}`}>
-                <User className={`h-6 w-6 ${role === 'student' ? 'text-orange-600' : 'text-gray-600'}`} />
+              <div className={`p-3 rounded-lg ${role === 'student' ? 'bg-blue-100' : 'bg-gray-100'}`}>
+                <User className={`h-6 w-6 ${role === 'student' ? 'text-[#0D3C69]' : 'text-gray-600'}`} />
               </div>
               <div className="text-left">
                 <h3 className="font-semibold text-gray-900">Ученик</h3>
@@ -265,13 +265,13 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onBackToLogin })
             onClick={() => setRole('teacher')}
             className={`w-full p-6 rounded-xl border-2 transition-all duration-200 ${
               role === 'teacher'
-                ? 'border-orange-500 bg-orange-50 shadow-lg'
+                ? 'border-[#0D3C69] bg-blue-50 shadow-lg'
                 : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
             }`}
           >
             <div className="flex items-center space-x-4">
-              <div className={`p-3 rounded-lg ${role === 'teacher' ? 'bg-orange-100' : 'bg-gray-100'}`}>
-                <UserCheck className={`h-6 w-6 ${role === 'teacher' ? 'text-orange-600' : 'text-gray-600'}`} />
+              <div className={`p-3 rounded-lg ${role === 'teacher' ? 'bg-blue-100' : 'bg-gray-100'}`}>
+                <UserCheck className={`h-6 w-6 ${role === 'teacher' ? 'text-[#0D3C69]' : 'text-gray-600'}`} />
               </div>
               <div className="text-left">
                 <h3 className="font-semibold text-gray-900">Преподаватель</h3>
@@ -292,7 +292,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onBackToLogin })
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
               required
-              className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors duration-200"
+              className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0D3C69] focus:border-[#0D3C69] transition-colors duration-200"
               placeholder="Введите никнейм"
             />
           </div>
@@ -309,7 +309,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onBackToLogin })
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 required
-                className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors duration-200"
+                className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0D3C69] focus:border-[#0D3C69] transition-colors duration-200"
                 placeholder="+7 (999) 123-45-67"
               />
             </div>
@@ -318,7 +318,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onBackToLogin })
           <button
             onClick={handleSubmit}
             disabled={loading || !nickname.trim() || !phone.trim()}
-            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-[#0D3C69] hover:bg-[#0A2F56] text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Создание аккаунта...' : 'Завершить регистрацию'}
           </button>
