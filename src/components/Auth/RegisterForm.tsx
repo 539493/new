@@ -56,13 +56,10 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onBackToLogin })
         {/* Левая часть - форма регистрации */}
         <div className="flex-1 bg-white flex items-center justify-center p-8">
           <div className="max-w-md w-full space-y-8">
-            {/* Большой анимированный логотип */}
+            {/* Заголовок */}
             <div className="text-center">
-              <div className="mx-auto mb-6">
-                <img src="/nauchi-logo.svg" alt="Nauchi" className="w-32 h-32 mx-auto drop-shadow-lg" />
-              </div>
               <h1 className="text-4xl font-bold text-gray-900 mb-2">
-                Добро пожаловать в nauchi
+                Добро пожаловать
               </h1>
               <p className="text-lg text-gray-600">
                 Создайте новый аккаунт
@@ -191,11 +188,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onBackToLogin })
 
         {/* Правая часть - маркетинг */}
         <div className="flex-1 bg-gray-900 flex flex-col items-center justify-center p-8 relative overflow-hidden">
-          {/* Большой логотип */}
-          <div className="mb-8">
-            <img src="/nauchi-logo.svg" alt="Nauchi" className="w-40 h-40 drop-shadow-2xl" />
-          </div>
-          
           {/* Заголовок */}
           <h2 className="text-5xl font-bold text-white mb-8 text-center">
             Платформа для обучения
