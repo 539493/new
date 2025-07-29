@@ -26,16 +26,17 @@ const io = new Server(server, {
 
 // Функции для работы с данными
 const DATA_FILE = path.join(__dirname, 'server_data.json');
+const INITIAL_DATA_FILE = path.join(__dirname, 'initial-data.json');
 
-function loadServerData() {
+function loadInitialData() {
   try {
-    if (fs.existsSync(DATA_FILE)) {
-      const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
-      console.log('Loaded server data from file');
+    if (fs.existsSync(INITIAL_DATA_FILE)) {
+      const data = JSON.parse(fs.readFileSync(INITIAL_DATA_FILE, 'utf8'));
+      console.log('Loaded initial data from file');
       return data;
     }
   } catch (error) {
-    console.error('Error loading server data:', error);
+    console.error('Error loading initial data:', error);
   }
   return {
     teacherProfiles: {},
@@ -47,9 +48,26 @@ function loadServerData() {
   };
 }
 
-function saveServerData() {
+function loadServerData() {
   try {
-    const data = {
+    if (fs.existsSync(DATA_FILE)) {
+      const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+      console.log('Loaded server data from file');
+      return data;
+    }
+  } catch (error) {
+    console.error('Error loading server data:', error);
+  }
+  
+  // Если файл данных не существует, загружаем начальные данные
+  const initialData = loadInitialData();
+  saveServerData(initialData);
+  return initialData;
+}
+
+function saveServerData(data = null) {
+  try {
+    const dataToSave = data || {
       teacherProfiles,
       studentProfiles,
       overbookingRequests,
@@ -57,7 +75,7 @@ function saveServerData() {
       lessons,
       chats
     };
-    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+    fs.writeFileSync(DATA_FILE, JSON.stringify(dataToSave, null, 2));
     console.log('Server data saved successfully');
   } catch (error) {
     console.error('Error saving server data:', error);
@@ -87,6 +105,7 @@ io.on('connection', (socket) => {
   socket.on('createSlot', (newSlot) => {
     console.log('New slot created:', newSlot);
     timeSlots.push(newSlot);
+    saveServerData();
     io.emit('slotCreated', newSlot);
   });
 
@@ -94,6 +113,7 @@ io.on('connection', (socket) => {
   socket.on('createChat', (newChat) => {
     console.log('New chat created:', newChat);
     chats.push(newChat);
+    saveServerData();
     io.emit('chatCreated', newChat);
   });
 
@@ -148,6 +168,7 @@ io.on('connection', (socket) => {
       updatedLesson = lessons[lessonIndex];
     }
     if (updatedLesson) {
+      saveServerData();
       io.emit('lessonCompleted', { lesson: updatedLesson });
     }
   });
@@ -177,6 +198,7 @@ io.on('connection', (socket) => {
     const { slotId } = data;
     if (slotId) {
       timeSlots = timeSlots.filter(slot => slot.id !== slotId);
+      saveServerData();
       io.emit('slotDeleted', { slotId });
     }
   });
@@ -209,6 +231,18 @@ app.get('/api/teachers', (req, res) => {
   res.json(teachers);
 });
 
+// Endpoint для получения начальных данных (для офлайн режима)
+app.get('/api/initial-data', (req, res) => {
+  res.json({
+    teacherProfiles,
+    studentProfiles,
+    timeSlots,
+    lessons,
+    chats,
+    overbookingRequests
+  });
+});
+
 // Статические файлы из папки dist
 app.use(express.static(path.join(__dirname, '../dist')));
 
@@ -228,4 +262,5 @@ server.listen(PORT, HOST, () => {
   console.log(`  - Network: http://${HOST}:${PORT}`);
   console.log(`  - Environment: ${process.env.NODE_ENV || 'production'}`);
   console.log(`  - WebSocket server: ws://${HOST}:${PORT}`);
+  console.log(`  - Initial data loaded: ${Object.keys(teacherProfiles).length} teachers, ${timeSlots.length} slots`);
 }); 

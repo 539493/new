@@ -26,6 +26,7 @@ interface DataContextType {
   allUsers: User[];
   updateTeacherProfile: (teacherId: string, profile: any) => void;
   socketRef: React.MutableRefObject<Socket | null>;
+  loadInitialData: () => void;
 }
 
 export const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -63,14 +64,125 @@ const saveToStorage = (key: string, data: any) => {
   }
 };
 
+// Начальные данные для офлайн режима
+const getInitialData = () => {
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const dayAfterTomorrow = new Date(today);
+  dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2);
+  const nextWeek = new Date(today);
+  nextWeek.setDate(nextWeek.getDate() + 7);
+
+  return {
+    timeSlots: [
+      {
+        id: 'demo_slot_1',
+        teacherId: 'teacher1',
+        teacherName: 'Анна Петрова',
+        teacherAvatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
+        subject: 'Математика',
+        date: tomorrow.toISOString().split('T')[0],
+        startTime: '10:00',
+        endTime: '11:00',
+        duration: 60,
+        price: 2500,
+        format: 'online' as const,
+        lessonType: 'regular' as const,
+        experience: 'professional' as const,
+        grades: ['9', '10', '11'],
+        goals: ['Подготовка к ЕГЭ', 'Олимпиады'],
+        bio: 'Опытный преподаватель математики с 10-летним стажем',
+        rating: 4.8,
+        isBooked: false,
+        country: 'Россия'
+      },
+      {
+        id: 'demo_slot_2',
+        teacherId: 'teacher2',
+        teacherName: 'Михаил Сидоров',
+        teacherAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+        subject: 'Английский язык',
+        date: dayAfterTomorrow.toISOString().split('T')[0],
+        startTime: '16:00',
+        endTime: '17:00',
+        duration: 60,
+        price: 2000,
+        format: 'online' as const,
+        lessonType: 'regular' as const,
+        experience: 'experienced' as const,
+        grades: ['7', '8', '9', '10', '11'],
+        goals: ['Разговорный английский', 'Подготовка к ЕГЭ'],
+        bio: 'Преподаватель английского языка с опытом работы в международных компаниях',
+        rating: 4.6,
+        isBooked: false,
+        country: 'Россия'
+      },
+      {
+        id: 'demo_slot_3',
+        teacherId: 'teacher3',
+        teacherName: 'Елена Козлова',
+        teacherAvatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
+        subject: 'Русский язык',
+        date: nextWeek.toISOString().split('T')[0],
+        startTime: '12:00',
+        endTime: '13:30',
+        duration: 90,
+        price: 4500,
+        format: 'offline' as const,
+        lessonType: 'regular' as const,
+        experience: 'professional' as const,
+        grades: ['10', '11'],
+        goals: ['Подготовка к ЕГЭ', 'Сочинения'],
+        bio: 'Филолог с 15-летним опытом преподавания',
+        rating: 4.9,
+        isBooked: false,
+        country: 'Россия',
+        city: 'Москва'
+      }
+    ],
+    lessons: [],
+    chats: [],
+    studentProfiles: {
+      'student1': {
+        id: 'student1',
+        name: 'Алексей Иванов',
+        email: 'alex.ivanov@example.com',
+        avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face',
+        grade: '10',
+        subjects: ['Математика', 'Физика'],
+        goals: ['Подготовка к ЕГЭ', 'Олимпиады'],
+        experience: 'experienced'
+      },
+      'student2': {
+        id: 'student2',
+        name: 'Мария Сидорова',
+        email: 'maria.sidorova@example.com',
+        avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face',
+        grade: '9',
+        subjects: ['Английский язык', 'История'],
+        goals: ['Разговорный английский', 'Подготовка к ЕГЭ'],
+        experience: 'beginner'
+      }
+    }
+  };
+};
+
 export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   // WebSocket состояние
   const socketRef = useRef<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
 
-  // Инициализация состояния с пустыми массивами - только реальные данные пользователей
+  // Инициализация состояния с данными из localStorage или начальными данными
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>(() => {
-    return loadFromStorage('tutoring_timeSlots', []);
+    const saved = loadFromStorage('tutoring_timeSlots', []);
+    if (saved.length > 0) {
+      return saved;
+    }
+    // Если нет сохраненных данных, загружаем начальные
+    const initialData = getInitialData();
+    saveToStorage('tutoring_timeSlots', initialData.timeSlots);
+    return initialData.timeSlots;
   });
 
   const [lessons, setLessons] = useState<Lesson[]>(() => {
@@ -81,7 +193,16 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     return loadFromStorage('tutoring_chats', []);
   });
 
-  const [studentProfiles, setStudentProfiles] = useState<Record<string, any>>({});
+  const [studentProfiles, setStudentProfiles] = useState<Record<string, any>>(() => {
+    const saved = loadFromStorage('tutoring_studentProfiles', {});
+    if (Object.keys(saved).length > 0) {
+      return saved;
+    }
+    // Если нет сохраненных данных, загружаем начальные
+    const initialData = getInitialData();
+    saveToStorage('tutoring_studentProfiles', initialData.studentProfiles);
+    return initialData.studentProfiles;
+  });
 
   const [allUsers, setAllUsers] = useState<User[]>(() => {
     try {
@@ -92,6 +213,22 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   });
 
   const { user, updateProfile } = useAuth();
+
+  // Функция для загрузки начальных данных
+  const loadInitialData = () => {
+    const initialData = getInitialData();
+    setTimeSlots(initialData.timeSlots);
+    setStudentProfiles(initialData.studentProfiles);
+    setLessons([]);
+    setChats([]);
+    
+    saveToStorage('tutoring_timeSlots', initialData.timeSlots);
+    saveToStorage('tutoring_studentProfiles', initialData.studentProfiles);
+    saveToStorage('tutoring_lessons', []);
+    saveToStorage('tutoring_chats', []);
+    
+    console.log('Initial data loaded for offline mode');
+  };
 
   // Инициализация WebSocket соединения
   useEffect(() => {
@@ -118,7 +255,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     const newSocket = io(WS_URL, {
       transports: ['websocket', 'polling'],
       timeout: 20000,
-      // Добавляем дополнительные опции для Render
       forceNew: true,
       reconnection: true,
       reconnectionAttempts: 5,
@@ -142,23 +278,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       console.error('WebSocket connection error:', error);
       setIsConnected(false);
       
-      // Fallback: загружаем данные из localStorage
-      const cachedTimeSlots = loadFromStorage('tutoring_timeSlots', []);
-      const cachedLessons = loadFromStorage('tutoring_lessons', []);
-      const cachedChats = loadFromStorage('tutoring_chats', []);
-      
-      if (cachedTimeSlots.length > 0) {
-        setTimeSlots(cachedTimeSlots);
-        console.log('Loaded cached timeSlots:', cachedTimeSlots.length);
-      }
-      if (cachedLessons.length > 0) {
-        setLessons(cachedLessons);
-        console.log('Loaded cached lessons:', cachedLessons.length);
-      }
-      if (cachedChats.length > 0) {
-        setChats(cachedChats);
-        console.log('Loaded cached chats:', cachedChats.length);
-      }
+      // При ошибке подключения загружаем начальные данные
+      console.log('Loading initial data for offline mode...');
+      loadInitialData();
     });
 
     // Получаем все актуальные данные при подключении
@@ -752,6 +874,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         allUsers,
         updateTeacherProfile, // добавлено
         socketRef,
+        loadInitialData, // добавлено
       }}
     >
       {children}
