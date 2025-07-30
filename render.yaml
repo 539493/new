@@ -10,4 +10,5 @@ services:
       - key: PORT
         value: 10000
     healthCheckPath: /api/health
-    autoDeploy: true 
+    autoDeploy: true
+    plan: starter 
