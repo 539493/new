@@ -284,7 +284,10 @@ const StudentHome: React.FC = () => {
   }, [timeSlots]);
 
   const handleTeacherClick = (teacher: any) => {
-    setSelectedTeacher(getUserById(teacher.id));
+    console.log('Teacher clicked:', teacher);
+    const teacherUser = getUserById(teacher.id);
+    console.log('Teacher user data:', teacherUser);
+    setSelectedTeacher(teacherUser);
     setShowTeacherProfilePage(true);
   };
 
@@ -535,7 +538,11 @@ const StudentHome: React.FC = () => {
             const maxPrice = hasAvailableSlots ? Math.max(...teacherSlots.map(slot => slot.price)) : profile?.hourlyRate || 0;
             
             return (
-              <div key={teacher.id} className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+              <div 
+                key={teacher.id} 
+                className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                onClick={() => handleTeacherClick(teacher)}
+              >
                 {/* Изображение */}
                 <div className="aspect-square bg-gradient-to-br from-blue-400 to-indigo-500 rounded-t-lg flex items-center justify-center">
                   {profile?.avatar ? (
@@ -589,13 +596,18 @@ const StudentHome: React.FC = () => {
                   </div>
                   
                   <button
-                    onClick={() => handleTeacherClick(teacher)}
+                    onClick={(e) => {
+                      e.stopPropagation(); // Предотвращаем всплытие события
+                      if (hasAvailableSlots) {
+                        // Здесь можно добавить логику для быстрого бронирования
+                        console.log('Quick booking for teacher:', teacher.id);
+                      }
+                    }}
                     className={`w-full py-2 rounded-lg text-sm font-medium transition-colors ${
                       hasAvailableSlots 
                         ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                        : 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                        : 'bg-gray-300 text-gray-600'
                     }`}
-                    disabled={!hasAvailableSlots}
                   >
                     {hasAvailableSlots ? 'Записаться' : 'Нет свободных слотов'}
                   </button>
