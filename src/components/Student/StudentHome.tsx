@@ -515,7 +515,7 @@ const StudentHome: React.FC = () => {
       </div>
 
       {/* Преподаватели в виде карточек */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {filteredTeachers.length === 0 ? (
           <div className="col-span-full text-center py-12">
             <div className="text-gray-400 text-lg mb-2">
@@ -540,7 +540,7 @@ const StudentHome: React.FC = () => {
             return (
               <div 
                 key={teacher.id} 
-                className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer max-w-sm"
                 onClick={() => handleTeacherClick(teacher)}
               >
                 {/* Изображение */}
@@ -553,45 +553,45 @@ const StudentHome: React.FC = () => {
                     />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-blue-400 to-indigo-500 rounded-t-lg flex items-center justify-center">
-                      <UserIcon className="h-16 w-16 text-white" />
+                      <UserIcon className="h-12 w-12 text-white" />
                     </div>
                   )}
                 </div>
                 
                 {/* Информация */}
-                <div className="p-4">
+                <div className="p-3">
                   <div className="flex items-start justify-between mb-2">
-                    <h3 className="font-semibold text-gray-900 text-sm leading-tight">
+                    <h3 className="font-semibold text-gray-900 text-xs leading-tight">
                       {profile?.name || teacher.name || 'Репетитор'}
                     </h3>
                     <div className="flex items-center space-x-1">
                       <button className="text-gray-400 hover:text-red-500 transition-colors">
-                        <Heart className="h-4 w-4" />
+                        <Heart className="h-3 w-3" />
                       </button>
                       <button className="text-gray-400 hover:text-gray-600 transition-colors">
-                        <MoreHorizontal className="h-4 w-4" />
+                        <MoreHorizontal className="h-3 w-3" />
                       </button>
                     </div>
                   </div>
                   
-                  <div className="text-sm text-gray-600 mb-2">
-                    {profile?.subjects?.slice(0, 3).join(', ')}...
+                  <div className="text-xs text-gray-600 mb-2">
+                    {profile?.subjects?.slice(0, 2).join(', ')}...
                   </div>
                   
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-900">
-                      от {minPrice} ₽ за услугу
+                    <span className="text-xs font-medium text-gray-900">
+                      от {minPrice} ₽
                     </span>
                     {profile?.rating && (
                       <div className="flex items-center space-x-1">
-                        <Star className="h-3 w-3 text-yellow-400 fill-current" />
+                        <Star className="h-2 w-2 text-yellow-400 fill-current" />
                         <span className="text-xs text-gray-600">{profile.rating}</span>
                       </div>
                     )}
                   </div>
                   
-                  <div className="flex items-center text-xs text-gray-500 mb-3">
-                    <MapPin className="h-3 w-3 mr-1" />
+                  <div className="flex items-center text-xs text-gray-500 mb-2">
+                    <MapPin className="h-2 w-2 mr-1" />
                     {profile?.city || 'Онлайн'}
                   </div>
                   
@@ -603,7 +603,7 @@ const StudentHome: React.FC = () => {
                         console.log('Quick booking for teacher:', teacher.id);
                       }
                     }}
-                    className={`w-full py-2 rounded-lg text-sm font-medium transition-colors ${
+                    className={`w-full py-1.5 rounded-lg text-xs font-medium transition-colors ${
                       hasAvailableSlots 
                         ? 'bg-blue-600 text-white hover:bg-blue-700' 
                         : 'bg-gray-300 text-gray-600'
