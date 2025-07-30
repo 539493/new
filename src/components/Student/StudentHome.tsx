@@ -10,6 +10,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { FilterOptions, TimeSlot } from '../../types';
 import { io, Socket } from 'socket.io-client';
 import { SERVER_URL, WEBSOCKET_URL } from '../../config';
+import TeacherProfilePage from './TeacherProfilePage';
 
 const StudentHome: React.FC = () => {
   const { getFilteredSlots, bookLesson, timeSlots, isConnected } = useData();
@@ -142,7 +143,7 @@ const StudentHome: React.FC = () => {
     }, 500);
   };
 
-  const handleBookLesson = (slotId: string) => {
+  const handleBookSlot = (slotId: string) => {
     if (user) {
       console.log('Booking lesson:', slotId, 'for user:', user.name);
       bookLesson(slotId, user.id, user.name);
@@ -190,21 +191,51 @@ const StudentHome: React.FC = () => {
     }
   };
 
-  // Собираем уникальных преподавателей с доступными слотами
-  const teachersWithSlots: { id: string; name: string; avatar?: string; rating?: number; profile?: any }[] = Array.from(
-    filteredSlots.reduce((acc: Map<string, { id: string; name: string; avatar?: string; rating?: number; profile?: any }>, slot: any) => {
-      if (!acc.has(slot.teacherId)) {
-        acc.set(slot.teacherId, {
-          id: slot.teacherId,
-          name: slot.teacherName,
-          avatar: slot.teacherAvatar,
-          rating: slot.rating,
-          profile: getTeacherProfileById(slot.teacherId)
-        });
+  // Собираем всех преподавателей (не только с доступными слотами)
+  const allTeachers: { id: string; name: string; avatar?: string; rating?: number; profile?: any }[] = React.useMemo(() => {
+    // Получаем всех преподавателей из разных источников
+    const teachersFromServer = serverTeachers.map(teacher => ({
+      id: teacher.id,
+      name: teacher.name || teacher.profile?.name || 'Репетитор',
+      avatar: teacher.avatar || teacher.profile?.avatar,
+      rating: teacher.profile?.rating,
+      profile: teacher.profile
+    }));
+
+    const teachersFromUsers = allUsers
+      ?.filter((u: any) => u.role === 'teacher')
+      .map((user: any) => ({
+        id: user.id,
+        name: user.name || user.profile?.name || 'Репетитор',
+        avatar: user.avatar || user.profile?.avatar,
+        rating: user.profile?.rating,
+        profile: user.profile
+      })) || [];
+
+    // Объединяем и убираем дубликаты
+    const allTeachersMap = new Map();
+    [...teachersFromServer, ...teachersFromUsers].forEach(teacher => {
+      if (!allTeachersMap.has(teacher.id)) {
+        allTeachersMap.set(teacher.id, teacher);
       }
-      return acc;
-    }, new Map()).values()
-  );
+    });
+
+    return Array.from(allTeachersMap.values());
+  }, [serverTeachers, allUsers]);
+
+  // Фильтруем преподавателей на основе фильтров
+  const filteredTeachers = React.useMemo(() => {
+    if (Object.keys(filters).length === 0 && !selectedDate && !selectedTimeRange) {
+      // Если фильтры не применены, показываем всех преподавателей
+      return allTeachers;
+    }
+
+    // Если есть фильтры, показываем только тех, у кого есть подходящие слоты
+    return allTeachers.filter(teacher => {
+      const teacherSlots = filteredSlots.filter(slot => slot.teacherId === teacher.id);
+      return teacherSlots.length > 0;
+    });
+  }, [allTeachers, filteredSlots, filters, selectedDate, selectedTimeRange]);
 
   function getTeacherProfileById(teacherId: string) {
     const teacher = serverTeachers.find(t => t.id === teacherId) ||
@@ -226,6 +257,7 @@ const StudentHome: React.FC = () => {
   const [modalSlot, setModalSlot] = useState<any>(null);
   const [selectedTeacher, setSelectedTeacher] = useState<any>(null);
   const [showTeacherModal, setShowTeacherModal] = useState(false);
+  const [showTeacherProfilePage, setShowTeacherProfilePage] = useState(false);
   const [teacherPosts, setTeacherPosts] = useState<any[]>([]);
 
   // Автоматическая подгрузка постов преподавателя
@@ -250,6 +282,18 @@ const StudentHome: React.FC = () => {
   React.useEffect(() => {
     console.log('DEBUG: timeSlots у ученика', timeSlots);
   }, [timeSlots]);
+
+  const handleTeacherClick = (teacher: any) => {
+    setSelectedTeacher(getUserById(teacher.id));
+    setShowTeacherProfilePage(true);
+  };
+
+  const handleBookLesson = (teacherId: string) => {
+    // Здесь можно добавить логику для бронирования урока
+    console.log('Booking lesson for teacher:', teacherId);
+    setShowTeacherProfilePage(false);
+    // Можно открыть модальное окно для выбора времени
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -469,17 +513,26 @@ const StudentHome: React.FC = () => {
 
       {/* Преподаватели в виде карточек */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {teachersWithSlots.length === 0 ? (
+        {filteredTeachers.length === 0 ? (
           <div className="col-span-full text-center py-12">
-            <div className="text-gray-400 text-lg mb-2">Нет доступных преподавателей</div>
-            <p className="text-gray-500">Попробуйте изменить фильтры или воспользуйтесь овербукингом</p>
+            <div className="text-gray-400 text-lg mb-2">
+              {Object.keys(filters).length > 0 || selectedDate || selectedTimeRange 
+                ? "Нет преподавателей подходящих под фильтры" 
+                : "Нет доступных преподавателей"}
+            </div>
+            <p className="text-gray-500">
+              {Object.keys(filters).length > 0 || selectedDate || selectedTimeRange 
+                ? "Попробуйте изменить фильтры или воспользуйтесь овербукингом"
+                : "Попробуйте воспользоваться овербукингом"}
+            </p>
           </div>
         ) : (
-          teachersWithSlots.map(teacher => {
+          filteredTeachers.map(teacher => {
             const profile = teacher.profile;
             const teacherSlots = filteredSlots.filter(slot => slot.teacherId === teacher.id);
-            const minPrice = Math.min(...teacherSlots.map(slot => slot.price));
-            const maxPrice = Math.max(...teacherSlots.map(slot => slot.price));
+            const hasAvailableSlots = teacherSlots.length > 0;
+            const minPrice = hasAvailableSlots ? Math.min(...teacherSlots.map(slot => slot.price)) : profile?.hourlyRate || 0;
+            const maxPrice = hasAvailableSlots ? Math.max(...teacherSlots.map(slot => slot.price)) : profile?.hourlyRate || 0;
             
             return (
               <div key={teacher.id} className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
@@ -536,13 +589,15 @@ const StudentHome: React.FC = () => {
                   </div>
                   
                   <button
-                    onClick={() => {
-                      setSelectedTeacher(getUserById(teacher.id));
-                      setShowTeacherModal(true);
-                    }}
-                    className="w-full bg-blue-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                    onClick={() => handleTeacherClick(teacher)}
+                    className={`w-full py-2 rounded-lg text-sm font-medium transition-colors ${
+                      hasAvailableSlots 
+                        ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                        : 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                    }`}
+                    disabled={!hasAvailableSlots}
                   >
-                    Записаться
+                    {hasAvailableSlots ? 'Записаться' : 'Нет свободных слотов'}
                   </button>
                 </div>
               </div>
@@ -777,7 +832,7 @@ const StudentHome: React.FC = () => {
                               {value.map((v: string, i: number) => (
                                 <span key={i} className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-xs mr-1 mb-1">{v}</span>
                               ))}
-                            </div>
+            </div>
                           ) : (
                             <div className="text-gray-900 text-sm break-all">{String(value)}</div>
                           )}
@@ -853,6 +908,15 @@ const StudentHome: React.FC = () => {
             }}>{isBooking ? 'Бронирование...' : 'Забронировать выбранное время'}</button>
           </div>
         </div>
+      )}
+
+      {/* Полная страница преподавателя */}
+      {showTeacherProfilePage && selectedTeacher && (
+        <TeacherProfilePage
+          teacher={selectedTeacher}
+          onClose={() => setShowTeacherProfilePage(false)}
+          onBookLesson={handleBookLesson}
+        />
       )}
     </div>
   );

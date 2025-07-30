@@ -341,7 +341,7 @@ const ProfileForm: React.FC = () => {
           <div className="text-xs font-semibold text-gray-500 mb-1 mt-2">НОМЕР ТЕЛЕФОНА</div>
           <div className="bg-white rounded-xl mb-4 overflow-hidden flex items-center justify-between px-4 py-3">
             <span className="text-sm text-gray-900">Изменить номер</span>
-            <span className="text-gray-400 text-sm">+7 (999) 300-18-02</span>
+            <span className="text-gray-400 text-sm">{user.phone || '+7 (999) 300-18-02'}</span>
             <svg className="w-4 h-4 text-gray-400 ml-2" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
           </div>
           <div className="text-xs font-semibold text-gray-500 mb-1 mt-2">ЭЛЕКТРОННАЯ ПОЧТА</div>
@@ -481,6 +481,33 @@ const ProfileForm: React.FC = () => {
                 value={user?.email}
                 disabled
                     className="input-modern w-full"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Номер телефона</label>
+              <input
+                type="tel"
+                value={user?.phone || ''}
+                onChange={(e) => {
+                  // Обновляем номер телефона в контексте аутентификации
+                  if (user) {
+                    const updatedUser = { ...user, phone: e.target.value };
+                    // Здесь нужно обновить пользователя в контексте
+                    // Пока просто сохраняем в localStorage
+                    try {
+                      const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
+                      const userIndex = users.findIndex((u: any) => u.id === user.id);
+                      if (userIndex !== -1) {
+                        users[userIndex].phone = e.target.value;
+                        localStorage.setItem('tutoring_users', JSON.stringify(users));
+                      }
+                    } catch (error) {
+                      console.error('Error updating phone:', error);
+                    }
+                  }
+                }}
+                className="input-modern w-full"
+                placeholder="+7 (999) 123-45-67"
               />
             </div>
           </div>
