@@ -108,3 +108,32 @@ export interface FilterOptions {
   city?: string;
   minRating?: number;
 }
+
+export interface Reaction {
+  type: 'like' | 'love' | 'smile' | 'thumbsup';
+  count: number;
+  userReacted: boolean;
+}
+
+export interface Comment {
+  id: string;
+  userId: string;
+  userName: string;
+  userAvatar?: string;
+  text: string;
+  date: string;
+}
+
+export interface Post {
+  id: string;
+  userId: string;
+  userName: string;
+  userAvatar?: string;
+  text: string;
+  media?: string[];
+  type: 'text' | 'image' | 'video';
+  date: string;
+  reactions: Reaction[];
+  comments: Comment[];
+  isBookmarked: boolean;
+}

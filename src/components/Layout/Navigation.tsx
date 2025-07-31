@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Calendar, MessageCircle, User, LogOut, Clock, BarChart3 } from 'lucide-react';
+import { Home, Calendar, MessageCircle, User, LogOut, Clock, BarChart3, FileText } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface NavigationProps {
@@ -12,6 +12,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange }) => {
 
   const studentTabs = [
     { id: 'home', label: 'Главная', icon: Home },
+    { id: 'posts', label: 'Записи', icon: FileText },
     { id: 'lessons', label: 'Мои уроки', icon: Calendar },
     { id: 'chats', label: 'Чаты', icon: MessageCircle },
     { id: 'profile', label: 'Профиль', icon: User },
@@ -19,6 +20,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange }) => {
 
   const teacherTabs = [
     { id: 'slots', label: 'Слоты', icon: Calendar },
+    { id: 'posts', label: 'Записи', icon: FileText },
     { id: 'calendar', label: 'Календарь', icon: BarChart3 },
     { id: 'students', label: 'Ученики', icon: User },
     { id: 'chats', label: 'Чаты', icon: MessageCircle },

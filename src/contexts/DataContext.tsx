@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect, useRef } from 'react';
-import { TimeSlot, Lesson, Chat, FilterOptions, User } from '../types';
+import { TimeSlot, Lesson, Chat, FilterOptions, User, Post, Reaction, Comment } from '../types';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from './AuthContext';
 import type { TeacherProfile } from '../types';
@@ -9,6 +9,7 @@ interface DataContextType {
   timeSlots: any[];
   lessons: any[];
   chats: any[];
+  posts: Post[];
   createTimeSlot: (slot: any) => void;
   bookLesson: (slotId: string, studentId: string, studentName: string) => void;
   cancelLesson: (lessonId: string) => void;
@@ -27,6 +28,14 @@ interface DataContextType {
   updateTeacherProfile: (teacherId: string, profile: any) => void;
   socketRef: React.MutableRefObject<Socket | null>;
   loadInitialData: () => void;
+  // Функции для работы с записями
+  createPost: (postData: { text: string; media: File[]; type: 'text' | 'image' | 'video' }) => void;
+  addReaction: (postId: string, reactionType: string) => void;
+  addComment: (postId: string, commentText: string) => void;
+  sharePost: (postId: string) => void;
+  bookmarkPost: (postId: string) => void;
+  editPost: (postId: string, newText: string) => void;
+  deletePost: (postId: string) => void;
 }
 
 export const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -210,6 +219,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     } catch {
       return [];
     }
+  });
+
+  const [posts, setPosts] = useState<Post[]>(() => {
+    return loadFromStorage('tutoring_posts', []);
   });
 
   const { user, updateProfile } = useAuth();
@@ -851,12 +864,166 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     }
   };
 
+  // Функции для работы с записями
+  const createPost = (postData: { text: string; media: File[]; type: 'text' | 'image' | 'video' }) => {
+    if (!user) return;
+
+    const newPost: Post = {
+      id: `post_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      userId: user.id,
+      userName: user.name,
+      userAvatar: user.avatar,
+      text: postData.text,
+      media: postData.media.map(file => URL.createObjectURL(file)), // В реальном приложении файлы загружались бы на сервер
+      type: postData.type,
+      date: new Date().toISOString(),
+      reactions: [],
+      comments: [],
+      isBookmarked: false
+    };
+
+    setPosts(prev => {
+      const updated = [newPost, ...prev];
+      saveToStorage('tutoring_posts', updated);
+      return updated;
+    });
+
+    if (socketRef.current && isConnected) {
+      socketRef.current.emit('createPost', newPost);
+    }
+  };
+
+  const addReaction = (postId: string, reactionType: string) => {
+    if (!user) return;
+
+    setPosts(prev => {
+      const updated = prev.map(post => {
+        if (post.id === postId) {
+          const existingReaction = post.reactions.find(r => r.type === reactionType);
+          const userReacted = post.reactions.some(r => r.userReacted);
+          
+          let newReactions = [...post.reactions];
+          
+          if (existingReaction) {
+            if (userReacted) {
+              // Убираем реакцию
+              newReactions = post.reactions.map(r => 
+                r.type === reactionType 
+                  ? { ...r, count: Math.max(0, r.count - 1), userReacted: false }
+                  : r
+              );
+            } else {
+              // Добавляем реакцию
+              newReactions = post.reactions.map(r => 
+                r.type === reactionType 
+                  ? { ...r, count: r.count + 1, userReacted: true }
+                  : r
+              );
+            }
+          } else {
+            // Создаем новую реакцию
+            newReactions.push({
+              type: reactionType as 'like' | 'love' | 'smile' | 'thumbsup',
+              count: 1,
+              userReacted: true
+            });
+          }
+
+          return { ...post, reactions: newReactions };
+        }
+        return post;
+      });
+
+      saveToStorage('tutoring_posts', updated);
+      return updated;
+    });
+
+    if (socketRef.current && isConnected) {
+      socketRef.current.emit('addReaction', { postId, reactionType, userId: user.id });
+    }
+  };
+
+  const addComment = (postId: string, commentText: string) => {
+    if (!user) return;
+
+    const newComment: Comment = {
+      id: `comment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      userId: user.id,
+      userName: user.name,
+      userAvatar: user.avatar,
+      text: commentText,
+      date: new Date().toISOString()
+    };
+
+    setPosts(prev => {
+      const updated = prev.map(post => 
+        post.id === postId 
+          ? { ...post, comments: [...post.comments, newComment] }
+          : post
+      );
+      saveToStorage('tutoring_posts', updated);
+      return updated;
+    });
+
+    if (socketRef.current && isConnected) {
+      socketRef.current.emit('addComment', { postId, comment: newComment });
+    }
+  };
+
+  const sharePost = (postId: string) => {
+    // В реальном приложении здесь была бы логика шаринга
+    console.log('Sharing post:', postId);
+  };
+
+  const bookmarkPost = (postId: string) => {
+    if (!user) return;
+
+    setPosts(prev => {
+      const updated = prev.map(post => 
+        post.id === postId 
+          ? { ...post, isBookmarked: !post.isBookmarked }
+          : post
+      );
+      saveToStorage('tutoring_posts', updated);
+      return updated;
+    });
+  };
+
+  const editPost = (postId: string, newText: string) => {
+    setPosts(prev => {
+      const updated = prev.map(post => 
+        post.id === postId 
+          ? { ...post, text: newText }
+          : post
+      );
+      saveToStorage('tutoring_posts', updated);
+      return updated;
+    });
+
+    if (socketRef.current && isConnected) {
+      socketRef.current.emit('editPost', { postId, newText });
+    }
+  };
+
+  const deletePost = (postId: string) => {
+    setPosts(prev => {
+      const updated = prev.filter(post => post.id !== postId);
+      saveToStorage('tutoring_posts', updated);
+      return updated;
+    });
+
+    if (socketRef.current && isConnected) {
+      socketRef.current.emit('deletePost', { postId });
+    }
+  };
+
   return (
     <DataContext.Provider
       value={{
         timeSlots,
         lessons,
         chats,
+        posts,
         createTimeSlot,
         bookLesson,
         cancelLesson,
@@ -875,6 +1042,14 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         updateTeacherProfile, // добавлено
         socketRef,
         loadInitialData, // добавлено
+        // Функции для работы с записями
+        createPost,
+        addReaction,
+        addComment,
+        sharePost,
+        bookmarkPost,
+        editPost,
+        deletePost,
       }}
     >
       {children}

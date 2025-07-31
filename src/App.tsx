@@ -12,6 +12,7 @@ import TeacherCalendar from './components/Teacher/TeacherCalendar';
 import ChatList from './components/Shared/ChatList';
 import ProfileForm from './components/Shared/ProfileForm';
 import TeacherStudents from './components/Teacher/TeacherStudents';
+import PostsPage from './components/Shared/PostsPage';
 import { Routes, Route } from 'react-router-dom';
 
 const AppContent: React.FC = () => {
@@ -28,6 +29,8 @@ const AppContent: React.FC = () => {
         return user.role === 'student' ? <StudentHome /> : <TeacherSlots />;
       case 'slots':
         return user.role === 'teacher' ? <TeacherSlots /> : <StudentHome />;
+      case 'posts':
+        return <PostsPage />;
       case 'calendar':
         return user.role === 'student' ? <StudentCalendar /> : <TeacherCalendar />;
       case 'lessons':
