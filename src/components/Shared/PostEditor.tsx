@@ -10,13 +10,17 @@ interface PostEditorProps {
   onCancel: () => void;
   initialText?: string;
   isEditing?: boolean;
+  userName?: string;
+  userAvatar?: string;
 }
 
 const PostEditor: React.FC<PostEditorProps> = ({ 
   onSubmit, 
   onCancel, 
   initialText = '', 
-  isEditing = false 
+  isEditing = false,
+  userName = 'U',
+  userAvatar
 }) => {
   const [text, setText] = useState(initialText);
   const [media, setMedia] = useState<File[]>([]);
@@ -25,12 +29,25 @@ const PostEditor: React.FC<PostEditorProps> = ({
 
   const handleMediaUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
+    console.log('Selected files:', files);
+    
+    if (files.length === 0) return;
+    
     const newMedia = [...media, ...files];
     setMedia(newMedia);
     
     // Создаем URL для предпросмотра
-    const newUrls = files.map(file => URL.createObjectURL(file));
+    const newUrls = files.map(file => {
+      const url = URL.createObjectURL(file);
+      console.log('Created URL for file:', file.name, url);
+      return url;
+    });
     setMediaUrls([...mediaUrls, ...newUrls]);
+    
+    // Очищаем input для возможности повторной загрузки того же файла
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const removeMedia = (index: number) => {
@@ -41,17 +58,27 @@ const PostEditor: React.FC<PostEditorProps> = ({
   };
 
   const handleSubmit = () => {
-    if (!text.trim() && media.length === 0) return;
+    console.log('PostEditor: handleSubmit called');
+    console.log('Text:', text);
+    console.log('Media files:', media);
     
-    const postType = media.length > 0 ? 
+    if (!text.trim() && media.length === 0) {
+      console.log('PostEditor: Submit blocked - no text and no media');
+      return;
+    }
+    
+    const postType: 'text' | 'image' | 'video' = media.length > 0 ? 
       (media.some(file => file.type.startsWith('video/')) ? 'video' : 'image') : 
       'text';
     
-    onSubmit({
+    const postData = {
       text: text.trim(),
       media,
       type: postType
-    });
+    };
+    
+    console.log('PostEditor: Submitting post data:', postData);
+    onSubmit(postData);
     
     // Очищаем URL объекты
     mediaUrls.forEach(url => URL.revokeObjectURL(url));
@@ -62,8 +89,14 @@ const PostEditor: React.FC<PostEditorProps> = ({
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-4">
       <div className="flex items-start space-x-3">
-        <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center">
-          <span className="text-white text-sm font-medium">U</span>
+        <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center overflow-hidden">
+          {userAvatar ? (
+            <img src={userAvatar} alt={userName} className="w-full h-full object-cover" />
+          ) : (
+            <span className="text-white text-sm font-medium">
+              {userName.charAt(0).toUpperCase()}
+            </span>
+          )}
         </div>
         
         <div className="flex-1">

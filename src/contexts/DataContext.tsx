@@ -868,13 +868,22 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   const createPost = (postData: { text: string; media: File[]; type: 'text' | 'image' | 'video' }) => {
     if (!user) return;
 
+    console.log('Creating post with data:', postData);
+
+    // Создаем URL для медиафайлов
+    const mediaUrls = postData.media.map(file => {
+      const url = URL.createObjectURL(file);
+      console.log('Created URL for post media:', file.name, url);
+      return url;
+    });
+
     const newPost: Post = {
       id: `post_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       userId: user.id,
       userName: user.name,
       userAvatar: user.avatar,
       text: postData.text,
-      media: postData.media.map(file => URL.createObjectURL(file)), // В реальном приложении файлы загружались бы на сервер
+      media: mediaUrls,
       type: postData.type,
       date: new Date().toISOString(),
       reactions: [],
@@ -882,9 +891,12 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       isBookmarked: false
     };
 
+    console.log('Created new post:', newPost);
+
     setPosts(prev => {
       const updated = [newPost, ...prev];
       saveToStorage('tutoring_posts', updated);
+      console.log('Updated posts in state, total posts:', updated.length);
       return updated;
     });
 

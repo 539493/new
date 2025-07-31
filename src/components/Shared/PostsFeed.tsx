@@ -76,6 +76,7 @@ const PostsFeed: React.FC<PostsFeedProps> = ({
   }, [posts, filterType, currentUserId]);
 
   const handleCreatePost = (postData: { text: string; media: File[]; type: 'text' | 'image' | 'video' }) => {
+    console.log('PostsFeed: handleCreatePost called with:', postData);
     onCreatePost(postData);
     setShowEditor(false);
   };
@@ -120,6 +121,8 @@ const PostsFeed: React.FC<PostsFeedProps> = ({
           <PostEditor
             onSubmit={handleCreatePost}
             onCancel={() => setShowEditor(false)}
+            userName={currentUserName}
+            userAvatar={currentUserAvatar}
           />
         </div>
       )}
