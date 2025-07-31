@@ -21,10 +21,12 @@ interface DataContextType {
   isConnected: boolean;
   completeLesson: (lessonId: string) => void;
   studentProfiles: Record<string, any>;
+  teacherProfiles: Record<string, any>;
   updateStudentProfile: (studentId: string, profile: any) => void;
   deleteSlot: (slotId: string) => void;
   createSlot: (slot: Omit<TimeSlot, 'id' | 'isBooked'>, studentId?: string, studentName?: string, options?: { mode?: string }) => Promise<TimeSlot>;
   allUsers: User[];
+  setAllUsers: (users: User[]) => void;
   updateTeacherProfile: (teacherId: string, profile: any) => void;
   socketRef: React.MutableRefObject<Socket | null>;
   loadInitialData: () => void;
@@ -36,6 +38,11 @@ interface DataContextType {
   bookmarkPost: (postId: string) => void;
   editPost: (postId: string, newText: string) => void;
   deletePost: (postId: string) => void;
+  // Функции для управления чатами
+  deleteChat: (chatId: string) => void;
+  markChatAsRead: (chatId: string) => void;
+  clearChatMessages: (chatId: string) => void;
+  archiveChat: (chatId: string) => void;
 }
 
 export const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -1029,6 +1036,68 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     }
   };
 
+  // Функции для управления чатами
+  const deleteChat = (chatId: string) => {
+    console.log('Deleting chat:', chatId);
+    setChats(prev => {
+      const updated = prev.filter(chat => chat.id !== chatId);
+      saveToStorage('tutoring_chats', updated);
+      return updated;
+    });
+
+    if (socketRef.current && isConnected) {
+      socketRef.current.emit('deleteChat', { chatId });
+    }
+  };
+
+  const markChatAsRead = (chatId: string) => {
+    setChats(prev => {
+      const updated = prev.map(chat => 
+        chat.id === chatId 
+          ? { ...chat, messages: chat.messages.map(msg => ({ ...msg, isRead: true })) }
+          : chat
+      );
+      saveToStorage('tutoring_chats', updated);
+      return updated;
+    });
+
+    if (socketRef.current && isConnected) {
+      socketRef.current.emit('markChatAsRead', { chatId });
+    }
+  };
+
+  const clearChatMessages = (chatId: string) => {
+    setChats(prev => {
+      const updated = prev.map(chat => 
+        chat.id === chatId 
+          ? { ...chat, messages: [] }
+          : chat
+      );
+      saveToStorage('tutoring_chats', updated);
+      return updated;
+    });
+
+    if (socketRef.current && isConnected) {
+      socketRef.current.emit('clearChatMessages', { chatId });
+    }
+  };
+
+  const archiveChat = (chatId: string) => {
+    setChats(prev => {
+      const updated = prev.map(chat => 
+        chat.id === chatId 
+          ? { ...chat, archived: true }
+          : chat
+      );
+      saveToStorage('tutoring_chats', updated);
+      return updated;
+    });
+
+    if (socketRef.current && isConnected) {
+      socketRef.current.emit('archiveChat', { chatId });
+    }
+  };
+
   return (
     <DataContext.Provider
       value={{
@@ -1051,6 +1120,11 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         deleteSlot,
         createSlot, // теперь поддерживает 4 параметра
         allUsers,
+        setAllUsers: (users: User[]) => {
+          setAllUsers(users);
+          localStorage.setItem('tutoring_users', JSON.stringify(users));
+        },
+        teacherProfiles: {},
         updateTeacherProfile, // добавлено
         socketRef,
         loadInitialData, // добавлено
@@ -1062,6 +1136,11 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         bookmarkPost,
         editPost,
         deletePost,
+        // Функции для управления чатами
+        deleteChat,
+        markChatAsRead,
+        clearChatMessages,
+        archiveChat,
       }}
     >
       {children}

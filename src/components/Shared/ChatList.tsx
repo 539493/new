@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MessageCircle, Send, Search, User, BookOpen } from 'lucide-react';
+import { MessageCircle, Send, Search, User, BookOpen, MoreHorizontal, Trash2, Archive, Eye, MessageSquare } from 'lucide-react';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { format } from 'date-fns';
@@ -7,7 +7,19 @@ import { ru } from 'date-fns/locale';
 
 const ChatList: React.FC = () => {
   // @ts-ignore
-  const { chats, sendMessage, allUsers, setAllUsers, teacherProfiles, studentProfiles, lessons } = useData();
+  const { 
+    chats, 
+    sendMessage, 
+    allUsers, 
+    setAllUsers, 
+    teacherProfiles, 
+    studentProfiles, 
+    lessons,
+    deleteChat,
+    markChatAsRead,
+    clearChatMessages,
+    archiveChat
+  } = useData();
   const { user } = useAuth();
   
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
@@ -19,6 +31,8 @@ const ChatList: React.FC = () => {
   const [profilePosts, setProfilePosts] = useState<any[]>([]);
   const { socketRef } = useData();
   const [forceUpdate, setForceUpdate] = useState(0);
+  const [showChatMenu, setShowChatMenu] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
 
   // Новый способ получения профиля по id — из allUsers, если нет — ищем в teacherProfiles/studentProfiles и добавляем
   const getUserProfileById = (userId: string) => {
@@ -125,6 +139,48 @@ const ChatList: React.FC = () => {
     }
   };
 
+  const handleDeleteChat = (chatId: string) => {
+    if (confirm('Вы уверены, что хотите удалить этот чат? Это действие нельзя отменить.')) {
+      deleteChat(chatId);
+      if (selectedChatId === chatId) {
+        setSelectedChatId(null);
+      }
+      setShowChatMenu(null);
+      setShowDeleteConfirm(null);
+    }
+  };
+
+  const handleMarkAsRead = (chatId: string) => {
+    markChatAsRead(chatId);
+    setShowChatMenu(null);
+  };
+
+  const handleClearMessages = (chatId: string) => {
+    if (confirm('Вы уверены, что хотите очистить все сообщения в этом чате?')) {
+      clearChatMessages(chatId);
+      setShowChatMenu(null);
+    }
+  };
+
+  const handleArchiveChat = (chatId: string) => {
+    archiveChat(chatId);
+    setShowChatMenu(null);
+  };
+
+  // Закрытие меню при клике вне его
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showChatMenu && !(event.target as Element).closest('.chat-menu')) {
+        setShowChatMenu(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showChatMenu]);
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
@@ -152,51 +208,102 @@ const ChatList: React.FC = () => {
             <div className="flex-1 overflow-y-auto">
               {filteredChats.length > 0 ? (
                 filteredChats.map((chat) => (
-                  <button
+                  <div
                     key={chat.id}
-                    onClick={() => setSelectedChatId(chat.id)}
-                    className={`w-full p-4 text-left hover:bg-gray-50 border-b border-gray-100 transition-colors ${
+                    className={`relative w-full p-4 text-left hover:bg-gray-50 border-b border-gray-100 transition-colors ${
                       selectedChatId === chat.id ? 'bg-blue-50 border-blue-200' : ''
                     }`}
                   >
-                    <div className="flex items-start space-x-3">
-                      <div className="flex-shrink-0 cursor-pointer" onClick={() => {
-                        const otherId = getOtherParticipantId(chat);
-                        setProfileUserId(otherId);
-                        setShowProfileModal(true);
-                      }}>
-                        {(() => {
+                    <button
+                      onClick={() => setSelectedChatId(chat.id)}
+                      className="w-full"
+                    >
+                      <div className="flex items-start space-x-3">
+                        <div className="flex-shrink-0 cursor-pointer" onClick={(e) => {
+                          e.stopPropagation();
                           const otherId = getOtherParticipantId(chat);
-                          const profile = getUserProfileById(otherId);
-                          if (profile?.avatar) {
-                            return <img src={profile.avatar} alt="avatar" className="h-10 w-10 rounded-full object-cover" />;
-                          }
-                          return (
-                            <div className="h-10 w-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                              <span className="text-white text-sm font-medium">
-                                {getOtherParticipantName(chat).charAt(0).toUpperCase()}
-                              </span>
-                            </div>
-                          );
-                        })()}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">
-                          {getOtherParticipantName(chat)}
-                        </p>
-                        {chat.lastMessage && (
-                          <p className="text-sm text-gray-500 truncate">
-                            {chat.lastMessage.content}
-                          </p>
-                        )}
-                      </div>
-                      {chat.lastMessage && (
-                        <div className="text-xs text-gray-400">
-                          {formatMessageTime(chat.lastMessage.timestamp)}
+                          setProfileUserId(otherId);
+                          setShowProfileModal(true);
+                        }}>
+                          {(() => {
+                            const otherId = getOtherParticipantId(chat);
+                            const profile = getUserProfileById(otherId);
+                            if (profile?.avatar) {
+                              return <img src={profile.avatar} alt="avatar" className="h-10 w-10 rounded-full object-cover" />;
+                            }
+                            return (
+                              <div className="h-10 w-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                                <span className="text-white text-sm font-medium">
+                                  {getOtherParticipantName(chat).charAt(0).toUpperCase()}
+                                </span>
+                              </div>
+                            );
+                          })()}
                         </div>
-                      )}
-                    </div>
-                  </button>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">
+                            {getOtherParticipantName(chat)}
+                          </p>
+                          {chat.lastMessage && (
+                            <p className="text-sm text-gray-500 truncate">
+                              {chat.lastMessage.content}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          {chat.lastMessage && (
+                            <div className="text-xs text-gray-400">
+                              {formatMessageTime(chat.lastMessage.timestamp)}
+                            </div>
+                          )}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowChatMenu(showChatMenu === chat.id ? null : chat.id);
+                            }}
+                            className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                          >
+                            <MoreHorizontal className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </button>
+                    
+                    {/* Контекстное меню чата */}
+                    {showChatMenu === chat.id && (
+                      <div className="absolute right-2 top-12 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10 min-w-[150px]">
+                        <button
+                          onClick={() => handleMarkAsRead(chat.id)}
+                          className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2"
+                        >
+                          <Eye className="w-4 h-4" />
+                          <span>Отметить как прочитанное</span>
+                        </button>
+                        <button
+                          onClick={() => handleClearMessages(chat.id)}
+                          className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2"
+                        >
+                          <MessageSquare className="w-4 h-4" />
+                          <span>Очистить сообщения</span>
+                        </button>
+                        <button
+                          onClick={() => handleArchiveChat(chat.id)}
+                          className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2"
+                        >
+                          <Archive className="w-4 h-4" />
+                          <span>Архивировать</span>
+                        </button>
+                        <div className="border-t border-gray-100 my-1"></div>
+                        <button
+                          onClick={() => handleDeleteChat(chat.id)}
+                          className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          <span>Удалить чат</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 ))
               ) : (
                 <div className="p-8 text-center">
