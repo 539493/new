@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Upload, User, Settings, Bell, Lock, User as UserIcon, Palette, Database, Monitor, BookOpen, MessageCircle, FileText, Star } from 'lucide-react';
+import { Save, Upload, User, Settings, Bell, Lock, User as UserIcon, Palette, Database, Monitor, BookOpen, MessageCircle, FileText, Star, Plus } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { StudentProfile, TeacherProfile } from '../../types';
 import { useData } from '../../contexts/DataContext';
 import Modal from './Modal';
+import PostEditor from './PostEditor';
+import PostCard from './PostCard';
 
 const countries = [
   'Россия', 'Казахстан', 'Беларусь', 'Украина', 'Армения', 'Грузия', 'Азербайджан', 'Узбекистан', 'Киргизия', 'Таджикистан', 'Другая страна'
@@ -11,7 +13,19 @@ const countries = [
 
 const ProfileForm: React.FC = () => {
   const { user, updateProfile } = useAuth();
-  const { updateStudentProfile, updateTeacherProfile, lessons } = useData();
+  const { 
+    updateStudentProfile, 
+    updateTeacherProfile, 
+    lessons, 
+    posts, 
+    createPost, 
+    addReaction, 
+    addComment, 
+    sharePost, 
+    bookmarkPost, 
+    editPost, 
+    deletePost 
+  } = useData();
   
   const [editMode, setEditMode] = useState(false);
   const [activeTab, setActiveTab] = useState<'profile' | 'settings' | null>(null);
@@ -44,8 +58,7 @@ const ProfileForm: React.FC = () => {
   const [stories, setStories] = useState<Array<{id: number, avatar: string, name: string}>>([
     { id: 1, avatar: user?.profile?.avatar || '', name: user?.name || '' }
   ]);
-  const [posts, setPosts] = useState<Array<{id: number, text: string, date: string}>>([]);
-  const [newPost, setNewPost] = useState('');
+  const [showPostEditor, setShowPostEditor] = useState(false);
   const [theme, setTheme] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('theme') || 'light';
@@ -390,42 +403,57 @@ const ProfileForm: React.FC = () => {
       </div>
       {/* --- POSTS --- */}
       <div className="bg-white rounded-xl shadow p-4 mb-6">
-        <div className="font-bold text-base mb-2">Записи на странице</div>
-        <form
-          onSubmit={e => {
-            e.preventDefault();
-            if (newPost.trim()) {
-              setPosts([{ id: Date.now(), text: newPost, date: new Date().toLocaleString() }, ...posts]);
-              setNewPost('');
-            }
-          }}
-          className="mb-4"
-        >
-          <textarea
-            className="input-modern w-full min-h-[60px] resize-none mb-2"
-            placeholder="Что у вас нового?"
-            value={newPost}
-            onChange={e => setNewPost(e.target.value)}
-            maxLength={500}
-          />
-          <button type="submit" className="btn-primary px-4 py-2 text-sm">Опубликовать</button>
-        </form>
-        <div className="flex flex-col gap-4">
-          {posts.length === 0 && <div className="text-gray-400 text-sm">Пока нет записей</div>}
-          {posts.map(post => (
-            <div key={post.id} className="bg-gray-50 rounded-lg p-3 shadow-sm">
-              <div className="flex items-center gap-2 mb-1">
-                {user.profile?.avatar ? (
-                  <img src={user.profile.avatar} alt="avatar" className="h-7 w-7 rounded-full object-cover" />
-                ) : (
-                  <User className="h-5 w-5 text-gray-400" />
-                )}
-                <span className="font-medium text-gray-900 text-sm">{user.name}</span>
-                <span className="text-xs text-gray-400 ml-2">{post.date}</span>
-              </div>
-              <div className="text-gray-800 text-sm whitespace-pre-line">{post.text}</div>
+        <div className="flex items-center justify-between mb-4">
+          <div className="font-bold text-base">Мои записи</div>
+          <button
+            onClick={() => setShowPostEditor(true)}
+            className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Создать запись</span>
+          </button>
+        </div>
+        
+        {/* Редактор создания записи */}
+        {showPostEditor && (
+          <div className="mb-6">
+            <PostEditor
+              onSubmit={(postData) => {
+                console.log('ProfileForm: Creating post:', postData);
+                createPost(postData);
+                setShowPostEditor(false);
+              }}
+              onCancel={() => setShowPostEditor(false)}
+              userName={user?.name || 'Пользователь'}
+              userAvatar={user?.avatar}
+            />
+          </div>
+        )}
+        
+        {/* Лента записей пользователя */}
+        <div className="space-y-4">
+          {posts.filter(post => post.userId === user?.id).length === 0 ? (
+            <div className="text-center py-8">
+              <div className="text-gray-400 text-lg mb-2">У вас пока нет записей</div>
+              <p className="text-gray-500">Создайте первую запись!</p>
             </div>
-          ))}
+          ) : (
+            posts
+              .filter(post => post.userId === user?.id)
+              .map(post => (
+                <PostCard
+                  key={post.id}
+                  post={post}
+                  currentUserId={user?.id || ''}
+                  onReaction={addReaction}
+                  onComment={addComment}
+                  onShare={sharePost}
+                  onBookmark={bookmarkPost}
+                  onEdit={editPost}
+                  onDelete={deletePost}
+                />
+              ))
+          )}
         </div>
       </div>
       {/* Форма редактирования оставляю как есть, по editMode */}
