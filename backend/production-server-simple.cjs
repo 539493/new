@@ -24,6 +24,9 @@ const io = new Server(server, {
   }
 });
 
+// Хранилище комнат для видео чата
+const videoRooms = new Map();
+
 // Функции для работы с данными
 const DATA_FILE = path.join(__dirname, 'server_data.json');
 const INITIAL_DATA_FILE = path.join(__dirname, 'initial-data.json');
@@ -203,8 +206,73 @@ io.on('connection', (socket) => {
     }
   });
 
+  // === ВИДЕО ЧАТ ФУНКЦИОНАЛЬНОСТЬ ===
+  
+  // Обработка присоединения к видео комнате
+  socket.on('video-join', (data) => {
+    const { roomId, userName } = data;
+    console.log(`User ${userName} joining video room ${roomId}`);
+    
+    if (!videoRooms.has(roomId)) {
+      videoRooms.set(roomId, new Map());
+    }
+    
+    const room = videoRooms.get(roomId);
+    room.set(socket.id, userName);
+    
+    // Присоединяем сокет к комнате
+    socket.join(roomId);
+    
+    // Уведомляем всех участников о новом пользователе
+    socket.to(roomId).emit('video-user-joined', { userName });
+    
+    // Отправляем подтверждение подключения
+    socket.emit('video-connected', { roomId });
+    
+    console.log(`User ${userName} joined video room ${roomId}`);
+  });
+
+  // Обработка WebRTC offer
+  socket.on('video-offer', (data) => {
+    const { roomId, offer } = data;
+    console.log(`Video offer received in room ${roomId}`);
+    socket.to(roomId).emit('video-offer', { offer });
+  });
+
+  // Обработка WebRTC answer
+  socket.on('video-answer', (data) => {
+    const { roomId, answer } = data;
+    console.log(`Video answer received in room ${roomId}`);
+    socket.to(roomId).emit('video-answer', { answer });
+  });
+
+  // Обработка ICE кандидатов
+  socket.on('video-ice-candidate', (data) => {
+    const { roomId, candidate } = data;
+    console.log(`ICE candidate received in room ${roomId}`);
+    socket.to(roomId).emit('video-ice-candidate', { candidate });
+  });
+
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
+    
+    // Удаляем пользователя из всех видео комнат
+    videoRooms.forEach((room, roomId) => {
+      if (room.has(socket.id)) {
+        const userName = room.get(socket.id);
+        room.delete(socket.id);
+        
+        // Уведомляем остальных участников
+        socket.to(roomId).emit('video-user-left', { userName });
+        
+        // Удаляем комнату, если она пуста
+        if (room.size === 0) {
+          videoRooms.delete(roomId);
+        }
+        
+        console.log(`User ${userName} left video room ${roomId}`);
+      }
+    });
   });
 });
 

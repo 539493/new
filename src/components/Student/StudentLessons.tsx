@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { Calendar, Clock, MessageCircle, User, MapPin, Users, X, Edit, Trash2 } from 'lucide-react';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
-// Удаляю импорты VideoGrid, Controls, ParticipantsList, useWebRTC, Participant
-import type { Participant } from '../../../.bolt/video chat copy/src/types';
+import VideoChat from '../Shared/VideoChat';
 
 const StudentLessons: React.FC = () => {
   const { lessons, cancelLesson, rescheduleLesson, getOrCreateChat } = useData();
@@ -22,25 +21,9 @@ const StudentLessons: React.FC = () => {
   // --- Видеозвонок ---
   // Удаляю все переменные и функции, связанные с видеозвонком
 
-  // Формируем участников для UI (локальный и remote)
-  const getParticipants = (lesson: any): Participant[] => [
-    {
-      id: lesson.studentId,
-      name: lesson.studentName,
-      role: 'student',
-      isVideoEnabled: false, // webRTC.isVideoEnabled, // Удаляю webRTC.isVideoEnabled
-      isAudioEnabled: false, // webRTC.isAudioEnabled, // Удаляю webRTC.isAudioEnabled
-      isHandRaised: false,
-    },
-    {
-      id: lesson.teacherId,
-      name: lesson.teacherName,
-      role: 'teacher',
-      isVideoEnabled: true,
-      isAudioEnabled: true,
-      isHandRaised: false,
-    },
-  ];
+  // Добавляем состояние для видеозвонка
+  const [showVideoChat, setShowVideoChat] = useState(false);
+  const [videoChatRoom, setVideoChatRoom] = useState('');
 
   const handleOpenChat = (teacherId: string, teacherName: string) => {
     if (user) {
@@ -147,13 +130,12 @@ const StudentLessons: React.FC = () => {
                 <MessageCircle className="h-4 w-4" />
                 <span className="text-sm">Чат</span>
               </button>
-              {/* Кнопка видеозвонка через внешний сервис */}
+              {/* Кнопка видеозвонка */}
               {lesson.format === 'online' && (
                 <button
                   onClick={() => {
-                    const roomName = `lesson_${lesson.id}`;
-                    const url = `https://video-chat-web-lp8d.onrender.com?room=${roomName}`;
-                    window.open(url, '_blank', 'noopener,noreferrer');
+                    setVideoChatRoom(`lesson_${lesson.id}`);
+                    setShowVideoChat(true);
                   }}
                   className="flex items-center space-x-1 px-3 py-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
                 >
@@ -294,6 +276,18 @@ const StudentLessons: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Video Chat Modal */}
+      {showVideoChat && videoChatRoom && (
+        <VideoChat
+          roomId={videoChatRoom}
+          onClose={() => {
+            setShowVideoChat(false);
+            setVideoChatRoom('');
+          }}
+          userName={user?.name || 'Student'}
+        />
       )}
     </div>
   );
