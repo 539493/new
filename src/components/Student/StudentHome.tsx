@@ -599,8 +599,18 @@ const StudentHome: React.FC = () => {
                     onClick={(e) => {
                       e.stopPropagation(); // Предотвращаем всплытие события
                       if (hasAvailableSlots) {
-                        // Здесь можно добавить логику для быстрого бронирования
-                        console.log('Quick booking for teacher:', teacher.id);
+                        // Находим первый доступный слот для этого преподавателя
+                        const availableSlot = teacherSlots.find(slot => !slot.isBooked);
+                        if (availableSlot && user) {
+                          console.log('Booking slot:', availableSlot.id, 'for teacher:', teacher.id);
+                          bookLesson(availableSlot.id, user.id, user.name);
+                          // Показываем уведомление об успешном бронировании
+                          alert(`Урок успешно забронирован! Преподаватель: ${teacher.name}`);
+                          // Обновляем список слотов после бронирования
+                          setTimeout(() => {
+                            loadAvailableSlots();
+                          }, 100);
+                        }
                       }
                     }}
                     className={`w-full py-1.5 rounded-lg text-xs font-medium transition-colors ${
