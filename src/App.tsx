@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { DataProvider } from './contexts/DataContext';
+import { NotificationProvider } from './contexts/NotificationContext';
 import AuthForm from './components/Auth/AuthForm';
 import Navigation from './components/Layout/Navigation';
 import StudentHome from './components/Student/StudentHome';
@@ -13,6 +14,8 @@ import ChatList from './components/Shared/ChatList';
 import ProfileForm from './components/Shared/ProfileForm';
 import TeacherStudents from './components/Teacher/TeacherStudents';
 import VideoChatPage from './components/Shared/VideoChatPage';
+import CRMIntegration from './components/Admin/CRMIntegration';
+import CRMDashboard from './components/CRM/CRMDashboard';
 import { Routes, Route } from 'react-router-dom';
 
 const AppContent: React.FC = () => {
@@ -47,6 +50,8 @@ const AppContent: React.FC = () => {
   return (
     <Routes>
       <Route path="/video-chat" element={<VideoChatPage />} />
+      <Route path="/admin/crm" element={<CRMIntegration />} />
+      <Route path="/crm" element={<CRMDashboard />} />
       <Route
         path="*"
         element={
@@ -64,11 +69,13 @@ const AppContent: React.FC = () => {
 
 function App() {
   return (
-    <AuthProvider>
-      <DataProvider>
-        <AppContent />
-      </DataProvider>
-    </AuthProvider>
+    <NotificationProvider>
+      <AuthProvider>
+        <DataProvider>
+          <AppContent />
+        </DataProvider>
+      </AuthProvider>
+    </NotificationProvider>
   );
 }
 

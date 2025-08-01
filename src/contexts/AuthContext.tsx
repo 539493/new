@@ -1,6 +1,9 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { User } from '../types';
+import { crmService, transformUserForCRM, createWelcomeTicket } from '../services/crmService';
+import { userSyncService } from '../services/userSyncService';
+import { useNotification } from './NotificationContext';
 
 interface AuthContextType {
   user: User | null;
@@ -64,6 +67,15 @@ const loadUserFromStorage = (): User | null => {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(() => loadUserFromStorage());
+  const { showNotification } = useNotification();
+
+  // Автоматическая синхронизация при первом запуске
+  useEffect(() => {
+    const hasSynced = localStorage.getItem('crm_auto_sync_needed');
+    if (!hasSynced) {
+      localStorage.setItem('crm_auto_sync_needed', 'true');
+    }
+  }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     // Симуляция API вызова
@@ -126,6 +138,71 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     saveUserToStorage(newUser);
     
     console.log('New user registered:', newUser);
+    
+    // Отправляем данные в CRM
+    try {
+      console.log('Отправка данных в CRM...');
+      showNotification({
+        type: 'info',
+        title: 'Интеграция с CRM',
+        message: 'Отправляем данные в систему управления...',
+        duration: 3000
+      });
+      
+      // Создаем пользователя в CRM
+      const crmUserData = transformUserForCRM(name, email, role, phone);
+      const crmUserResponse = await crmService.createUser(crmUserData);
+      
+      if (crmUserResponse.success) {
+        console.log('Пользователь успешно создан в CRM:', crmUserResponse.data);
+        showNotification({
+          type: 'success',
+          title: 'Успешная интеграция',
+          message: 'Данные успешно отправлены в CRM систему',
+          duration: 4000
+        });
+        
+        // Создаем приветственный тикет
+        const ticketData = createWelcomeTicket(newUser.id, name, role);
+        const ticketResponse = await crmService.createTicket(ticketData);
+        
+        if (ticketResponse.success) {
+          console.log('Приветственный тикет создан в CRM:', ticketResponse.data);
+          showNotification({
+            type: 'success',
+            title: 'Тикет создан',
+            message: 'Приветственный тикет создан в CRM',
+            duration: 3000
+          });
+        } else {
+          console.warn('Ошибка создания тикета в CRM:', ticketResponse.message);
+          showNotification({
+            type: 'warning',
+            title: 'Частичная интеграция',
+            message: 'Пользователь создан, но тикет не создан',
+            duration: 4000
+          });
+        }
+      } else {
+        console.warn('Ошибка создания пользователя в CRM:', crmUserResponse.message);
+        showNotification({
+          type: 'warning',
+          title: 'Ошибка интеграции',
+          message: 'Не удалось отправить данные в CRM, но регистрация завершена',
+          duration: 5000
+        });
+      }
+    } catch (error) {
+      console.error('Ошибка интеграции с CRM:', error);
+      showNotification({
+        type: 'error',
+        title: 'Ошибка сети',
+        message: 'Не удалось подключиться к CRM системе',
+        duration: 5000
+      });
+      // Не блокируем регистрацию, если CRM недоступен
+    }
+    
     return true;
   };
 

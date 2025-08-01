@@ -9,6 +9,10 @@ services:
         value: production
       - key: PORT
         value: 10000
+      - key: CRM_API_URL
+        value: https://crm-q4vk.onrender.com/api
+      - key: CRM_API_KEY
+        value: crm_539493_2024_auth_token_secure_key
     healthCheckPath: /api/health
     autoDeploy: true
     plan: starter 
