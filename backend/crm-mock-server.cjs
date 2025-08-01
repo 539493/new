@@ -133,6 +133,44 @@ app.get('/api/users', checkApiKey, (req, res) => {
   }
 });
 
+// Получение списка тикетов
+app.get('/api/tickets', checkApiKey, (req, res) => {
+  try {
+    const { limit = 10, page = 1, status, priority } = req.query;
+    
+    let filteredTickets = [...tickets];
+    
+    if (status) {
+      filteredTickets = filteredTickets.filter(ticket => ticket.status === status);
+    }
+    
+    if (priority) {
+      filteredTickets = filteredTickets.filter(ticket => ticket.priority === priority);
+    }
+    
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + parseInt(limit);
+    const paginatedTickets = filteredTickets.slice(startIndex, endIndex);
+    
+    res.json({
+      success: true,
+      data: {
+        data: paginatedTickets,
+        total: filteredTickets.length,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil(filteredTickets.length / limit)
+      }
+    });
+  } catch (error) {
+    console.error('❌ Error getting tickets:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
 // Создание тикета
 app.post('/api/tickets', checkApiKey, (req, res) => {
   try {
