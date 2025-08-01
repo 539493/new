@@ -551,6 +551,19 @@ const TeacherSlots: React.FC = () => {
                   <MessageCircle className="w-5 h-5" /> Чат с учеником
                 </button>
               )}
+              {selectedSlot && selectedSlot.isBooked && selectedSlot.format === 'online' && (
+                <button
+                  onClick={() => {
+                    const roomName = `lesson_${selectedSlot.lessonId || selectedSlot.id}`;
+                    const url = `https://video-chat-web-lp8d.onrender.com?room=${roomName}`;
+                    window.open(url, '_blank', 'noopener,noreferrer');
+                  }}
+                  className="flex items-center gap-2 bg-green-100 text-green-700 px-4 py-2 rounded-lg hover:bg-green-200"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M4 6h8a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2z" /></svg>
+                  Видеозвонок
+                </button>
+              )}
               {selectedSlot && selectedSlot.isBooked && (
                 <button onClick={() => { completeLesson(selectedSlot.lessonId); handleCloseModal(); }} className="flex items-center gap-2 bg-amber-100 text-amber-700 px-4 py-2 rounded-lg hover:bg-amber-200">
                   <CheckCircle className="w-5 h-5" /> Завершить урок
@@ -567,12 +580,12 @@ const TeacherSlots: React.FC = () => {
                   <button onClick={() => { getOrCreateChat(user.id, selectedLesson.studentId, user.name, selectedLesson.studentName); handleCloseModal(); }} className="flex items-center gap-2 bg-blue-100 text-blue-700 px-4 py-2 rounded-lg hover:bg-blue-200">
                     <MessageCircle className="w-5 h-5" /> Чат с учеником
                   </button>
-                  {/* Кнопка видеозвонка через Jitsi Meet */}
+                  {/* Кнопка видеозвонка через внешний сервис */}
                   {selectedLesson.format === 'online' && (
                     <button
                       onClick={() => {
                         const roomName = `lesson_${selectedLesson.id}`;
-                        const url = `https://meet.jit.si/${roomName}`;
+                        const url = `https://video-chat-web-lp8d.onrender.com?room=${roomName}`;
                         window.open(url, '_blank', 'noopener,noreferrer');
                       }}
                       className="flex items-center gap-2 bg-green-100 text-green-700 px-4 py-2 rounded-lg hover:bg-green-200"

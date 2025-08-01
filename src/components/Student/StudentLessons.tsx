@@ -147,12 +147,12 @@ const StudentLessons: React.FC = () => {
                 <MessageCircle className="h-4 w-4" />
                 <span className="text-sm">Чат</span>
               </button>
-              {/* Кнопка видеозвонка через Jitsi Meet */}
+              {/* Кнопка видеозвонка через внешний сервис */}
               {lesson.format === 'online' && (
                 <button
                   onClick={() => {
                     const roomName = `lesson_${lesson.id}`;
-                    const url = `https://meet.jit.si/${roomName}`;
+                    const url = `https://video-chat-web-lp8d.onrender.com?room=${roomName}`;
                     window.open(url, '_blank', 'noopener,noreferrer');
                   }}
                   className="flex items-center space-x-1 px-3 py-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
