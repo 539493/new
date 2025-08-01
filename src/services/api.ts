@@ -1,5 +1,5 @@
 // Базовая конфигурация API
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://crm-q4vk.onrender.com/api';
 
 // API ключ для CRM
 const API_KEY = 'crm_539493_2024_auth_token_secure_key';

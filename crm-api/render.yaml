@@ -1,18 +1,14 @@
 services:
   - type: web
-    name: tutoring-platform
+    name: crm-api-server
     env: node
-    buildCommand: npm install && npm run build
+    buildCommand: npm install
     startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 10000
-      - key: CRM_API_URL
-        value: https://crm-api-server.onrender.com/api
-      - key: CRM_API_KEY
-        value: crm_539493_2024_auth_token_secure_key
     healthCheckPath: /api/health
     autoDeploy: true
     plan: starter 

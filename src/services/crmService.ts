@@ -1,7 +1,9 @@
 // CRM API Integration Service
 const API_KEY = process.env.CRM_API_KEY || 'crm_539493_2024_auth_token_secure_key';
-// Используем продакшен API на Render или локальный для разработки
-const BASE_URL = process.env.CRM_API_URL || 'http://localhost:3001/api';
+// Используем локальный API в режиме разработки, продакшен API в продакшене
+const BASE_URL = process.env.CRM_API_URL || (process.env.NODE_ENV === 'production' 
+  ? 'https://crm-api-server.onrender.com/api' 
+  : 'http://localhost:3001/api');
 
 interface CRMUserData {
   name: string;
