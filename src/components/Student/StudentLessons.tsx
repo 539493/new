@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Calendar, Clock, MessageCircle, User, MapPin, Users, X, Edit, Trash2 } from 'lucide-react';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
+import VideoChatLink from '../Shared/VideoChatLink';
 
 const StudentLessons: React.FC = () => {
   const { lessons, cancelLesson, rescheduleLesson, getOrCreateChat } = useData();
@@ -127,20 +128,13 @@ const StudentLessons: React.FC = () => {
                 <MessageCircle className="h-4 w-4" />
                 <span className="text-sm">Чат</span>
               </button>
-              {/* Кнопка видеозвонка */}
+              {/* Видеозвонок */}
               {lesson.format === 'online' && (
-                <button
-                  onClick={() => {
-                    const roomId = `lesson_${lesson.id}`;
-                    const userName = user?.name || 'Student';
-                    const url = `/video-chat?room=${roomId}&user=${encodeURIComponent(userName)}`;
-                    window.open(url, '_blank', 'noopener,noreferrer');
-                  }}
-                  className="flex items-center space-x-1 px-3 py-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M4 6h8a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2z" /></svg>
-                  <span className="text-sm">Видеозвонок</span>
-                </button>
+                <VideoChatLink
+                  lessonId={lesson.id}
+                  userName={user?.name || 'Student'}
+                  role="student"
+                />
               )}
             </div>
             

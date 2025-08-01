@@ -1,13 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Phone, PhoneOff, Mic, MicOff, Video, VideoOff, Users, MessageCircle, Share2 } from 'lucide-react';
+import { Phone, PhoneOff, Mic, MicOff, Video, VideoOff, Users, MessageCircle, Share2, Copy, Check } from 'lucide-react';
 import { io, Socket } from 'socket.io-client';
 
 const VideoChatPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const roomId = searchParams.get('room') || '';
+  const lessonId = searchParams.get('lesson') || '';
+  const roomId = searchParams.get('room') || lessonId;
   const userName = searchParams.get('user') || 'User';
+  const userRole = searchParams.get('role') || 'student';
 
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
@@ -20,6 +22,8 @@ const VideoChatPage: React.FC = () => {
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [participants, setParticipants] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   useEffect(() => {
     if (!roomId) {
@@ -54,7 +58,8 @@ const VideoChatPage: React.FC = () => {
         console.log('Socket.IO connected');
         socketRef.current?.emit('video-join', {
           roomId,
-          userName
+          userName,
+          userRole
         });
       });
 
@@ -194,6 +199,17 @@ const VideoChatPage: React.FC = () => {
     navigate('/');
   };
 
+  const copyLink = () => {
+    const link = `${window.location.origin}/video-chat?lesson=${lessonId}&user=${encodeURIComponent(userName)}&role=${userRole}`;
+    navigator.clipboard.writeText(link);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const shareLink = () => {
+    setShowShareModal(true);
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
@@ -209,10 +225,22 @@ const VideoChatPage: React.FC = () => {
     <div className="min-h-screen bg-gray-900 flex flex-col">
       {/* Заголовок */}
       <div className="bg-gray-800 p-4 flex items-center justify-between">
-        <h1 className="text-white text-xl font-bold">videoChatApp</h1>
-        <div className="flex items-center space-x-2">
-          <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
-          <span className="text-white text-sm">{isConnected ? 'Подключено' : 'Подключение...'}</span>
+        <div>
+          <h1 className="text-white text-xl font-bold">videoChatApp</h1>
+          <p className="text-gray-300 text-sm">Урок: {lessonId} • {userRole === 'teacher' ? 'Преподаватель' : 'Ученик'}</p>
+        </div>
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
+            <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+            <span className="text-white text-sm">{isConnected ? 'Подключено' : 'Подключение...'}</span>
+          </div>
+          <button
+            onClick={copyLink}
+            className="flex items-center space-x-1 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+          >
+            {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+            <span className="text-sm">{copied ? 'Скопировано!' : 'Копировать ссылку'}</span>
+          </button>
         </div>
       </div>
 
@@ -231,6 +259,7 @@ const VideoChatPage: React.FC = () => {
               <div className="text-center">
                 <Users className="w-16 h-16 mx-auto mb-4 text-gray-400" />
                 <p className="text-lg">Ожидание подключения участника...</p>
+                <p className="text-sm text-gray-400 mt-2">Поделитесь ссылкой с другим участником</p>
               </div>
             </div>
           )}
@@ -249,10 +278,25 @@ const VideoChatPage: React.FC = () => {
             Вы ({userName})
           </div>
         </div>
+
+        {/* Информация о подключении */}
+        {participants.length > 0 && (
+          <div className="absolute top-4 left-4 bg-black bg-opacity-50 text-white px-3 py-2 rounded">
+            <p className="text-sm">Участники: {participants.join(', ')}</p>
+          </div>
+        )}
       </div>
 
       {/* Панель управления */}
       <div className="bg-gray-800 p-4 flex items-center justify-center space-x-4">
+        <button
+          onClick={shareLink}
+          className="p-3 rounded-full bg-gray-700 text-white hover:bg-gray-600 transition-colors"
+          title="Поделиться ссылкой"
+        >
+          <Share2 className="w-5 h-5" />
+        </button>
+
         <button
           onClick={() => {}}
           className="p-3 rounded-full bg-gray-700 text-white hover:bg-gray-600 transition-colors"
@@ -267,14 +311,6 @@ const VideoChatPage: React.FC = () => {
           title="Чат"
         >
           <MessageCircle className="w-5 h-5" />
-        </button>
-
-        <button
-          onClick={() => {}}
-          className="p-3 rounded-full bg-gray-700 text-white hover:bg-gray-600 transition-colors"
-          title="Поделиться экраном"
-        >
-          <Share2 className="w-5 h-5" />
         </button>
 
         <button
@@ -301,6 +337,35 @@ const VideoChatPage: React.FC = () => {
           <PhoneOff className="w-5 h-5" />
         </button>
       </div>
+
+      {/* Модальное окно для копирования ссылки */}
+      {showShareModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-white text-lg font-bold mb-4">Поделиться ссылкой</h3>
+            <p className="text-gray-300 mb-4">Отправьте эту ссылку другому участнику урока:</p>
+            <div className="bg-gray-700 p-3 rounded mb-4">
+              <p className="text-white text-sm break-all">
+                {`${window.location.origin}/video-chat?lesson=${lessonId}&user=${encodeURIComponent(userName)}&role=${userRole}`}
+              </p>
+            </div>
+            <div className="flex space-x-3">
+              <button
+                onClick={copyLink}
+                className="flex-1 bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition-colors"
+              >
+                {copied ? 'Скопировано!' : 'Копировать'}
+              </button>
+              <button
+                onClick={() => setShowShareModal(false)}
+                className="px-4 py-2 border border-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
+              >
+                Закрыть
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
