@@ -3,7 +3,7 @@ import { Calendar, Clock, Plus, Trash2, Edit, MapPin, Users, MessageCircle, Chec
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { TimeSlot, Lesson } from '../../types';
-import VideoChat from '../Shared/VideoChat';
+
 // убираем локальный socket, используем глобальный из DataContext
 
 const TeacherSlots: React.FC = () => {
@@ -29,9 +29,7 @@ const TeacherSlots: React.FC = () => {
   const [selectedOverbookingRequest, setSelectedOverbookingRequest] = useState<any>(null);
   const [showOverbookingRequestModal, setShowOverbookingRequestModal] = useState(false);
   
-  // Состояние для видео чата
-  const [showVideoChat, setShowVideoChat] = useState(false);
-  const [videoChatRoom, setVideoChatRoom] = useState('');
+
 
   // Автоматическая подписка при подключении сокета и наличии user.id
   React.useEffect(() => {
@@ -559,8 +557,10 @@ const TeacherSlots: React.FC = () => {
               {selectedSlot && selectedSlot.isBooked && selectedSlot.format === 'online' && (
                 <button
                   onClick={() => {
-                    setVideoChatRoom(`lesson_${selectedSlot.lessonId || selectedSlot.id}`);
-                    setShowVideoChat(true);
+                    const roomId = `lesson_${selectedSlot.lessonId || selectedSlot.id}`;
+                    const userName = user?.name || 'Teacher';
+                    const url = `/video-chat?room=${roomId}&user=${encodeURIComponent(userName)}`;
+                    window.open(url, '_blank', 'noopener,noreferrer');
                     handleCloseModal();
                   }}
                   className="flex items-center gap-2 bg-green-100 text-green-700 px-4 py-2 rounded-lg hover:bg-green-200"
@@ -589,8 +589,10 @@ const TeacherSlots: React.FC = () => {
                   {selectedLesson.format === 'online' && (
                     <button
                       onClick={() => {
-                        setVideoChatRoom(`lesson_${selectedLesson.id}`);
-                        setShowVideoChat(true);
+                        const roomId = `lesson_${selectedLesson.id}`;
+                        const userName = user?.name || 'Teacher';
+                        const url = `/video-chat?room=${roomId}&user=${encodeURIComponent(userName)}`;
+                        window.open(url, '_blank', 'noopener,noreferrer');
                         handleCloseModal();
                       }}
                       className="flex items-center gap-2 bg-green-100 text-green-700 px-4 py-2 rounded-lg hover:bg-green-200"
@@ -644,18 +646,6 @@ const TeacherSlots: React.FC = () => {
             </button>
           </div>
         </div>
-      )}
-
-      {/* Video Chat Modal */}
-      {showVideoChat && videoChatRoom && (
-        <VideoChat
-          roomId={videoChatRoom}
-          onClose={() => {
-            setShowVideoChat(false);
-            setVideoChatRoom('');
-          }}
-          userName={user?.name || 'Teacher'}
-        />
       )}
     </div>
   );

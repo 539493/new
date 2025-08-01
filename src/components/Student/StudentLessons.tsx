@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Calendar, Clock, MessageCircle, User, MapPin, Users, X, Edit, Trash2 } from 'lucide-react';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
-import VideoChat from '../Shared/VideoChat';
 
 const StudentLessons: React.FC = () => {
   const { lessons, cancelLesson, rescheduleLesson, getOrCreateChat } = useData();
@@ -21,9 +20,7 @@ const StudentLessons: React.FC = () => {
   // --- Видеозвонок ---
   // Удаляю все переменные и функции, связанные с видеозвонком
 
-  // Добавляем состояние для видеозвонка
-  const [showVideoChat, setShowVideoChat] = useState(false);
-  const [videoChatRoom, setVideoChatRoom] = useState('');
+
 
   const handleOpenChat = (teacherId: string, teacherName: string) => {
     if (user) {
@@ -134,8 +131,10 @@ const StudentLessons: React.FC = () => {
               {lesson.format === 'online' && (
                 <button
                   onClick={() => {
-                    setVideoChatRoom(`lesson_${lesson.id}`);
-                    setShowVideoChat(true);
+                    const roomId = `lesson_${lesson.id}`;
+                    const userName = user?.name || 'Student';
+                    const url = `/video-chat?room=${roomId}&user=${encodeURIComponent(userName)}`;
+                    window.open(url, '_blank', 'noopener,noreferrer');
                   }}
                   className="flex items-center space-x-1 px-3 py-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
                 >
@@ -276,18 +275,6 @@ const StudentLessons: React.FC = () => {
             </div>
           </div>
         </div>
-      )}
-
-      {/* Video Chat Modal */}
-      {showVideoChat && videoChatRoom && (
-        <VideoChat
-          roomId={videoChatRoom}
-          onClose={() => {
-            setShowVideoChat(false);
-            setVideoChatRoom('');
-          }}
-          userName={user?.name || 'Student'}
-        />
       )}
     </div>
   );
