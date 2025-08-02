@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { PhoneOff, Mic, MicOff, Video, VideoOff, Users, MessageCircle, Share2, Copy, Check } from 'lucide-react';
 import { io, Socket } from 'socket.io-client';
+import { SERVER_URL, WEBRTC_CONFIG, MEDIA_CONFIG, SOCKET_CONFIG } from '../../config';
 
 const VideoChatPage: React.FC = () => {
   const navigate = useNavigate();
@@ -24,6 +25,7 @@ const VideoChatPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!roomId) {
@@ -39,20 +41,20 @@ const VideoChatPage: React.FC = () => {
 
   const initializeVideoChat = async () => {
     try {
+      setError(null);
+      setIsLoading(true);
+
       // Получаем доступ к камере и микрофону
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true
-      });
+      const stream = await navigator.mediaDevices.getUserMedia(MEDIA_CONFIG);
       
       localStreamRef.current = stream;
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = stream;
+        await localVideoRef.current.play().catch(console.error);
       }
 
       // Создаем Socket.IO соединение
-      const socketUrl = window.location.origin;
-      socketRef.current = io(socketUrl);
+      socketRef.current = io(SERVER_URL, SOCKET_CONFIG);
       
       socketRef.current.on('connect', () => {
         console.log('Socket.IO connected');
@@ -63,15 +65,22 @@ const VideoChatPage: React.FC = () => {
         });
       });
 
+      socketRef.current.on('connect_error', (error) => {
+        console.error('Socket.IO connection error:', error);
+        setError('Ошибка подключения к серверу');
+      });
+
       socketRef.current.on('video-connected', (data) => {
         console.log('Connected to video room:', data.roomId);
         setIsConnected(true);
+        setIsLoading(false);
       });
 
       socketRef.current.on('video-user-joined', (data) => {
         console.log('User joined:', data.userName);
         setParticipants(prev => [...prev, data.userName]);
-        if (peerConnectionRef.current) {
+        // Создаем offer только если мы первый в комнате
+        if (peerConnectionRef.current && participants.length === 0) {
           createOffer();
         }
       });
@@ -84,49 +93,58 @@ const VideoChatPage: React.FC = () => {
       socketRef.current.on('video-offer', async (data) => {
         console.log('Received offer');
         if (peerConnectionRef.current) {
-          await peerConnectionRef.current.setRemoteDescription(data.offer);
-          const answer = await peerConnectionRef.current.createAnswer();
-          await peerConnectionRef.current.setLocalDescription(answer);
-          socketRef.current?.emit('video-answer', {
-            roomId,
-            answer
-          });
+          try {
+            await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(data.offer));
+            const answer = await peerConnectionRef.current.createAnswer();
+            await peerConnectionRef.current.setLocalDescription(answer);
+            socketRef.current?.emit('video-answer', {
+              roomId,
+              answer
+            });
+          } catch (error) {
+            console.error('Error handling offer:', error);
+          }
         }
       });
 
       socketRef.current.on('video-answer', async (data) => {
         console.log('Received answer');
         if (peerConnectionRef.current) {
-          await peerConnectionRef.current.setRemoteDescription(data.answer);
+          try {
+            await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(data.answer));
+          } catch (error) {
+            console.error('Error handling answer:', error);
+          }
         }
       });
 
       socketRef.current.on('video-ice-candidate', async (data) => {
         console.log('Received ICE candidate');
         if (peerConnectionRef.current) {
-          await peerConnectionRef.current.addIceCandidate(data.candidate);
+          try {
+            await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(data.candidate));
+          } catch (error) {
+            console.error('Error adding ICE candidate:', error);
+          }
         }
       });
 
-      // Создаем RTCPeerConnection
-      const configuration = {
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' }
-        ]
-      };
-      
-      peerConnectionRef.current = new RTCPeerConnection(configuration);
+      // Создаем RTCPeerConnection с улучшенной конфигурацией
+      peerConnectionRef.current = new RTCPeerConnection(WEBRTC_CONFIG);
       
       // Добавляем локальный поток
       stream.getTracks().forEach(track => {
-        peerConnectionRef.current?.addTrack(track, stream);
+        if (peerConnectionRef.current) {
+          peerConnectionRef.current.addTrack(track, stream);
+        }
       });
 
       // Обрабатываем входящие потоки
       peerConnectionRef.current.ontrack = (event) => {
+        console.log('Received remote stream');
         if (remoteVideoRef.current) {
           remoteVideoRef.current.srcObject = event.streams[0];
+          remoteVideoRef.current.play().catch(console.error);
         }
       };
 
@@ -140,17 +158,29 @@ const VideoChatPage: React.FC = () => {
         }
       };
 
-      setIsLoading(false);
+      // Обрабатываем изменения состояния соединения
+      peerConnectionRef.current.onconnectionstatechange = () => {
+        console.log('Connection state:', peerConnectionRef.current?.connectionState);
+      };
+
+      peerConnectionRef.current.oniceconnectionstatechange = () => {
+        console.log('ICE connection state:', peerConnectionRef.current?.iceConnectionState);
+      };
+
     } catch (error) {
       console.error('Error initializing video chat:', error);
-      alert('Не удалось получить доступ к камере и микрофону');
+      setError('Не удалось получить доступ к камере и микрофону. Убедитесь, что вы разрешили доступ к камере и микрофону.');
+      setIsLoading(false);
     }
   };
 
   const createOffer = async () => {
     if (peerConnectionRef.current) {
       try {
-        const offer = await peerConnectionRef.current.createOffer();
+        const offer = await peerConnectionRef.current.createOffer({
+          offerToReceiveAudio: true,
+          offerToReceiveVideo: true
+        });
         await peerConnectionRef.current.setLocalDescription(offer);
         socketRef.current?.emit('video-offer', {
           roomId,
@@ -170,6 +200,7 @@ const VideoChatPage: React.FC = () => {
       peerConnectionRef.current.close();
     }
     if (socketRef.current) {
+      socketRef.current.emit('video-leave', { roomId, userName });
       socketRef.current.disconnect();
     }
   };
@@ -209,6 +240,28 @@ const VideoChatPage: React.FC = () => {
   const shareLink = () => {
     setShowShareModal(true);
   };
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="bg-gray-800 rounded-lg p-6 text-center max-w-md mx-4">
+          <div className="text-red-500 mb-4">
+            <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          </div>
+          <h3 className="text-white text-lg font-bold mb-2">Ошибка подключения</h3>
+          <p className="text-gray-300 mb-4">{error}</p>
+          <button
+            onClick={() => navigate('/')}
+            className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors"
+          >
+            Вернуться на главную
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (

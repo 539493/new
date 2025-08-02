@@ -12,6 +12,7 @@ import ChatList from './components/Shared/ChatList';
 import ProfileForm from './components/Shared/ProfileForm';
 import TeacherStudents from './components/Teacher/TeacherStudents';
 import VideoChatPage from './components/Shared/VideoChatPage';
+import VideoTestPage from './components/Shared/VideoTestPage';
 import { Routes, Route } from 'react-router-dom';
 
 const AppContent: React.FC = () => {
@@ -46,6 +47,7 @@ const AppContent: React.FC = () => {
   return (
     <Routes>
       <Route path="/video-chat" element={<VideoChatPage />} />
+      <Route path="/video-test" element={<VideoTestPage />} />
       <Route
         path="*"
         element={

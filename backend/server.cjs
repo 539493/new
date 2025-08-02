@@ -11,10 +11,14 @@ const server = http.createServer(app);
 // Настройка CORS для всех доменов
 const allowedOrigins = [
   "http://localhost:3000",
+  "http://localhost:3001",
+  "http://localhost:3002",
   "http://localhost:4173", 
   "https://*.vercel.app",
   "https://*.onrender.com",
-  "https://tutoring-platform.vercel.app"
+  "https://tutoring-platform.vercel.app",
+  "https://tutoring-platform.onrender.com",
+  "https://tutoring-platform-*.onrender.com"
 ];
 
 app.use(cors({
@@ -440,17 +444,64 @@ io.on('connection', (socket) => {
   // roomId -> Set(socket.id)
   const rooms = {};
 
+  // Обработка подключения к видео комнате
+  socket.on('video-join', (data) => {
+    const { roomId, userName, userRole } = data;
+    if (!rooms[roomId]) rooms[roomId] = new Set();
+    rooms[roomId].add(socket.id);
+    socket.join(roomId);
+    console.log(`[Video] ${userName} (${userRole}) joined video room ${roomId}`);
+    
+    // Уведомляем пользователя о успешном подключении
+    socket.emit('video-connected', { roomId });
+    
+    // Уведомляем других участников о новом пользователе
+    socket.to(roomId).emit('video-user-joined', { userName, userRole });
+  });
+
+  // Обработка WebRTC offer
+  socket.on('video-offer', (data) => {
+    const { roomId, offer } = data;
+    console.log(`[Video] Forwarding offer in room ${roomId}`);
+    socket.to(roomId).emit('video-offer', { offer });
+  });
+
+  // Обработка WebRTC answer
+  socket.on('video-answer', (data) => {
+    const { roomId, answer } = data;
+    console.log(`[Video] Forwarding answer in room ${roomId}`);
+    socket.to(roomId).emit('video-answer', { answer });
+  });
+
+  // Обработка ICE кандидатов
+  socket.on('video-ice-candidate', (data) => {
+    const { roomId, candidate } = data;
+    console.log(`[Video] Forwarding ICE candidate in room ${roomId}`);
+    socket.to(roomId).emit('video-ice-candidate', { candidate });
+  });
+
+  // Обработка выхода из видео комнаты
+  socket.on('video-leave', (data) => {
+    const { roomId, userName } = data;
+    if (rooms[roomId]) {
+      rooms[roomId].delete(socket.id);
+      if (rooms[roomId].size === 0) delete rooms[roomId];
+    }
+    socket.leave(roomId);
+    socket.to(roomId).emit('video-user-left', { userName });
+    console.log(`[Video] ${userName} left video room ${roomId}`);
+  });
+
+  // Старые события для обратной совместимости
   socket.on('join-room', (roomId) => {
     if (!rooms[roomId]) rooms[roomId] = new Set();
     rooms[roomId].add(socket.id);
     socket.join(roomId);
     console.log(`[WebRTC] ${socket.id} joined room ${roomId}`);
-    // Сообщаем другим участникам комнаты о новом участнике
     socket.to(roomId).emit('peer-joined', { socketId: socket.id });
   });
 
   socket.on('signal', ({ roomId, to, data }) => {
-    // Пересылаем signaling-сообщение конкретному участнику
     io.to(to).emit('signal', { from: socket.id, data });
   });
 

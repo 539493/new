@@ -3,15 +3,14 @@ services:
     name: tutoring-platform
     env: node
     buildCommand: npm install && npm run build
-    startCommand: npm start
+    startCommand: cd backend && node static-server.cjs
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 10000
+      - key: HOST
+        value: 0.0.0.0
     healthCheckPath: /api/health
     autoDeploy: true
-    plan: starter
-    envVars:
-      - key: NODE_ENV
-        value: production 
+    plan: starter 

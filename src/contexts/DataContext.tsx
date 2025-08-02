@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import { TimeSlot, Lesson, Chat, FilterOptions, User, Post, Comment, StudentProfile, TeacherProfile } from '../types';
 import { io, Socket } from 'socket.io-client';
+import { SERVER_URL, SOCKET_CONFIG } from '../config';
 import { useAuth } from './AuthContext';
 
 // Типизация контекста (можно расширить по необходимости)
@@ -251,30 +252,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
   // Инициализация WebSocket соединения
   useEffect(() => {
-    // Динамически определяем адрес сервера
-    let WS_URL;
+    console.log('Connecting to WebSocket:', SERVER_URL);
     
-    // Проверяем переменную окружения
-    if (import.meta.env.VITE_WS_URL) {
-      WS_URL = import.meta.env.VITE_WS_URL;
-    }
-    // В продакшене используем тот же домен
-    else if (import.meta.env.PROD) {
-      const hostname = window.location.hostname;
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      WS_URL = `${protocol}//${hostname}`;
-    } else {
-      // Локальная разработка
-      const WS_HOST = window.location.hostname;
-      WS_URL = `http://${WS_HOST}:3000`;
-    }
-    
-    console.log('Connecting to WebSocket:', WS_URL);
-    
-    const newSocket = io(WS_URL, {
-      transports: ['websocket', 'polling'],
-      timeout: 20000,
-      forceNew: true,
+    const newSocket = io(SERVER_URL, {
+      ...SOCKET_CONFIG,
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
