@@ -22,6 +22,7 @@ const VideoChat: React.FC<VideoChatProps> = ({ roomId, onClose, userName }) => {
   const [participants, setParticipants] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [connectionStatus, setConnectionStatus] = useState<string>('Инициализация...');
 
   useEffect(() => {
     initializeVideoChat();
@@ -34,6 +35,7 @@ const VideoChat: React.FC<VideoChatProps> = ({ roomId, onClose, userName }) => {
     try {
       setError(null);
       setIsLoading(true);
+      setConnectionStatus('Получение доступа к камере...');
 
       // Получаем доступ к камере и микрофону
       const stream = await navigator.mediaDevices.getUserMedia(MEDIA_CONFIG);
@@ -44,11 +46,15 @@ const VideoChat: React.FC<VideoChatProps> = ({ roomId, onClose, userName }) => {
         await localVideoRef.current.play().catch(console.error);
       }
 
+      setConnectionStatus('Подключение к серверу...');
+      console.log('Connecting to server:', SERVER_URL);
+
       // Создаем Socket.IO соединение
       socketRef.current = io(SERVER_URL, SOCKET_CONFIG);
       
       socketRef.current.on('connect', () => {
-        console.log('Socket.IO connected');
+        console.log('Socket.IO connected successfully');
+        setConnectionStatus('Подключено к серверу');
         socketRef.current?.emit('video-join', {
           roomId,
           userName,
@@ -58,13 +64,15 @@ const VideoChat: React.FC<VideoChatProps> = ({ roomId, onClose, userName }) => {
 
       socketRef.current.on('connect_error', (error) => {
         console.error('Socket.IO connection error:', error);
-        setError('Ошибка подключения к серверу');
+        setError(`Ошибка подключения к серверу: ${error.message}`);
+        setConnectionStatus('Ошибка подключения');
       });
 
       socketRef.current.on('video-connected', (data) => {
         console.log('Connected to video room:', data.roomId);
         setIsConnected(true);
         setIsLoading(false);
+        setConnectionStatus('Подключено к видео комнате');
       });
 
       socketRef.current.on('video-user-joined', (data) => {
@@ -120,6 +128,8 @@ const VideoChat: React.FC<VideoChatProps> = ({ roomId, onClose, userName }) => {
         }
       });
 
+      setConnectionStatus('Создание WebRTC соединения...');
+
       // Создаем RTCPeerConnection с улучшенной конфигурацией
       peerConnectionRef.current = new RTCPeerConnection(WEBRTC_CONFIG);
       
@@ -152,6 +162,7 @@ const VideoChat: React.FC<VideoChatProps> = ({ roomId, onClose, userName }) => {
       // Обрабатываем изменения состояния соединения
       peerConnectionRef.current.onconnectionstatechange = () => {
         console.log('Connection state:', peerConnectionRef.current?.connectionState);
+        setConnectionStatus(`WebRTC: ${peerConnectionRef.current?.connectionState}`);
       };
 
       peerConnectionRef.current.oniceconnectionstatechange = () => {
@@ -162,6 +173,7 @@ const VideoChat: React.FC<VideoChatProps> = ({ roomId, onClose, userName }) => {
       console.error('Error initializing video chat:', error);
       setError('Не удалось получить доступ к камере и микрофону. Убедитесь, что вы разрешили доступ к камере и микрофону.');
       setIsLoading(false);
+      setConnectionStatus('Ошибка инициализации');
     }
   };
 
@@ -248,7 +260,8 @@ const VideoChat: React.FC<VideoChatProps> = ({ roomId, onClose, userName }) => {
       <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
         <div className="bg-white rounded-lg p-6 text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p>Подключение к видеозвонку...</p>
+          <p className="text-lg font-semibold mb-2">Подключение к видеозвонку...</p>
+          <p className="text-sm text-gray-600">{connectionStatus}</p>
         </div>
       </div>
     );
@@ -263,6 +276,7 @@ const VideoChat: React.FC<VideoChatProps> = ({ roomId, onClose, userName }) => {
             <h2 className="text-lg font-semibold">Видеозвонок</h2>
             <p className="text-sm text-gray-300">Комната: {roomId}</p>
             <p className="text-sm text-gray-300">Участники: {participants.length + 1}</p>
+            <p className="text-sm text-gray-300">Статус: {connectionStatus}</p>
           </div>
           <div className="flex items-center space-x-2">
             <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>

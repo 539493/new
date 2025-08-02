@@ -57,7 +57,9 @@ export const MEDIA_CONFIG = {
 export const SOCKET_CONFIG = {
   transports: ['websocket', 'polling'],
   timeout: 10000,
-  forceNew: true
+  forceNew: true,
+  upgrade: true,
+  rememberUpgrade: true
 };
 
 // Окружение
