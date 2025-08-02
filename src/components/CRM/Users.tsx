@@ -3,6 +3,7 @@ import { Search, Filter, Plus, MoreVertical, Star, Calendar, Phone, MapPin } fro
 import { useUsers } from '../../hooks/useUsers';
 import LoadingSpinner from './LoadingSpinner';
 import ErrorMessage from './ErrorMessage';
+import AddUserModal from './AddUserModal';
 
 interface UsersProps {
   onViewProfile: (userId: string) => void;
@@ -12,6 +13,7 @@ const Users: React.FC<UsersProps> = ({ onViewProfile }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'tutor' | 'student'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'suspended'>('all');
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
 
   const { 
     users, 
@@ -48,6 +50,10 @@ const Users: React.FC<UsersProps> = ({ onViewProfile }) => {
     updateFilters({ page });
   };
 
+  const handleUserAdded = () => {
+    refetch(); // Обновляем список пользователей
+  };
+
   const getStatusBadge = (status: string) => {
     const styles = {
       active: 'bg-green-100 text-green-800',
@@ -70,7 +76,10 @@ const Users: React.FC<UsersProps> = ({ onViewProfile }) => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">Пользователи</h1>
-        <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+        <button 
+          onClick={() => setIsAddUserModalOpen(true)}
+          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
           <Plus className="w-4 h-4 mr-2" />
           Добавить пользователя
         </button>
@@ -291,6 +300,13 @@ const Users: React.FC<UsersProps> = ({ onViewProfile }) => {
         </div>
       </div>
       )}
+
+      {/* Модальное окно добавления пользователя */}
+      <AddUserModal
+        isOpen={isAddUserModalOpen}
+        onClose={() => setIsAddUserModalOpen(false)}
+        onUserAdded={handleUserAdded}
+      />
     </div>
   );
 };

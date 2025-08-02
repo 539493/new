@@ -14,7 +14,6 @@ import ChatList from './components/Shared/ChatList';
 import ProfileForm from './components/Shared/ProfileForm';
 import TeacherStudents from './components/Teacher/TeacherStudents';
 import VideoChatPage from './components/Shared/VideoChatPage';
-import CRMIntegration from './components/Admin/CRMIntegration';
 import CRMDashboard from './components/CRM/CRMDashboard';
 import { Routes, Route } from 'react-router-dom';
 
@@ -50,7 +49,6 @@ const AppContent: React.FC = () => {
   return (
     <Routes>
       <Route path="/video-chat" element={<VideoChatPage />} />
-      <Route path="/admin/crm" element={<CRMIntegration />} />
       <Route path="/crm" element={<CRMDashboard />} />
       <Route
         path="*"
