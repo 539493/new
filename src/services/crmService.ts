@@ -2,7 +2,7 @@
 const API_KEY = process.env.CRM_API_KEY || 'crm_539493_2024_auth_token_secure_key';
 // Используем новый CRM API сервер
 const BASE_URL = process.env.CRM_API_URL || (process.env.NODE_ENV === 'production' 
-  ? 'https://crm-api-server.onrender.com/api' 
+  ? 'https://crm-api-server-9udg.onrender.com/api' 
   : 'http://localhost:3001/api');
 
 interface CRMUserData {
