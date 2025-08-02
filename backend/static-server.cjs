@@ -75,10 +75,13 @@ app.use(express.static(path.join(__dirname, '../dist')));
 // API маршруты
 app.get('/api/health', (req, res) => {
   res.json({ 
-    message: 'Tutoring Platform Server',
+    message: 'Tutoring Platform WebSocket Server',
     status: 'running',
     connectedClients: io.engine.clientsCount,
-    time: new Date().toISOString()
+    timeSlots: 0,
+    lessons: 0,
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'production'
   });
 });
 
@@ -87,7 +90,7 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../dist/index.html'));
 });
 
-// WebSocket обработчики (копируем из основного сервера)
+// WebSocket обработчики
 io.on('connection', (socket) => {
   console.log('=== CLIENT CONNECTED ===');
   console.log('Socket ID:', socket.id);
@@ -134,6 +137,27 @@ io.on('connection', (socket) => {
     socket.leave(roomId);
     socket.to(roomId).emit('video-user-left', { userName });
     console.log(`[Video] ${userName} left video room ${roomId}`);
+  });
+
+  // Обработка основных событий приложения
+  socket.on('createSlot', (slot) => {
+    console.log('Slot created:', slot);
+    socket.broadcast.emit('slotCreated', slot);
+  });
+
+  socket.on('bookSlot', (data) => {
+    console.log('Slot booked:', data);
+    socket.broadcast.emit('slotBooked', data);
+  });
+
+  socket.on('cancelSlot', (data) => {
+    console.log('Slot cancelled:', data);
+    socket.broadcast.emit('slotCancelled', data);
+  });
+
+  socket.on('sendMessage', (message) => {
+    console.log('Message sent:', message);
+    socket.broadcast.emit('messageReceived', message);
   });
 
   socket.on('disconnect', () => {
