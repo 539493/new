@@ -82,17 +82,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     await new Promise(resolve => setTimeout(resolve, 1000));
     
     const users = loadUsersFromStorage();
-    const foundUser = users.find(u => u.email === email);
+    const foundUser = users.find(u => u.email === email && u.password === password);
     
     if (foundUser) {
       setUser(foundUser);
       saveUserToStorage(foundUser);
       console.log('User logged in:', foundUser);
+      showNotification({
+        type: 'success',
+        title: 'Успешный вход',
+        message: `Добро пожаловать, ${foundUser.name}!`
+      });
       return true;
     }
     
     // Если пользователь не найден, показываем ошибку
-    alert('Пользователь с таким email не найден. Пожалуйста, зарегистрируйтесь.');
+    showNotification({
+      type: 'error',
+      title: 'Ошибка входа',
+      message: 'Неверный email или пароль. Пожалуйста, проверьте данные и попробуйте снова.'
+    });
     return false;
   };
 
@@ -114,18 +123,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const nicknameExists = users.some(u => u.nickname === nickname);
     
     if (emailExists) {
-      alert('Пользователь с таким email уже существует');
+      showNotification({
+        type: 'error',
+        title: 'Ошибка регистрации',
+        message: 'Пользователь с таким email уже существует'
+      });
       return false;
     }
     
     if (nicknameExists) {
-      alert('Пользователь с таким никнеймом уже существует');
+      showNotification({
+        type: 'error',
+        title: 'Ошибка регистрации',
+        message: 'Пользователь с таким никнеймом уже существует'
+      });
       return false;
     }
     
     const newUser: User = {
       id: uuidv4(),
       email,
+      password, // Сохраняем пароль
       name,
       nickname,
       role,
@@ -149,8 +167,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         duration: 3000
       });
       
-      // Создаем пользователя в CRM
-      const crmUserData = transformUserForCRM(name, email, role, phone);
+      // Создаем пользователя в CRM с паролем
+      const crmUserData = transformUserForCRM(name, email, role, phone, password);
       const crmUserResponse = await crmService.createUser(crmUserData);
       
       if (crmUserResponse.success) {
@@ -203,12 +221,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Не блокируем регистрацию, если CRM недоступен
     }
     
+    showNotification({
+      type: 'success',
+      title: 'Регистрация завершена',
+      message: `Добро пожаловать, ${name}! Ваш аккаунт успешно создан.`
+    });
+    
     return true;
   };
 
   const logout = () => {
     setUser(null);
     localStorage.removeItem('tutoring_currentUser');
+    showNotification({
+      type: 'info',
+      title: 'Выход из системы',
+      message: 'Вы успешно вышли из системы'
+    });
   };
 
   const updateProfile = (profile: any) => {
@@ -221,6 +250,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const users = loadUsersFromStorage();
       const updatedUsers = users.map(u => u.id === user.id ? updatedUser : u);
       saveUsersToStorage(updatedUsers);
+      
+      showNotification({
+        type: 'success',
+        title: 'Профиль обновлен',
+        message: 'Данные профиля успешно сохранены'
+      });
     }
   };
 
@@ -235,6 +270,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     localStorage.removeItem('tutoring_currentUser');
     
     console.log('All users cleared successfully');
+    
+    showNotification({
+      type: 'info',
+      title: 'Система очищена',
+      message: 'Все пользователи удалены из системы'
+    });
   };
 
   return (

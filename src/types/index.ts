@@ -1,6 +1,7 @@
 export interface User {
   id: string;
   email: string;
+  password: string; // Добавляем поле для пароля
   name: string;
   nickname: string;
   role: 'student' | 'teacher';

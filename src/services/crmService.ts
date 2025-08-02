@@ -1,6 +1,6 @@
 // CRM API Integration Service
 const API_KEY = process.env.CRM_API_KEY || 'crm_539493_2024_auth_token_secure_key';
-// Используем локальный API в режиме разработки, продакшен API в продакшене
+// Используем новый CRM API сервер
 const BASE_URL = process.env.CRM_API_URL || (process.env.NODE_ENV === 'production' 
   ? 'https://crm-api-server.onrender.com/api' 
   : 'http://localhost:3001/api');
@@ -10,6 +10,7 @@ interface CRMUserData {
   email: string;
   type: 'student' | 'tutor';
   phone: string;
+  password?: string; // Добавляем поддержку паролей
   subjects: string[];
   joinDate: string;
 }
@@ -102,17 +103,31 @@ class CRMService {
       method: 'GET',
     });
   }
+
+  async getTickets(params: Record<string, any> = {}): Promise<CRMResponse> {
+    const queryString = new URLSearchParams(params).toString();
+    const endpoint = `/tickets${queryString ? `?${queryString}` : ''}`;
+    
+    return this.makeRequest(endpoint, {
+      method: 'GET',
+    });
+  }
+
+  async healthCheck(): Promise<CRMResponse> {
+    return this.makeRequest('/health', {
+      method: 'GET',
+    });
+  }
 }
 
-// Экспортируем экземпляр сервиса
 export const crmService = new CRMService();
 
-// Вспомогательные функции для преобразования данных
 export const transformUserForCRM = (
   name: string,
   email: string,
   role: 'student' | 'teacher',
   phone: string,
+  password?: string, // Добавляем пароль
   subjects: string[] = []
 ): CRMUserData => {
   return {
@@ -120,8 +135,9 @@ export const transformUserForCRM = (
     email,
     type: role === 'teacher' ? 'tutor' : 'student',
     phone,
+    password, // Включаем пароль в данные
     subjects: subjects.length > 0 ? subjects : ['Общие предметы'],
-    joinDate: new Date().toISOString().split('T')[0], // YYYY-MM-DD формат
+    joinDate: new Date().toISOString().split('T')[0],
   };
 };
 
@@ -130,14 +146,12 @@ export const createWelcomeTicket = (
   userName: string,
   userType: 'student' | 'teacher'
 ): CRMTicketData => {
-  const typeText = userType === 'teacher' ? 'преподавателя' : 'ученика';
-  
   return {
     title: `Добро пожаловать, ${userName}!`,
-    description: `Новый пользователь ${typeText} зарегистрировался на платформе. Необходимо проверить профиль и при необходимости связаться для уточнения деталей.`,
+    description: `Новый пользователь ${userType === 'teacher' ? 'преподавателя' : 'ученика'} зарегистрировался на платформе. Необходимо проверить профиль и при необходимости связаться для уточнения деталей.`,
     priority: 'medium',
     category: 'Новые пользователи',
     createdBy: userId,
-    tags: ['регистрация', 'новый пользователь', typeText],
+    tags: ['регистрация', 'новый пользователь', userType === 'teacher' ? 'преподавателя' : 'ученика']
   };
 }; 
