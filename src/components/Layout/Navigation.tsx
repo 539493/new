@@ -1,7 +1,6 @@
 import React from 'react';
-import { Home, Calendar, MessageCircle, User, LogOut, Clock, BarChart3, FileText, Database } from 'lucide-react';
+import { Home, Calendar, MessageCircle, User, LogOut, BarChart3 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
 
 interface NavigationProps {
   activeTab: string;
@@ -10,7 +9,6 @@ interface NavigationProps {
 
 const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange }) => {
   const { user, logout } = useAuth();
-  const navigate = useNavigate();
 
   const studentTabs = [
     { id: 'home', label: 'Главная', icon: Home },
@@ -28,10 +26,6 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange }) => {
   ];
 
   const tabs = user?.role === 'teacher' ? teacherTabs : studentTabs;
-
-  const handleCRMAccess = () => {
-    navigate('/crm');
-  };
 
   return (
     <nav className="bg-card-light dark:bg-card-dark shadow-lg border-b border-border-light dark:border-border-dark transition-colors">
@@ -67,16 +61,6 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange }) => {
           </div>
 
           <div className="flex items-center space-x-4">
-            {/* Кнопка CRM для администраторов */}
-            <button
-              onClick={handleCRMAccess}
-              className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
-              title="CRM система"
-            >
-              <Database className="h-4 w-4" />
-              <span className="hidden md:block">CRM</span>
-            </button>
-
             <div className="flex items-center space-x-2">
               <div className="h-8 w-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
                 <span className="text-white text-sm font-medium">
@@ -114,23 +98,14 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange }) => {
                   className={`flex-shrink-0 flex flex-col items-center gap-1 px-4 py-3 rounded-xl text-xs font-semibold transition-all duration-200 ${
                     activeTab === tab.id
                       ? 'bg-primary-light/10 text-primary-light dark:bg-primary-dark/20 dark:text-primary-dark shadow-md'
-                      : 'text-textSecondary-light dark:text-textSecondary-dark hover:bg-border-light dark:hover:bg-border-dark'
+                      : 'text-textSecondary-light dark:text-textSecondary-dark hover:bg-border-light dark:hover:bg-border-dark hover:text-primary-light dark:hover:text-primary-dark'
                   }`}
                 >
-                  <Icon className="h-4 w-4" />
+                  <Icon className="h-5 w-5" />
                   <span>{tab.label}</span>
                 </button>
               );
             })}
-            
-            {/* CRM кнопка для мобильных */}
-            <button
-              onClick={handleCRMAccess}
-              className="flex-shrink-0 flex flex-col items-center gap-1 px-4 py-3 rounded-xl text-xs font-semibold bg-purple-600 text-white hover:bg-purple-700 transition-all duration-200"
-            >
-              <Database className="h-4 w-4" />
-              <span>CRM</span>
-            </button>
           </div>
         </div>
       </div>

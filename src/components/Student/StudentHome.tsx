@@ -1,16 +1,16 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Search, Filter, Clock, Star, Users, MapPin, BookOpen, RefreshCw, Wifi, WifiOff, Heart, MoreHorizontal } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, Filter, Star, Users, MapPin, BookOpen, RefreshCw, Wifi, WifiOff, Heart, MoreHorizontal } from 'lucide-react';
 import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
-import { format, parse, startOfWeek, getDay, addDays, startOfHour, isSameDay, isSameHour, setHours, setMinutes, isWithinInterval } from 'date-fns';
+import { format, parse, startOfWeek, getDay } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
-import { User as UserIcon, Star as StarIcon } from 'lucide-react';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { FilterOptions, TimeSlot } from '../../types';
+import { FilterOptions, TimeSlot, User } from '../../types';
 import { io, Socket } from 'socket.io-client';
 import { SERVER_URL, WEBSOCKET_URL } from '../../config';
 import TeacherProfilePage from './TeacherProfilePage';
+import { User as UserIcon } from 'lucide-react';
 
 const StudentHome: React.FC = () => {
   const { getFilteredSlots, bookLesson, timeSlots, isConnected } = useData();
@@ -33,14 +33,11 @@ const StudentHome: React.FC = () => {
     startTime: '',
     comment: '',
   });
-  const [selectedSlot, setSelectedSlot] = useState<any>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isBooking, setIsBooking] = useState(false);
-  const [bookingTeacher, setBookingTeacher] = useState<any>(null);
   const [showBookingModal, setShowBookingModal] = useState(false);
-  const [teacherAvailableSlots, setTeacherAvailableSlots] = useState<any[]>([]);
-  const [selectedBookingSlot, setSelectedBookingSlot] = useState<any>(null);
   const [bookingComment, setBookingComment] = useState('');
+  const [bookingTeacher, setBookingTeacher] = useState<TimeSlot | null>(null);
+  const [selectedBookingSlot, setSelectedBookingSlot] = useState<TimeSlot | null>(null);
 
   // Новые состояния для календаря в фильтрах
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -50,15 +47,13 @@ const StudentHome: React.FC = () => {
   const grades = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', 'Студент', 'Взрослый'];
   const goals = ['подготовка к экзаменам', 'помощь с домашним заданием', 'углубленное изучение', 'разговорная практика'];
   const experiences = ['beginner', 'experienced', 'professional'];
-  const lessonTypes = ['trial', 'regular'];
-  const durations = [45, 60];
   const formats = ['online', 'offline', 'mini-group'];
-
+  const durations = [45, 60];
   const locales = { 'ru': ru };
   const localizer = dateFnsLocalizer({ format, parse, startOfWeek, getDay, locales });
 
   const { allUsers } = useData();
-  const [serverTeachers, setServerTeachers] = useState<any[]>([]);
+  const [serverTeachers, setServerTeachers] = useState<User[]>([]);
 
   // Загружаем преподавателей с сервера при монтировании
   useEffect(() => {
@@ -901,7 +896,7 @@ const StudentHome: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
-            <h2 className="text-xl font-bold mb-4">Назначить урок у {bookingTeacher.name}</h2>
+            <h2 className="text-xl font-bold mb-4">Назначить урок у {bookingTeacher.teacherName}</h2>
             <div className="mb-4 p-3 bg-gray-50 rounded">
               <div className="mb-1 font-semibold">Детали урока:</div>
               <div><b>Предмет:</b> {selectedBookingSlot.subject}</div>

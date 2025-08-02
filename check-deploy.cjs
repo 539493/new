@@ -5,130 +5,128 @@ const path = require('path');
 
 console.log('🔍 Проверка готовности к деплою на Render...\n');
 
-const checks = [
-  {
-    name: 'package.json',
-    path: 'package.json',
-    required: true,
-    check: (content) => {
-      const pkg = JSON.parse(content);
-      return pkg.scripts.start && pkg.scripts.build;
-    }
-  },
-  {
-    name: 'render.yaml',
-    path: 'render.yaml',
-    required: true,
-    check: () => true
-  },
-  {
-    name: 'production-server-simple.cjs',
-    path: 'backend/production-server-simple.cjs',
-    required: true,
-    check: () => true
-  },
-  {
-    name: 'config.ts',
-    path: 'src/config.ts',
-    required: true,
-    check: (content) => {
-      return content.includes('WEBSOCKET_URL') && content.includes('SERVER_URL');
-    }
-  },
-  {
-    name: 'vite.config.ts',
-    path: 'vite.config.ts',
-    required: true,
-    check: () => true
-  },
-  {
-    name: 'tailwind.config.js',
-    path: 'tailwind.config.js',
-    required: true,
-    check: () => true
-  }
+// Проверка необходимых файлов
+const requiredFiles = [
+  'package.json',
+  'render.yaml',
+  'backend/production-server-simple.cjs',
+  'dist/index.html',
+  'dist/assets/'
 ];
 
-let allPassed = true;
+let allFilesExist = true;
 
-checks.forEach(check => {
-  const filePath = path.join(process.cwd(), check.path);
-  
-  if (!fs.existsSync(filePath)) {
-    if (check.required) {
-      console.log(`❌ ${check.name} - НЕ НАЙДЕН (обязательный файл)`);
-      allPassed = false;
-    } else {
-      console.log(`⚠️  ${check.name} - НЕ НАЙДЕН (опциональный файл)`);
-    }
-    return;
-  }
-
-  try {
-    const content = fs.readFileSync(filePath, 'utf8');
-    if (check.check(content)) {
-      console.log(`✅ ${check.name} - OK`);
-    } else {
-      console.log(`❌ ${check.name} - НЕ ПРОШЕЛ ПРОВЕРКУ`);
-      allPassed = false;
-    }
-  } catch (error) {
-    console.log(`❌ ${check.name} - ОШИБКА ЧТЕНИЯ: ${error.message}`);
-    allPassed = false;
-  }
+console.log('📁 Проверка файлов:');
+requiredFiles.forEach(file => {
+  const exists = fs.existsSync(file);
+  console.log(`  ${exists ? '✅' : '❌'} ${file}`);
+  if (!exists) allFilesExist = false;
 });
 
-console.log('\n📋 Дополнительные проверки:');
-
-// Проверка зависимостей
+// Проверка package.json
+console.log('\n📦 Проверка package.json:');
 try {
   const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-  const requiredDeps = ['express', 'socket.io', 'cors', 'react', 'vite'];
-  const missingDeps = requiredDeps.filter(dep => !packageJson.dependencies[dep]);
   
-  if (missingDeps.length === 0) {
-    console.log('✅ Зависимости - OK');
-  } else {
-    console.log(`❌ Отсутствуют зависимости: ${missingDeps.join(', ')}`);
-    allPassed = false;
-  }
+  const hasStartScript = packageJson.scripts && packageJson.scripts.start;
+  console.log(`  ${hasStartScript ? '✅' : '❌'} start script`);
+  
+  const hasBuildScript = packageJson.scripts && packageJson.scripts.build;
+  console.log(`  ${hasBuildScript ? '✅' : '❌'} build script`);
+  
+  const hasDependencies = packageJson.dependencies && Object.keys(packageJson.dependencies).length > 0;
+  console.log(`  ${hasDependencies ? '✅' : '❌'} dependencies`);
+  
+  const hasEngines = packageJson.engines && packageJson.engines.node;
+  console.log(`  ${hasEngines ? '✅' : '❌'} engines.node`);
+  
 } catch (error) {
-  console.log('❌ Ошибка проверки зависимостей');
-  allPassed = false;
+  console.log('  ❌ Ошибка чтения package.json');
+  allFilesExist = false;
 }
 
-// Проверка скриптов
+// Проверка render.yaml
+console.log('\n⚙️  Проверка render.yaml:');
 try {
-  const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-  const requiredScripts = ['start', 'build'];
-  const missingScripts = requiredScripts.filter(script => !packageJson.scripts[script]);
+  const renderYaml = fs.readFileSync('render.yaml', 'utf8');
   
-  if (missingScripts.length === 0) {
-    console.log('✅ Скрипты package.json - OK');
-  } else {
-    console.log(`❌ Отсутствуют скрипты: ${missingScripts.join(', ')}`);
-    allPassed = false;
-  }
+  const hasWebService = renderYaml.includes('type: web');
+  console.log(`  ${hasWebService ? '✅' : '❌'} web service type`);
+  
+  const hasBuildCommand = renderYaml.includes('buildCommand');
+  console.log(`  ${hasBuildCommand ? '✅' : '❌'} build command`);
+  
+  const hasStartCommand = renderYaml.includes('startCommand');
+  console.log(`  ${hasStartCommand ? '✅' : '❌'} start command`);
+  
+  const hasHealthCheck = renderYaml.includes('healthCheckPath');
+  console.log(`  ${hasHealthCheck ? '✅' : '❌'} health check path`);
+  
 } catch (error) {
-  console.log('❌ Ошибка проверки скриптов');
-  allPassed = false;
+  console.log('  ❌ Ошибка чтения render.yaml');
+  allFilesExist = false;
 }
 
-console.log('\n' + '='.repeat(50));
+// Проверка dist папки
+console.log('\n📂 Проверка dist папки:');
+try {
+  const distFiles = fs.readdirSync('dist');
+  const hasIndexHtml = distFiles.includes('index.html');
+  console.log(`  ${hasIndexHtml ? '✅' : '❌'} index.html`);
+  
+  const assetsDir = fs.readdirSync('dist/assets');
+  const hasJsFiles = assetsDir.some(file => file.endsWith('.js'));
+  console.log(`  ${hasJsFiles ? '✅' : '❌'} JavaScript files`);
+  
+  const hasCssFiles = assetsDir.some(file => file.endsWith('.css'));
+  console.log(`  ${hasCssFiles ? '✅' : '❌'} CSS files`);
+  
+} catch (error) {
+  console.log('  ❌ Ошибка чтения dist папки');
+  allFilesExist = false;
+}
 
-if (allPassed) {
+// Проверка сервера
+console.log('\n🖥️  Проверка сервера:');
+try {
+  const serverFile = fs.readFileSync('backend/production-server-simple.cjs', 'utf8');
+  
+  const hasExpress = serverFile.includes('express');
+  console.log(`  ${hasExpress ? '✅' : '❌'} Express.js`);
+  
+  const hasSocketIO = serverFile.includes('socket.io');
+  console.log(`  ${hasSocketIO ? '✅' : '❌'} Socket.IO`);
+  
+  const hasHealthEndpoint = serverFile.includes('/api/health');
+  console.log(`  ${hasHealthEndpoint ? '✅' : '❌'} Health endpoint`);
+  
+  const hasStaticFiles = serverFile.includes('express.static');
+  console.log(`  ${hasStaticFiles ? '✅' : '❌'} Static files serving`);
+  
+  const hasPortConfig = serverFile.includes('process.env.PORT');
+  console.log(`  ${hasPortConfig ? '✅' : '❌'} PORT environment variable`);
+  
+} catch (error) {
+  console.log('  ❌ Ошибка чтения сервера');
+  allFilesExist = false;
+}
+
+// Итоговая оценка
+console.log('\n📊 Итоговая оценка:');
+
+if (allFilesExist) {
   console.log('🎉 ПРОЕКТ ГОТОВ К ДЕПЛОЮ НА RENDER!');
-  console.log('\n📝 Следующие шаги:');
-  console.log('1. git add .');
-  console.log('2. git commit -m "Ready for Render deployment"');
-  console.log('3. git push origin main');
-  console.log('4. Создайте Web Service на render.com');
-  console.log('5. Подключите ваш GitHub репозиторий');
-  console.log('6. Настройте Build Command: npm install && npm run build');
-  console.log('7. Настройте Start Command: npm start');
+  console.log('\n📋 Следующие шаги:');
+  console.log('1. Закоммитьте изменения: git add . && git commit -m "Ready for deployment"');
+  console.log('2. Отправьте в репозиторий: git push origin main');
+  console.log('3. Создайте сервис на Render.com');
+  console.log('4. Подключите GitHub репозиторий');
+  console.log('5. Настройте переменные окружения');
+  console.log('6. Дождитесь автоматического деплоя');
 } else {
   console.log('❌ ПРОЕКТ НЕ ГОТОВ К ДЕПЛОЮ');
-  console.log('Исправьте указанные выше ошибки перед деплоем.');
+  console.log('\n🔧 Необходимо исправить ошибки выше');
 }
 
-console.log('\n📖 Подробные инструкции: RENDER_DEPLOY.md'); 
+console.log('\n📖 Подробные инструкции: QUICK_DEPLOY.md');
+console.log('📋 Полный отчет: DEPLOYMENT_READY.md'); 

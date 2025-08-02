@@ -8,7 +8,7 @@ const path = require('path');
 const app = express();
 const server = http.createServer(app);
 
-// Настройка CORS
+// Настройка CORS для Render
 app.use(cors({
   origin: true,
   credentials: true,
@@ -21,7 +21,8 @@ const io = new Server(server, {
     origin: true,
     credentials: true,
     methods: ["GET", "POST"]
-  }
+  },
+  transports: ['websocket', 'polling']
 });
 
 // Хранилище комнат для видео чата
@@ -99,136 +100,140 @@ let overbookingRequests = serverData.overbookingRequests || [];
 // Обработка подключений
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
-  
-  // Отправляем текущие данные новому клиенту
-  socket.emit('initialData', { timeSlots, lessons, chats });
-  socket.emit('studentProfiles', studentProfiles);
 
-  // Обработка создания нового слота
-  socket.on('createSlot', (newSlot) => {
-    console.log('New slot created:', newSlot);
+  // Отправляем текущие данные новому клиенту
+  socket.emit('initialData', {
+    teacherProfiles,
+    studentProfiles,
+    timeSlots,
+    lessons,
+    chats,
+    overbookingRequests
+  });
+
+  // Обработка обновления профиля учителя
+  socket.on('updateTeacherProfile', (data) => {
+    const { teacherId, profile } = data;
+    teacherProfiles[teacherId] = { ...teacherProfiles[teacherId], ...profile };
+    saveServerData();
+    socket.broadcast.emit('teacherProfileUpdated', { teacherId, profile });
+  });
+
+  // Обработка обновления профиля студента
+  socket.on('updateStudentProfile', (data) => {
+    const { studentId, profile } = data;
+    studentProfiles[studentId] = { ...studentProfiles[studentId], ...profile };
+    saveServerData();
+    socket.broadcast.emit('studentProfileUpdated', { studentId, profile });
+  });
+
+  // Обработка создания временного слота
+  socket.on('createTimeSlot', (slot) => {
+    const newSlot = {
+      id: Date.now().toString(),
+      ...slot,
+      createdAt: new Date().toISOString()
+    };
     timeSlots.push(newSlot);
     saveServerData();
-    io.emit('slotCreated', newSlot);
+    socket.broadcast.emit('timeSlotCreated', newSlot);
   });
 
-  // Обработка создания нового чата
-  socket.on('createChat', (newChat) => {
-    console.log('New chat created:', newChat);
-    chats.push(newChat);
-    saveServerData();
-    io.emit('chatCreated', newChat);
-  });
-
-  // Обработка бронирования слота
-  socket.on('bookSlot', (data) => {
-    console.log('Slot booked:', data);
-    const { slotId, lesson } = data;
-    
-    const slotIndex = timeSlots.findIndex(slot => slot.id === slotId);
-    if (slotIndex !== -1) {
-      timeSlots[slotIndex].isBooked = true;
+  // Обработка удаления временного слота
+  socket.on('deleteTimeSlot', (slotId) => {
+    const index = timeSlots.findIndex(slot => slot.id === slotId);
+    if (index !== -1) {
+      timeSlots.splice(index, 1);
+      saveServerData();
+      socket.broadcast.emit('timeSlotDeleted', slotId);
     }
-    
-    lessons.push(lesson);
-    saveServerData();
-    io.emit('slotBooked', data);
   });
 
-  // Обработка отмены бронирования
-  socket.on('cancelSlot', (data) => {
-    console.log('Slot cancelled:', data);
-    const { slotId, lessonId } = data;
-    
-    const slotIndex = timeSlots.findIndex(slot => slot.id === slotId);
-    if (slotIndex !== -1) {
-      timeSlots[slotIndex].isBooked = false;
-    }
-    
-    const lessonIndex = lessons.findIndex(lesson => lesson.id === lessonId);
-    if (lessonIndex !== -1) {
-      lessons.splice(lessonIndex, 1);
-    }
-    
+  // Обработка создания урока
+  socket.on('createLesson', (lesson) => {
+    const newLesson = {
+      id: Date.now().toString(),
+      ...lesson,
+      createdAt: new Date().toISOString()
+    };
+    lessons.push(newLesson);
     saveServerData();
-    io.emit('slotCancelled', data);
+    socket.broadcast.emit('lessonCreated', newLesson);
   });
 
-  // Обработка отправки сообщений в чате
+  // Обработка переноса урока
+  socket.on('rescheduleLesson', (data) => {
+    const { lessonId, newDate, newStartTime } = data;
+    const lesson = lessons.find(l => l.id === lessonId);
+    if (lesson) {
+      lesson.date = newDate;
+      lesson.startTime = newStartTime;
+      saveServerData();
+      socket.broadcast.emit('lessonRescheduled', { lessonId, newDate, newStartTime });
+    }
+  });
+
+  // Обработка отправки сообщения
   socket.on('sendMessage', (data) => {
-    console.log('Message received:', data);
-    io.emit('receiveMessage', data);
+    const { chatId, senderId, senderName, content } = data;
+    const message = {
+      id: Date.now().toString(),
+      senderId,
+      senderName,
+      content,
+      timestamp: new Date().toISOString()
+    };
+
+    let chat = chats.find(c => c.id === chatId);
+    if (!chat) {
+      chat = {
+        id: chatId,
+        messages: []
+      };
+      chats.push(chat);
+    }
+
+    chat.messages.push(message);
+    saveServerData();
+    socket.broadcast.emit('messageReceived', { chatId, message });
   });
 
-  // Обработка завершения урока
-  socket.on('lessonCompleted', (data) => {
-    console.log('Lesson completed:', data);
-    const { lessonId } = data;
-    const lessonIndex = lessons.findIndex(lesson => lesson.id === lessonId);
-    let updatedLesson = null;
-    if (lessonIndex !== -1) {
-      lessons[lessonIndex].status = 'completed';
-      updatedLesson = lessons[lessonIndex];
-    }
-    if (updatedLesson) {
+  // Обработка создания или получения чата
+  socket.on('getOrCreateChat', (data) => {
+    const { participant1Id, participant2Id, participant1Name, participant2Name } = data;
+    const chatId = [participant1Id, participant2Id].sort().join('-');
+    
+    let chat = chats.find(c => c.id === chatId);
+    if (!chat) {
+      chat = {
+        id: chatId,
+        participants: [participant1Id, participant2Id],
+        participantNames: [participant1Name, participant2Name],
+        messages: []
+      };
+      chats.push(chat);
       saveServerData();
-      io.emit('lessonCompleted', { lesson: updatedLesson });
     }
+
+    socket.emit('chatCreated', { chatId, chat });
   });
 
-  // Обработка обновления профиля ученика
-  socket.on('updateStudentProfile', (data) => {
-    if (data && data.studentId && data.profile) {
-      studentProfiles[data.studentId] = data.profile;
-      saveServerData();
-      io.emit('profileUpdated', { type: 'student', userId: data.studentId, profile: data.profile });
-      io.emit('studentProfileUpdated', { studentId: data.studentId, profile: data.profile });
-    }
-  });
-
-  // Обработка обновления профиля преподавателя
-  socket.on('updateTeacherProfile', (data) => {
-    if (data && data.teacherId && data.profile) {
-      teacherProfiles[data.teacherId] = data.profile;
-      saveServerData();
-      io.emit('profileUpdated', { type: 'teacher', userId: data.teacherId, profile: data.profile });
-      io.emit('teacherProfileUpdated', { teacherId: data.teacherId, profile: data.profile });
-    }
-  });
-
-  // Обработка удаления слота
-  socket.on('deleteSlot', (data) => {
-    const { slotId } = data;
-    if (slotId) {
-      timeSlots = timeSlots.filter(slot => slot.id !== slotId);
-      saveServerData();
-      io.emit('slotDeleted', { slotId });
-    }
-  });
-
-  // === ВИДЕО ЧАТ ФУНКЦИОНАЛЬНОСТЬ ===
-  
-  // Обработка присоединения к видео комнате
-  socket.on('video-join', (data) => {
+  // Обработка видео чата
+  socket.on('join-video-room', (data) => {
     const { roomId, userName } = data;
     console.log(`User ${userName} joining video room ${roomId}`);
-    
+
     if (!videoRooms.has(roomId)) {
       videoRooms.set(roomId, new Map());
     }
-    
+
     const room = videoRooms.get(roomId);
     room.set(socket.id, userName);
-    
-    // Присоединяем сокет к комнате
     socket.join(roomId);
-    
-    // Уведомляем всех участников о новом пользователе
+
+    // Уведомляем остальных участников
     socket.to(roomId).emit('video-user-joined', { userName });
-    
-    // Отправляем подтверждение подключения
-    socket.emit('video-connected', { roomId });
-    
+
     console.log(`User ${userName} joined video room ${roomId}`);
   });
 
@@ -319,6 +324,15 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../dist/index.html'));
 });
 
+// Обработка ошибок
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
 // Запуск сервера
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
@@ -331,4 +345,10 @@ server.listen(PORT, HOST, () => {
   console.log(`  - Environment: ${process.env.NODE_ENV || 'production'}`);
   console.log(`  - WebSocket server: ws://${HOST}:${PORT}`);
   console.log(`  - Initial data loaded: ${Object.keys(teacherProfiles).length} teachers, ${timeSlots.length} slots`);
+}).on('error', (error) => {
+  console.error('Server error:', error);
+  if (error.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} is already in use. Please try a different port.`);
+  }
+  process.exit(1);
 }); 

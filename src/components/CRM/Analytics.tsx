@@ -1,7 +1,7 @@
 import React from 'react';
 import { BarChart3, TrendingUp, Users, Ticket, Calendar, PieChart } from 'lucide-react';
-import { useUsers } from '../../hooks/useUsers';
-import { useTickets } from '../../hooks/useTickets';
+import { useUsers } from '../hooks/useUsers';
+import { useTickets } from '../hooks/useTickets';
 import LoadingSpinner from './LoadingSpinner';
 import ErrorMessage from './ErrorMessage';
 

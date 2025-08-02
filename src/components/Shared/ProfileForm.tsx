@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Upload, User, Settings, Bell, Lock, User as UserIcon, Palette, Database, Monitor, BookOpen, MessageCircle, FileText, Star, Plus } from 'lucide-react';
+import { Save, Upload, Settings, Bell, Lock, User as UserIcon, Palette, Database, Monitor, BookOpen, MessageCircle, FileText, Star, Plus } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { StudentProfile, TeacherProfile } from '../../types';
 import { useData } from '../../contexts/DataContext';
@@ -7,9 +7,7 @@ import Modal from './Modal';
 import PostEditor from './PostEditor';
 import PostCard from './PostCard';
 
-const countries = [
-  'Россия', 'Казахстан', 'Беларусь', 'Украина', 'Армения', 'Грузия', 'Азербайджан', 'Узбекистан', 'Киргизия', 'Таджикистан', 'Другая страна'
-];
+
 
 const ProfileForm: React.FC = () => {
   const { user, updateProfile } = useAuth();
@@ -28,7 +26,6 @@ const ProfileForm: React.FC = () => {
   } = useData();
   
   const [editMode, setEditMode] = useState(false);
-  const [activeTab, setActiveTab] = useState<'profile' | 'settings' | null>(null);
   const [studentProfile, setStudentProfile] = useState<StudentProfile>({
     grade: '',
     bio: '',
@@ -55,7 +52,7 @@ const ProfileForm: React.FC = () => {
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [pushModalOpen, setPushModalOpen] = useState(false);
   const [accountModalOpen, setAccountModalOpen] = useState(false);
-  const [stories, setStories] = useState<Array<{id: number, avatar: string, name: string}>>([
+  const [stories] = useState<Array<{id: number, avatar: string, name: string}>>([
     { id: 1, avatar: user?.profile?.avatar || '', name: user?.name || '' }
   ]);
   const [showPostEditor, setShowPostEditor] = useState(false);
@@ -69,10 +66,9 @@ const ProfileForm: React.FC = () => {
   const subjects = ['Математика', 'Русский язык', 'Английский язык'];
   const grades = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', 'Студент', 'Взрослый'];
   const goals = ['подготовка к экзаменам', 'помощь с домашним заданием', 'углубленное изучение', 'разговорная практика'];
-  const lessonTypes = ['regular', 'trial'];
+  const experiences = ['beginner', 'experienced', 'professional'];
   const durations = [45, 60];
   const formats = ['online', 'offline', 'mini-group'];
-  const experiences = ['beginner', 'experienced', 'professional'];
 
   useEffect(() => {
     if (user?.profile) {
@@ -109,13 +105,7 @@ const ProfileForm: React.FC = () => {
     }
   };
 
-  // Статистика: считаем количество учеников и уроков
-  const studentsCount = user && user.role === 'teacher' && Array.isArray((user.profile as TeacherProfile)?.students)
-    ? ((user.profile as TeacherProfile).students?.length ?? 0)
-    : 0;
-  const lessonsCount = user && user.role === 'teacher' && typeof (user.profile as TeacherProfile)?.lessonsCount === 'number'
-    ? (user.profile as TeacherProfile).lessonsCount ?? 0
-    : 0;
+
 
   // Статистика для ученика
   let studentLessonsCount = 0;
@@ -153,7 +143,7 @@ const ProfileForm: React.FC = () => {
           {user.profile?.avatar ? (
             <img src={user.profile.avatar} alt="Avatar" className="h-20 w-20 rounded-full object-cover" />
                 ) : (
-                  <User className="h-10 w-10 text-white" />
+                  <UserIcon className="h-10 w-10 text-white" />
                 )}
               </div>
         <div className="flex-1">
@@ -173,7 +163,7 @@ const ProfileForm: React.FC = () => {
               </div>
               <div className="text-center">
                 <div className="text-base font-bold text-gray-900 flex items-center justify-center gap-1">
-                  <User className="w-5 h-5 text-green-500 mr-1" />
+                  <UserIcon className="w-5 h-5 text-green-500 mr-1" />
                   {uniqueTeachersCount}
                 </div>
                 <div className="text-xs text-gray-500">Учителей</div>
@@ -380,7 +370,7 @@ const ProfileForm: React.FC = () => {
               {(user.role === 'student' ? studentProfile.avatar : user.profile?.avatar) ? (
                 <img src={user.role === 'student' ? studentProfile.avatar : user.profile?.avatar} alt="avatar" className="h-14 w-14 object-cover rounded-full" />
               ) : (
-                <User className="h-7 w-7 text-white" />
+                <UserIcon className="h-7 w-7 text-white" />
               )}
               <span className="absolute bottom-0 right-0 bg-blue-500 text-white rounded-full h-5 w-5 flex items-center justify-center text-xs border-2 border-white">+</span>
             </div>
@@ -393,7 +383,7 @@ const ProfileForm: React.FC = () => {
                 {story.avatar ? (
                   <img src={story.avatar} alt={story.name} className="h-14 w-14 object-cover rounded-full" />
                 ) : (
-                  <User className="h-7 w-7 text-white" />
+                  <UserIcon className="h-7 w-7 text-white" />
                 )}
               </div>
               <span className="text-xs mt-1 text-gray-700 truncate max-w-[60px]">{story.name}</span>
@@ -444,7 +434,6 @@ const ProfileForm: React.FC = () => {
                 <PostCard
                   key={post.id}
                   post={post}
-                  currentUserId={user?.id || ''}
                   onReaction={addReaction}
                   onComment={addComment}
                   onShare={sharePost}
@@ -470,7 +459,7 @@ const ProfileForm: React.FC = () => {
                   className="h-20 w-20 rounded-full object-cover"
                 />
               ) : (
-                <User className="h-10 w-10 text-white" />
+                <UserIcon className="h-10 w-10 text-white" />
               )}
             </div>
             <div>
@@ -519,7 +508,6 @@ const ProfileForm: React.FC = () => {
                 onChange={(e) => {
                   // Обновляем номер телефона в контексте аутентификации
                   if (user) {
-                    const updatedUser = { ...user, phone: e.target.value };
                     // Здесь нужно обновить пользователя в контексте
                     // Пока просто сохраняем в localStorage
                     try {

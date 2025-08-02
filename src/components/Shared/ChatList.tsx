@@ -6,7 +6,6 @@ import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 
 const ChatList: React.FC = () => {
-  // @ts-ignore
   const { 
     chats, 
     sendMessage, 

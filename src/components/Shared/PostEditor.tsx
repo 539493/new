@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { X, Image, Video, Smile, Send } from 'lucide-react';
+import { X, Image, Smile } from 'lucide-react';
 
 interface PostEditorProps {
   onSubmit: (post: {

@@ -8,7 +8,6 @@ import {
   Smile, 
   Bookmark,
   Play,
-  X,
   Send
 } from 'lucide-react';
 import PostEditor from './PostEditor';
@@ -44,7 +43,6 @@ interface Post {
 
 interface PostCardProps {
   post: Post;
-  currentUserId: string;
   onReaction: (postId: string, reactionType: string) => void;
   onComment: (postId: string, comment: string) => void;
   onShare: (postId: string) => void;
@@ -55,7 +53,6 @@ interface PostCardProps {
 
 const PostCard: React.FC<PostCardProps> = ({
   post,
-  currentUserId,
   onReaction,
   onComment,
   onShare,

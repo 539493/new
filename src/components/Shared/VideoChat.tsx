@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Phone, PhoneOff, Mic, MicOff, Video, VideoOff, Settings, Users } from 'lucide-react';
+import { PhoneOff, Mic, MicOff, Video, VideoOff, Users } from 'lucide-react';
 import { io, Socket } from 'socket.io-client';
 
 interface VideoChatProps {

@@ -1,7 +1,6 @@
 export interface User {
   id: string;
   email: string;
-  password: string; // Добавляем поле для пароля
   name: string;
   nickname: string;
   role: 'student' | 'teacher';
@@ -15,7 +14,7 @@ export interface StudentProfile {
   bio?: string;
   avatar?: string;
   subjects?: string[];
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface TeacherProfile {
@@ -37,7 +36,7 @@ export interface TeacherProfile {
   students?: string[]; // id учеников
   lessonsCount?: number; // всего проведённых уроков
   country?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface TimeSlot {

@@ -1,33 +1,32 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect, useRef } from 'react';
-import { TimeSlot, Lesson, Chat, FilterOptions, User, Post, Reaction, Comment } from '../types';
+import { TimeSlot, Lesson, Chat, FilterOptions, User, Post, Comment, StudentProfile, TeacherProfile } from '../types';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from './AuthContext';
-import type { TeacherProfile } from '../types';
 
 // Типизация контекста (можно расширить по необходимости)
 interface DataContextType {
-  timeSlots: any[];
-  lessons: any[];
-  chats: any[];
+  timeSlots: TimeSlot[];
+  lessons: Lesson[];
+  chats: Chat[];
   posts: Post[];
-  createTimeSlot: (slot: any) => void;
+  createTimeSlot: (slot: Omit<TimeSlot, 'id'>) => void;
   bookLesson: (slotId: string, studentId: string, studentName: string) => void;
   cancelLesson: (lessonId: string) => void;
-  rescheduleLesson: (...args: any[]) => void;
-  getFilteredSlots: (filters: any) => any[];
-  sendMessage: (...args: any[]) => void;
-  getOrCreateChat: (...args: any[]) => any;
+  rescheduleLesson: (lessonId: string, newDate: string, newStartTime: string) => void;
+  getFilteredSlots: (filters: FilterOptions) => TimeSlot[];
+  sendMessage: (chatId: string, senderId: string, senderName: string, content: string) => void;
+  getOrCreateChat: (participant1Id: string, participant2Id: string, participant1Name: string, participant2Name: string) => string;
   clearAllData: () => void;
   isConnected: boolean;
   completeLesson: (lessonId: string) => void;
-  studentProfiles: Record<string, any>;
-  teacherProfiles: Record<string, any>;
-  updateStudentProfile: (studentId: string, profile: any) => void;
+  studentProfiles: Record<string, StudentProfile>;
+  teacherProfiles: Record<string, TeacherProfile>;
+  updateStudentProfile: (studentId: string, profile: StudentProfile) => void;
   deleteSlot: (slotId: string) => void;
   createSlot: (slot: Omit<TimeSlot, 'id' | 'isBooked'>, studentId?: string, studentName?: string, options?: { mode?: string }) => Promise<TimeSlot>;
   allUsers: User[];
   setAllUsers: (users: User[]) => void;
-  updateTeacherProfile: (teacherId: string, profile: any) => void;
+  updateTeacherProfile: (teacherId: string, profile: TeacherProfile) => void;
   socketRef: React.MutableRefObject<Socket | null>;
   loadInitialData: () => void;
   // Функции для работы с записями
@@ -209,7 +208,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     return loadFromStorage('tutoring_chats', []);
   });
 
-  const [studentProfiles, setStudentProfiles] = useState<Record<string, any>>(() => {
+  const [studentProfiles, setStudentProfiles] = useState<Record<string, StudentProfile>>(() => {
     const saved = loadFromStorage('tutoring_studentProfiles', {});
     if (Object.keys(saved).length > 0) {
       return saved;
@@ -419,19 +418,19 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       });
     }
 
-    newSocket.on('studentProfiles', (profiles: Record<string, any>) => {
+    newSocket.on('studentProfiles', (profiles: Record<string, StudentProfile>) => {
       setStudentProfiles(profiles || {});
     });
-    newSocket.on('studentProfileUpdated', (data: { studentId: string; profile: any }) => {
+    newSocket.on('studentProfileUpdated', (data: { studentId: string; profile: StudentProfile }) => {
       console.log('Получено обновление профиля:', data);
       setStudentProfiles(prev => ({ ...prev, [data.studentId]: data.profile }));
     });
 
     // --- Синхронизация профиля преподавателя между устройствами ---
-    newSocket.on('teacherProfileUpdated', (data: { teacherId: string; profile: any }) => {
+    newSocket.on('teacherProfileUpdated', (data: { teacherId: string; profile: TeacherProfile }) => {
       try {
         const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
-        const updatedUsers = users.map((u: any) =>
+        const updatedUsers = users.map((u: User) =>
           u.id === data.teacherId ? { ...u, profile: data.profile, avatar: data.profile.avatar } : u
         );
         localStorage.setItem('tutoring_users', JSON.stringify(updatedUsers));
@@ -443,11 +442,11 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     });
 
     // --- Универсальная синхронизация профиля между устройствами ---
-    newSocket.on('profileUpdated', (data: { type: string; userId: string; profile: any }) => {
+    newSocket.on('profileUpdated', (data: { type: string; userId: string; profile: StudentProfile | TeacherProfile }) => {
       try {
         const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
         let found = false;
-        const updatedUsers = users.map((u: any) => {
+        const updatedUsers = users.map((u: User) => {
           if (u.id === data.userId) {
             found = true;
             return { ...u, profile: data.profile, avatar: data.profile.avatar, name: data.profile.name || u.name, email: data.profile.email || u.email };
@@ -815,7 +814,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     }
   };
 
-  const updateStudentProfile = (studentId: string, profile: any) => {
+  const updateStudentProfile = (studentId: string, profile: StudentProfile) => {
     if (socketRef.current) {
       socketRef.current.emit('updateStudentProfile', { studentId, profile });
     }
@@ -853,7 +852,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   };
 
   // Функция для обновления профиля преподавателя на сервере
-  const updateTeacherProfile = (teacherId: string, profile: any) => {
+  const updateTeacherProfile = (teacherId: string, profile: TeacherProfile) => {
     console.log('[updateTeacherProfile] called:', { teacherId, profile, isConnected, socket: !!socketRef.current });
     if (socketRef.current && isConnected) {
       socketRef.current.emit('updateTeacherProfile', { teacherId, profile });

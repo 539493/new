@@ -1,20 +1,17 @@
 import React, { useState } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { DataProvider } from './contexts/DataContext';
-import { NotificationProvider } from './contexts/NotificationContext';
 import AuthForm from './components/Auth/AuthForm';
 import Navigation from './components/Layout/Navigation';
 import StudentHome from './components/Student/StudentHome';
 import StudentLessons from './components/Student/StudentLessons';
 import StudentCalendar from './components/Student/StudentCalendar';
-import TeacherHome from './components/Teacher/TeacherHome';
 import TeacherSlots from './components/Teacher/TeacherSlots';
 import TeacherCalendar from './components/Teacher/TeacherCalendar';
 import ChatList from './components/Shared/ChatList';
 import ProfileForm from './components/Shared/ProfileForm';
 import TeacherStudents from './components/Teacher/TeacherStudents';
 import VideoChatPage from './components/Shared/VideoChatPage';
-import CRMDashboard from './components/CRM/CRMDashboard';
 import { Routes, Route } from 'react-router-dom';
 
 const AppContent: React.FC = () => {
@@ -49,7 +46,6 @@ const AppContent: React.FC = () => {
   return (
     <Routes>
       <Route path="/video-chat" element={<VideoChatPage />} />
-      <Route path="/crm" element={<CRMDashboard />} />
       <Route
         path="*"
         element={
@@ -67,13 +63,11 @@ const AppContent: React.FC = () => {
 
 function App() {
   return (
-    <NotificationProvider>
-      <AuthProvider>
-        <DataProvider>
-          <AppContent />
-        </DataProvider>
-      </AuthProvider>
-    </NotificationProvider>
+    <AuthProvider>
+      <DataProvider>
+        <AppContent />
+      </DataProvider>
+    </AuthProvider>
   );
 }
 

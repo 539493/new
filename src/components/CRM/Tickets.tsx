@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Search, Filter, Plus, Clock, AlertTriangle, CheckCircle, User } from 'lucide-react';
-import { useTickets } from '../../hooks/useTickets';
+import { useTickets } from '../hooks/useTickets';
 import LoadingSpinner from './LoadingSpinner';
 import ErrorMessage from './ErrorMessage';
 

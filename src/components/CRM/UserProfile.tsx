@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Mail, Phone, MapPin, Calendar, Star, BookOpen, MessageSquare, Edit, Ban, CheckCircle } from 'lucide-react';
-import { UserService } from '../../services/userService';
-import { TicketService } from '../../services/ticketService';
+import { UserService } from '../services/userService';
+import { TicketService } from '../services/ticketService';
 import LoadingSpinner from './LoadingSpinner';
 import ErrorMessage from './ErrorMessage';
-import type { CRMUser as User } from './CRMDashboard';
+import type { User } from '../App';
 
 interface UserProfileProps {
   userId: string | null;

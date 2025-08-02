@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Phone, PhoneOff, Mic, MicOff, Video, VideoOff, Users, MessageCircle, Share2, Copy, Check } from 'lucide-react';
+import { PhoneOff, Mic, MicOff, Video, VideoOff, Users, MessageCircle, Share2, Copy, Check } from 'lucide-react';
 import { io, Socket } from 'socket.io-client';
 
 const VideoChatPage: React.FC = () => {
