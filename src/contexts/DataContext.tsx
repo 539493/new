@@ -11,7 +11,7 @@ interface DataContextType {
   chats: Chat[];
   posts: Post[];
   createTimeSlot: (slot: Omit<TimeSlot, 'id'>) => void;
-  bookLesson: (slotId: string, studentId: string, studentName: string) => void;
+  bookLesson: (slotId: string, studentId: string, studentName: string, comment?: string) => void;
   cancelLesson: (lessonId: string) => void;
   rescheduleLesson: (lessonId: string, newDate: string, newStartTime: string) => void;
   getFilteredSlots: (filters: FilterOptions) => TimeSlot[];

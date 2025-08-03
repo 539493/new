@@ -10,6 +10,7 @@ import { FilterOptions, TimeSlot, User } from '../../types';
 import { io, Socket } from 'socket.io-client';
 import { SERVER_URL, WEBSOCKET_URL } from '../../config';
 import TeacherProfilePage from './TeacherProfilePage';
+import BookingModal from '../Shared/BookingModal';
 import { User as UserIcon } from 'lucide-react';
 
 const StudentHome: React.FC = () => {
@@ -33,10 +34,7 @@ const StudentHome: React.FC = () => {
     startTime: '',
     comment: '',
   });
-  const [isBooking, setIsBooking] = useState(false);
   const [showBookingModal, setShowBookingModal] = useState(false);
-  const [bookingComment, setBookingComment] = useState('');
-  const [bookingTeacher, setBookingTeacher] = useState<TimeSlot | null>(null);
   const [selectedBookingSlot, setSelectedBookingSlot] = useState<TimeSlot | null>(null);
 
   // Новые состояния для календаря в фильтрах
@@ -140,8 +138,18 @@ const StudentHome: React.FC = () => {
 
   const handleBookSlot = (slotId: string) => {
     if (user) {
-      console.log('Booking lesson:', slotId, 'for user:', user.name);
-      bookLesson(slotId, user.id, user.name);
+      const slot = timeSlots.find(s => s.id === slotId);
+      if (slot) {
+        setSelectedBookingSlot(slot);
+        setShowBookingModal(true);
+      }
+    }
+  };
+
+  const handleConfirmBooking = async (comment: string) => {
+    if (user && selectedBookingSlot) {
+      console.log('Booking lesson:', selectedBookingSlot.id, 'for user:', user.name, 'with comment:', comment);
+      bookLesson(selectedBookingSlot.id, user.id, user.name, comment);
       
       setTimeout(() => {
         if (Object.keys(filters).length === 0 && !selectedDate && !selectedTimeRange) {
@@ -887,44 +895,19 @@ const StudentHome: React.FC = () => {
         </div>
       )}
 
-      {/* Модальное окно для назначения урока */}
-      {showBookingModal && bookingTeacher && selectedBookingSlot && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative">
-            <button className="absolute top-4 right-4 text-gray-400 hover:text-gray-700" onClick={() => { setShowBookingModal(false); setBookingComment(''); setSelectedBookingSlot(null); }} title="Закрыть">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            <h2 className="text-xl font-bold mb-4">Назначить урок у {bookingTeacher.teacherName}</h2>
-            <div className="mb-4 p-3 bg-gray-50 rounded">
-              <div className="mb-1 font-semibold">Детали урока:</div>
-              <div><b>Предмет:</b> {selectedBookingSlot.subject}</div>
-              <div><b>Дата:</b> {selectedBookingSlot.date}</div>
-              <div><b>Время:</b> {selectedBookingSlot.startTime}–{selectedBookingSlot.endTime}</div>
-              <div><b>Класс:</b> {selectedBookingSlot.grades?.join(', ') || '—'}</div>
-            </div>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Комментарий к уроку</label>
-              <textarea
-                className="w-full p-2 border border-gray-300 rounded"
-                rows={2}
-                placeholder="Например: хочу разобрать домашнее задание или подготовиться к контрольной..."
-                value={bookingComment}
-                onChange={e => setBookingComment(e.target.value)}
-              />
-            </div>
-            <button className="w-full bg-blue-600 text-white py-2 rounded mt-4 disabled:opacity-50" onClick={async () => {
-              if (!selectedBookingSlot || !user) return;
-              setIsBooking(true);
-              await bookLesson(selectedBookingSlot.id, user.id, user.name);
-              setIsBooking(false);
-              setShowBookingModal(false);
-              setSelectedBookingSlot(null);
-              setBookingComment('');
-            }}>{isBooking ? 'Бронирование...' : 'Забронировать выбранное время'}</button>
-          </div>
-        </div>
+      {/* Модальное окно для бронирования урока */}
+      {showBookingModal && selectedBookingSlot && user && (
+        <BookingModal
+          isOpen={showBookingModal}
+          onClose={() => {
+            setShowBookingModal(false);
+            setSelectedBookingSlot(null);
+          }}
+          onConfirm={handleConfirmBooking}
+          slot={selectedBookingSlot}
+          teacher={getUserById(selectedBookingSlot.teacherId)}
+          student={user}
+        />
       )}
 
       {/* Полная страница преподавателя */}
