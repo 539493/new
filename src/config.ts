@@ -27,40 +27,8 @@ const getWebSocketUrl = () => {
 export const SERVER_URL = getServerUrl();
 export const WEBSOCKET_URL = getWebSocketUrl();
 
-// Настройки WebRTC
-export const WEBRTC_CONFIG = {
-  iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun2.l.google.com:19302' },
-    { urls: 'stun:stun3.l.google.com:19302' },
-    { urls: 'stun:stun4.l.google.com:19302' }
-  ],
-  iceCandidatePoolSize: 10
-};
-
-// Настройки медиа
-export const MEDIA_CONFIG = {
-  video: {
-    width: { ideal: 1280 },
-    height: { ideal: 720 },
-    facingMode: 'user'
-  },
-  audio: {
-    echoCancellation: true,
-    noiseSuppression: true,
-    autoGainControl: true
-  }
-};
-
-// Настройки Socket.IO
-export const SOCKET_CONFIG = {
-  transports: ['websocket', 'polling'],
-  timeout: 10000,
-  forceNew: true,
-  upgrade: true,
-  rememberUpgrade: true
-};
+// URL внешнего сервиса видео чата
+export const EXTERNAL_VIDEO_CHAT_URL = 'https://video-chat-web-lp8d.onrender.com';
 
 // Окружение
 export const ENV = {

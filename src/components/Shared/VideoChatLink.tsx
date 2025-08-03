@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Copy, Check, Share2, Video } from 'lucide-react';
+import { Copy, Check, Share2, Video, ExternalLink } from 'lucide-react';
+import { EXTERNAL_VIDEO_CHAT_URL } from '../../config';
 
 interface VideoChatLinkProps {
   lessonId: string;
@@ -13,8 +14,12 @@ const VideoChatLink: React.FC<VideoChatLinkProps> = ({ lessonId, userName, role,
   const [showModal, setShowModal] = useState(false);
 
   const generateLink = () => {
-    const baseUrl = window.location.origin;
-    return `${baseUrl}/video-chat?lesson=${lessonId}&user=${encodeURIComponent(userName)}&role=${role}`;
+    const params = new URLSearchParams({
+      lesson: lessonId,
+      user: userName,
+      role: role
+    });
+    return `${EXTERNAL_VIDEO_CHAT_URL}/?${params.toString()}`;
   };
 
   const copyLink = () => {
@@ -42,6 +47,7 @@ const VideoChatLink: React.FC<VideoChatLinkProps> = ({ lessonId, userName, role,
         >
           <Video className="h-4 w-4" />
           <span className="text-sm">Видеозвонок</span>
+          <ExternalLink className="h-3 w-3" />
         </button>
         
         <button

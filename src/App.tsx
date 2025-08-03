@@ -11,10 +11,7 @@ import TeacherCalendar from './components/Teacher/TeacherCalendar';
 import StudentLessons from './components/Student/StudentLessons';
 import StudentCalendar from './components/Student/StudentCalendar';
 import TeacherProfilePage from './components/Student/TeacherProfilePage';
-import VideoChatPage from './components/Shared/VideoChatPage';
-import VideoTestPage from './components/Shared/VideoTestPage';
 import WebSocketTest from './components/Shared/WebSocketTest';
-import SimpleVideoTest from './components/Shared/SimpleVideoTest';
 import ChatList from './components/Shared/ChatList';
 import ProfileForm from './components/Shared/ProfileForm';
 import { Routes, Route } from 'react-router-dom';
@@ -64,9 +61,6 @@ const App: React.FC = () => {
     <AuthProvider>
       <DataProvider>
         <Routes>
-          <Route path="/video-chat" element={<VideoChatPage />} />
-          <Route path="/video-test" element={<VideoTestPage />} />
-          <Route path="/simple-video-test" element={<SimpleVideoTest />} />
           <Route path="/websocket-test" element={<WebSocketTest />} />
           <Route path="/teacher/:teacherId" element={<TeacherProfilePage teacher={{}} onClose={() => {}} onBookLesson={() => {}} />} />
           <Route path="*" element={<AppContent />} />
