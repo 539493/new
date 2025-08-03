@@ -8,8 +8,10 @@ const getServerUrl = () => {
     return `${protocol}//${hostname}`;
   }
   
-  // В разработке также используем внешний сервер для работы между разными сетями
-  return 'https://tutoring-platform-0gvk.onrender.com';
+  // В разработке используем локальный сервер, но доступный из других сетей
+  // Получаем IP адрес компьютера для доступа из других устройств
+  const localIP = window.location.hostname === 'localhost' ? '192.168.0.103' : window.location.hostname;
+  return `http://${localIP}:3001`;
 };
 
 const getWebSocketUrl = () => {
@@ -20,8 +22,9 @@ const getWebSocketUrl = () => {
     return `${protocol}//${hostname}`;
   }
   
-  // В разработке также используем внешний сервер для работы между разными сетями
-  return 'https://tutoring-platform-0gvk.onrender.com';
+  // В разработке используем локальный сервер, но доступный из других сетей
+  const localIP = window.location.hostname === 'localhost' ? '192.168.0.103' : window.location.hostname;
+  return `http://${localIP}:3001`;
 };
 
 export const SERVER_URL = getServerUrl();
