@@ -226,19 +226,16 @@ const StudentHome: React.FC = () => {
     return Array.from(allTeachersMap.values());
   }, [serverTeachers, allUsers]);
 
-  // Фильтруем преподавателей на основе фильтров
+  // Показываем всех преподавателей (не фильтруем по слотам)
   const filteredTeachers = React.useMemo(() => {
     if (Object.keys(filters).length === 0 && !selectedDate && !selectedTimeRange) {
       // Если фильтры не применены, показываем всех преподавателей
       return allTeachers;
     }
 
-    // Если есть фильтры, показываем только тех, у кого есть подходящие слоты
-    return allTeachers.filter(teacher => {
-      const teacherSlots = filteredSlots.filter(slot => slot.teacherId === teacher.id);
-      return teacherSlots.length > 0;
-    });
-  }, [allTeachers, filteredSlots, filters, selectedDate, selectedTimeRange]);
+    // Если есть фильтры, показываем всех преподавателей, но с фильтрацией слотов
+    return allTeachers;
+  }, [allTeachers, filters, selectedDate, selectedTimeRange]);
 
   function getTeacherProfileById(teacherId: string) {
     const teacher = serverTeachers.find(t => t.id === teacherId) ||
@@ -536,9 +533,10 @@ const StudentHome: React.FC = () => {
           filteredTeachers.map(teacher => {
             const profile = teacher.profile;
             const teacherSlots = filteredSlots.filter(slot => slot.teacherId === teacher.id);
-            const hasAvailableSlots = teacherSlots.length > 0;
-            const minPrice = hasAvailableSlots ? Math.min(...teacherSlots.map(slot => slot.price)) : profile?.hourlyRate || 0;
-            const maxPrice = hasAvailableSlots ? Math.max(...teacherSlots.map(slot => slot.price)) : profile?.hourlyRate || 0;
+            const availableSlots = teacherSlots.filter(slot => !slot.isBooked);
+            const hasAvailableSlots = availableSlots.length > 0;
+            const minPrice = teacherSlots.length > 0 ? Math.min(...teacherSlots.map(slot => slot.price)) : profile?.hourlyRate || 0;
+            const maxPrice = teacherSlots.length > 0 ? Math.max(...teacherSlots.map(slot => slot.price)) : profile?.hourlyRate || 0;
             
             return (
               <div 
@@ -603,21 +601,24 @@ const StudentHome: React.FC = () => {
                       e.stopPropagation(); // Предотвращаем всплытие события
                       if (hasAvailableSlots) {
                         // Находим первый доступный слот для этого преподавателя
-                        const availableSlot = teacherSlots.find(slot => !slot.isBooked);
+                        const availableSlot = availableSlots[0];
                         if (availableSlot && user) {
                           console.log('Opening booking modal for slot:', availableSlot.id, 'for teacher:', teacher.id);
                           setSelectedBookingSlot(availableSlot);
                           setShowBookingModal(true);
                         }
+                      } else {
+                        // Если нет доступных слотов, открываем профиль преподавателя
+                        handleTeacherClick(teacher);
                       }
                     }}
                     className={`w-full py-1.5 rounded-lg text-xs font-medium transition-colors ${
                       hasAvailableSlots 
                         ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                        : 'bg-gray-300 text-gray-600'
+                        : 'bg-green-600 text-white hover:bg-green-700'
                     }`}
                   >
-                    {hasAvailableSlots ? 'Забронировать' : 'Нет свободных слотов'}
+                    {hasAvailableSlots ? 'Забронировать' : 'Календарь'}
                   </button>
                 </div>
               </div>
