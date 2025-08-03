@@ -8,8 +8,8 @@ const getServerUrl = () => {
     return `${protocol}//${hostname}`;
   }
   
-  // В разработке используем локальный сервер на порту 3001
-  return 'http://localhost:3001';
+  // В разработке также используем внешний сервер для работы между разными сетями
+  return 'https://tutoring-platform-0gvk.onrender.com';
 };
 
 const getWebSocketUrl = () => {
@@ -20,8 +20,8 @@ const getWebSocketUrl = () => {
     return `${protocol}//${hostname}`;
   }
   
-  // В разработке используем локальный сервер на порту 3001
-  return 'http://localhost:3001';
+  // В разработке также используем внешний сервер для работы между разными сетями
+  return 'https://tutoring-platform-0gvk.onrender.com';
 };
 
 export const SERVER_URL = getServerUrl();
