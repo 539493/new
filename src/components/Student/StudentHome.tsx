@@ -605,14 +605,9 @@ const StudentHome: React.FC = () => {
                         // Находим первый доступный слот для этого преподавателя
                         const availableSlot = teacherSlots.find(slot => !slot.isBooked);
                         if (availableSlot && user) {
-                          console.log('Booking slot:', availableSlot.id, 'for teacher:', teacher.id);
-                          bookLesson(availableSlot.id, user.id, user.name);
-                          // Показываем уведомление об успешном бронировании
-                          alert(`Урок успешно забронирован! Преподаватель: ${teacher.name}`);
-                          // Обновляем список слотов после бронирования
-                          setTimeout(() => {
-                            loadAvailableSlots();
-                          }, 100);
+                          console.log('Opening booking modal for slot:', availableSlot.id, 'for teacher:', teacher.id);
+                          setSelectedBookingSlot(availableSlot);
+                          setShowBookingModal(true);
                         }
                       }
                     }}
@@ -622,7 +617,7 @@ const StudentHome: React.FC = () => {
                         : 'bg-gray-300 text-gray-600'
                     }`}
                   >
-                    {hasAvailableSlots ? 'Записаться' : 'Нет свободных слотов'}
+                    {hasAvailableSlots ? 'Забронировать' : 'Нет свободных слотов'}
                   </button>
                 </div>
               </div>
