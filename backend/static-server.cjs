@@ -90,12 +90,203 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../dist/index.html'));
 });
 
+// Функции для работы с данными
+const fs = require('fs');
+const DATA_FILE = path.join(__dirname, 'server_data.json');
+
+function loadServerData() {
+  try {
+    if (fs.existsSync(DATA_FILE)) {
+      const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+      console.log('Loaded server data from file');
+      return data;
+    }
+  } catch (error) {
+    console.error('Error loading server data:', error);
+  }
+  return {
+    teacherProfiles: {},
+    studentProfiles: {},
+    overbookingRequests: [],
+    timeSlots: [],
+    lessons: [],
+    chats: []
+  };
+}
+
+function saveServerData() {
+  try {
+    const data = {
+      teacherProfiles,
+      studentProfiles,
+      overbookingRequests,
+      timeSlots,
+      lessons,
+      chats
+    };
+    console.log('=== SAVING SERVER DATA ===');
+    console.log('Data file path:', DATA_FILE);
+    console.log('Teacher profiles count:', Object.keys(teacherProfiles).length);
+    console.log('Student profiles count:', Object.keys(studentProfiles).length);
+    console.log('Overbooking requests count:', overbookingRequests.length);
+    console.log('Time slots count:', timeSlots.length);
+    console.log('Lessons count:', lessons.length);
+    console.log('Chats count:', chats.length);
+    
+    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+    console.log('Server data saved to file successfully');
+    console.log('=== SAVE COMPLETED ===');
+  } catch (error) {
+    console.error('Error saving server data:', error);
+  }
+}
+
+// Загружаем данные при запуске сервера
+const serverData = loadServerData();
+
+// Хранилище для данных
+let teacherProfiles = serverData.teacherProfiles && typeof serverData.teacherProfiles === 'object' ? serverData.teacherProfiles : {};
+let studentProfiles = serverData.studentProfiles && typeof serverData.studentProfiles === 'object' ? serverData.studentProfiles : {};
+let timeSlots = Array.isArray(serverData.timeSlots) ? serverData.timeSlots : [];
+let lessons = Array.isArray(serverData.lessons) ? serverData.lessons : [];
+let chats = Array.isArray(serverData.chats) ? serverData.chats : [];
+let overbookingRequests = Array.isArray(serverData.overbookingRequests) ? serverData.overbookingRequests : [];
+
+// Функция для очистки старых слотов (старше 30 дней)
+function cleanupOldSlots() {
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  
+  const oldSlots = timeSlots.filter(slot => {
+    const slotDate = new Date(slot.date);
+    return slotDate < thirtyDaysAgo;
+  });
+  
+  if (oldSlots.length > 0) {
+    timeSlots = timeSlots.filter(slot => {
+      const slotDate = new Date(slot.date);
+      return slotDate >= thirtyDaysAgo;
+    });
+    
+    console.log(`Cleaned up ${oldSlots.length} old slots`);
+    saveServerData();
+  }
+}
+
+// Очищаем старые слоты при запуске сервера
+cleanupOldSlots();
+
 // WebSocket обработчики
 io.on('connection', (socket) => {
   console.log('=== CLIENT CONNECTED ===');
   console.log('Socket ID:', socket.id);
   console.log('Total connected clients:', io.engine.clientsCount);
   
+  // Отправляем текущие данные новому клиенту
+  console.log('Sending initial data to client:', {
+    timeSlotsCount: timeSlots.length,
+    lessonsCount: lessons.length,
+    chatsCount: chats.length,
+    teacherProfilesCount: Object.keys(teacherProfiles).length
+  });
+  socket.emit('initialData', { timeSlots, lessons, chats });
+
+  // Отправляем профили учеников новому клиенту
+  socket.emit('studentProfiles', studentProfiles);
+  
+  // Отправляем все слоты для синхронизации
+  socket.emit('allSlots', timeSlots);
+  
+  // Обработка запроса всех слотов
+  socket.on('requestAllSlots', () => {
+    console.log('Client requested all slots');
+    socket.emit('allSlots', timeSlots);
+  });
+
+  // Обработка создания нового слота
+  socket.on('createSlot', (newSlot) => {
+    console.log('=== NEW SLOT CREATED ===');
+    console.log('Slot data:', newSlot);
+    
+    // Проверяем, не существует ли уже слот с таким ID
+    const existingSlotIndex = timeSlots.findIndex(slot => slot.id === newSlot.id);
+    if (existingSlotIndex !== -1) {
+      // Обновляем существующий слот
+      timeSlots[existingSlotIndex] = { ...timeSlots[existingSlotIndex], ...newSlot };
+      console.log('Updated existing slot:', newSlot.id);
+    } else {
+      // Добавляем новый слот
+      timeSlots.push(newSlot);
+      console.log('Added new slot:', newSlot.id);
+    }
+    
+    console.log('Total slots on server:', timeSlots.length);
+    
+    // Сохраняем данные в файл
+    saveServerData();
+    
+    // Отправляем новый слот всем подключенным клиентам
+    io.emit('slotCreated', newSlot);
+    console.log('Slot broadcasted to all clients');
+    console.log('=== SLOT CREATION COMPLETED ===');
+  });
+
+  // Обработка бронирования слота
+  socket.on('bookSlot', (data) => {
+    console.log('Slot booked:', data);
+    const { slotId, lesson } = data;
+    
+    // Обновляем статус слота
+    const slotIndex = timeSlots.findIndex(slot => slot.id === slotId);
+    if (slotIndex !== -1) {
+      timeSlots[slotIndex].isBooked = true;
+    }
+    
+    // Добавляем урок
+    lessons.push(lesson);
+    
+    // Сохраняем данные в файл
+    saveServerData();
+    
+    // Отправляем обновление всем клиентам
+    io.emit('slotBooked', data);
+  });
+
+  // Обработка отмены бронирования
+  socket.on('cancelSlot', (data) => {
+    console.log('Slot cancelled:', data);
+    const { slotId, lessonId } = data;
+    
+    // Обновляем статус слота
+    const slotIndex = timeSlots.findIndex(slot => slot.id === slotId);
+    if (slotIndex !== -1) {
+      timeSlots[slotIndex].isBooked = false;
+    }
+    
+    // Удаляем урок
+    const lessonIndex = lessons.findIndex(lesson => lesson.id === lessonId);
+    if (lessonIndex !== -1) {
+      lessons.splice(lessonIndex, 1);
+    }
+    
+    // Сохраняем данные в файл
+    saveServerData();
+    
+    // Отправляем обновление всем клиентам
+    io.emit('slotCancelled', data);
+  });
+
+  // Обработка удаления слота
+  socket.on('deleteSlot', (data) => {
+    const { slotId } = data;
+    if (slotId) {
+      timeSlots = timeSlots.filter(slot => slot.id !== slotId);
+      saveServerData(); // Сохраняем данные в файл
+      io.emit('slotDeleted', { slotId });
+      console.log('Slot deleted:', slotId);
+    }
+  });
+
   // Обработка видео событий
   const rooms = {};
 
@@ -139,25 +330,10 @@ io.on('connection', (socket) => {
     console.log(`[Video] ${userName} left video room ${roomId}`);
   });
 
-  // Обработка основных событий приложения
-  socket.on('createSlot', (slot) => {
-    console.log('Slot created:', slot);
-    socket.broadcast.emit('slotCreated', slot);
-  });
-
-  socket.on('bookSlot', (data) => {
-    console.log('Slot booked:', data);
-    socket.broadcast.emit('slotBooked', data);
-  });
-
-  socket.on('cancelSlot', (data) => {
-    console.log('Slot cancelled:', data);
-    socket.broadcast.emit('slotCancelled', data);
-  });
-
-  socket.on('sendMessage', (message) => {
-    console.log('Message sent:', message);
-    socket.broadcast.emit('messageReceived', message);
+  // Обработка отправки сообщений в чате
+  socket.on('sendMessage', (data) => {
+    console.log('Message received:', data);
+    io.emit('receiveMessage', data);
   });
 
   socket.on('disconnect', () => {
