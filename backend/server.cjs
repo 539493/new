@@ -149,6 +149,9 @@ console.log('=== TESTING SAVE FUNCTION ===');
 saveServerData();
 console.log('=== TEST COMPLETED ===');
 
+// Очищаем старые слоты при запуске сервера
+cleanupOldSlots();
+
 // Хранилище для связи teacherId с socketId (ОБЫЧНЫЙ ОБЪЕКТ)
 let teacherSocketMap = {};
 
@@ -186,13 +189,37 @@ io.on('connection', (socket) => {
 
   // Отправляем профили учеников новому клиенту
   socket.emit('studentProfiles', studentProfiles);
+  
+  // Отправляем все слоты для синхронизации
+  socket.emit('allSlots', timeSlots);
+  
+  // Обработка запроса всех слотов
+  socket.on('requestAllSlots', () => {
+    console.log('Client requested all slots');
+    socket.emit('allSlots', timeSlots);
+  });
 
   // Обработка создания нового слота
   socket.on('createSlot', (newSlot) => {
     console.log('=== NEW SLOT CREATED ===');
     console.log('Slot data:', newSlot);
-    timeSlots.push(newSlot);
+    
+    // Проверяем, не существует ли уже слот с таким ID
+    const existingSlotIndex = timeSlots.findIndex(slot => slot.id === newSlot.id);
+    if (existingSlotIndex !== -1) {
+      // Обновляем существующий слот
+      timeSlots[existingSlotIndex] = { ...timeSlots[existingSlotIndex], ...newSlot };
+      console.log('Updated existing slot:', newSlot.id);
+    } else {
+      // Добавляем новый слот
+      timeSlots.push(newSlot);
+      console.log('Added new slot:', newSlot.id);
+    }
+    
     console.log('Total slots on server:', timeSlots.length);
+    
+    // Сохраняем данные в файл
+    saveServerData();
     
     // Отправляем новый слот всем подключенным клиентам
     io.emit('slotCreated', newSlot);
@@ -319,6 +346,7 @@ io.on('connection', (socket) => {
     const { slotId } = data;
     if (slotId) {
       timeSlots = timeSlots.filter(slot => slot.id !== slotId);
+      saveServerData(); // Сохраняем данные в файл
       io.emit('slotDeleted', { slotId });
       console.log('Slot deleted:', slotId);
     }
@@ -538,6 +566,27 @@ io.on('connection', (socket) => {
     console.log('[SERVER] teacherSocketMap after disconnect:', teacherSocketMap);
   });
 });
+
+// Функция для очистки старых слотов (старше 30 дней)
+function cleanupOldSlots() {
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  
+  const oldSlots = timeSlots.filter(slot => {
+    const slotDate = new Date(slot.date);
+    return slotDate < thirtyDaysAgo;
+  });
+  
+  if (oldSlots.length > 0) {
+    timeSlots = timeSlots.filter(slot => {
+      const slotDate = new Date(slot.date);
+      return slotDate >= thirtyDaysAgo;
+    });
+    
+    console.log(`Cleaned up ${oldSlots.length} old slots`);
+    saveServerData();
+  }
+}
 
 // Функция для поиска всех преподавателей с включённым овербукингом и свободным временем
 function findAvailableTeachers(request) {

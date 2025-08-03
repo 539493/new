@@ -73,6 +73,7 @@ const StudentHome: React.FC = () => {
     console.log('StudentHome: Loading available slots...');
     console.log('StudentHome: Total timeSlots in context:', timeSlots.length);
     
+    // Показываем все незабронированные слоты, независимо от статуса преподавателя
     const availableSlots = timeSlots.filter(slot => !slot.isBooked);
     
     console.log('StudentHome: Available slots to display:', availableSlots.length);
@@ -594,6 +595,14 @@ const StudentHome: React.FC = () => {
                   <div className="flex items-center text-xs text-gray-500 mb-2">
                     <MapPin className="h-2 w-2 mr-1" />
                     {profile?.city || 'Онлайн'}
+                  </div>
+                  
+                  {/* Индикатор статуса преподавателя */}
+                  <div className="flex items-center text-xs text-gray-500 mb-2">
+                    <div className={`w-2 h-2 rounded-full mr-1 ${isConnected ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                    <span className="text-xs text-gray-500">
+                      {isConnected ? 'Онлайн' : 'Слоты доступны'}
+                    </span>
                   </div>
                   
                   <button

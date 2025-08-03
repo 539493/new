@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест слотов</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .slot { border: 1px solid #ccc; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .online { border-color: green; background-color: #f0fff0; }
+        .offline { border-color: gray; background-color: #f5f5f5; }
+        .status { font-weight: bold; }
+        .online .status { color: green; }
+        .offline .status { color: gray; }
+    </style>
+</head>
+<body>
+    <h1>Тест слотов преподавателей</h1>
+    <div id="status">Статус подключения: <span id="connection-status">Подключение...</span></div>
+    <div id="slots"></div>
+
+    <script>
+        const socket = io('http://localhost:3001');
+        const slotsContainer = document.getElementById('slots');
+        const connectionStatus = document.getElementById('connection-status');
+
+        socket.on('connect', () => {
+            connectionStatus.textContent = 'Подключено';
+            connectionStatus.style.color = 'green';
+        });
+
+        socket.on('disconnect', () => {
+            connectionStatus.textContent = 'Отключено';
+            connectionStatus.style.color = 'red';
+        });
+
+        socket.on('allSlots', (slots) => {
+            console.log('Получены все слоты:', slots);
+            displaySlots(slots);
+        });
+
+        socket.on('slotCreated', (slot) => {
+            console.log('Создан новый слот:', slot);
+            // Обновляем отображение
+            socket.emit('requestAllSlots');
+        });
+
+        function displaySlots(slots) {
+            slotsContainer.innerHTML = '';
+            
+            if (slots.length === 0) {
+                slotsContainer.innerHTML = '<p>Нет доступных слотов</p>';
+                return;
+            }
+
+            slots.forEach(slot => {
+                const slotElement = document.createElement('div');
+                slotElement.className = `slot ${slot.isBooked ? 'offline' : 'online'}`;
+                
+                slotElement.innerHTML = `
+                    <div class="status">${slot.isBooked ? 'Забронирован' : 'Доступен'}</div>
+                    <div><strong>Преподаватель:</strong> ${slot.teacherName}</div>
+                    <div><strong>Предмет:</strong> ${slot.subject}</div>
+                    <div><strong>Дата:</strong> ${slot.date}</div>
+                    <div><strong>Время:</strong> ${slot.startTime} - ${slot.endTime}</div>
+                    <div><strong>Цена:</strong> ${slot.price} ₽</div>
+                    <div><strong>Формат:</strong> ${slot.format}</div>
+                `;
+                
+                slotsContainer.appendChild(slotElement);
+            });
+        }
+
+        // Запрашиваем все слоты при загрузке
+        socket.on('connect', () => {
+            socket.emit('requestAllSlots');
+        });
+    </script>
+</body>
+</html> 

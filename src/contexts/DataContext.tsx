@@ -236,18 +236,32 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
   // Функция для загрузки начальных данных
   const loadInitialData = () => {
+    // Загружаем данные из localStorage или используем начальные данные
+    const savedTimeSlots = loadFromStorage('tutoring_timeSlots', []);
+    const savedLessons = loadFromStorage('tutoring_lessons', []);
+    const savedChats = loadFromStorage('tutoring_chats', []);
     const initialData = getInitialData();
-    setTimeSlots(initialData.timeSlots);
+    
+    // Приоритет отдаем сохраненным слотам, так как они содержат актуальные данные
+    const allTimeSlots = savedTimeSlots.length > 0 ? savedTimeSlots : initialData.timeSlots;
+    
+    // Убираем дубликаты по ID, приоритет у более новых слотов
+    const uniqueTimeSlots = allTimeSlots.filter((slot: TimeSlot, index: number, self: TimeSlot[]) => 
+      index === self.findIndex((s: TimeSlot) => s.id === slot.id)
+    );
+    
+    setTimeSlots(uniqueTimeSlots);
+    setLessons(savedLessons);
+    setChats(savedChats);
     setStudentProfiles(initialData.studentProfiles);
-    setLessons([]);
-    setChats([]);
     
-    saveToStorage('tutoring_timeSlots', initialData.timeSlots);
+    // Сохраняем объединенные данные
+    saveToStorage('tutoring_timeSlots', uniqueTimeSlots);
+    saveToStorage('tutoring_lessons', savedLessons);
+    saveToStorage('tutoring_chats', savedChats);
     saveToStorage('tutoring_studentProfiles', initialData.studentProfiles);
-    saveToStorage('tutoring_lessons', []);
-    saveToStorage('tutoring_chats', []);
     
-    console.log('Initial data loaded for offline mode');
+    console.log('Initial data loaded with saved slots:', uniqueTimeSlots.length);
   };
 
   // Инициализация WebSocket соединения
@@ -266,6 +280,17 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     newSocket.on('connect', () => {
       console.log('WebSocket connected');
       setIsConnected(true);
+      
+      // Синхронизируем локальные слоты с сервером при восстановлении соединения
+      const localSlots = loadFromStorage('tutoring_timeSlots', []);
+      if (localSlots.length > 0) {
+        console.log('Syncing local slots with server:', localSlots.length, 'slots');
+        localSlots.forEach((slot: TimeSlot) => {
+          if (socketRef.current) {
+            socketRef.current.emit('createSlot', slot);
+          }
+        });
+      }
     });
 
     newSocket.on('disconnect', () => {
@@ -286,14 +311,32 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     // Получаем все актуальные данные при подключении
     newSocket.on('initialData', (data: { timeSlots: TimeSlot[]; lessons: Lesson[]; chats: Chat[] }) => {
       console.log('Received initialData from server:', data);
-      setTimeSlots(data.timeSlots);
+      
+      // Объединяем серверные данные с локальными
+      const currentTimeSlots = loadFromStorage('tutoring_timeSlots', []);
+      const allTimeSlots = [...currentTimeSlots, ...data.timeSlots];
+      
+      // Убираем дубликаты по ID, приоритет у серверных данных
+      const uniqueTimeSlots = allTimeSlots.filter((slot: TimeSlot, index: number, self: TimeSlot[]) => 
+        index === self.findIndex((s: TimeSlot) => s.id === slot.id)
+      );
+      
+      setTimeSlots(uniqueTimeSlots);
       setLessons(data.lessons);
-      saveToStorage('tutoring_timeSlots', data.timeSlots);
+      saveToStorage('tutoring_timeSlots', uniqueTimeSlots);
       saveToStorage('tutoring_lessons', data.lessons);
       if (data.chats) {
         setChats(data.chats);
         saveToStorage('tutoring_chats', data.chats);
       }
+    });
+
+    // Слушаем все слоты при подключении для синхронизации
+    newSocket.on('allSlots', (allSlots: TimeSlot[]) => {
+      console.log('DEBUG: allSlots received on client:', allSlots.length, 'slots');
+      setTimeSlots(allSlots);
+      saveToStorage('tutoring_timeSlots', allSlots);
+      console.log('All slots synchronized and saved to localStorage');
     });
 
     // Слушаем обновления слотов от других клиентов
@@ -304,6 +347,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         if (!exists) {
           const updated = [...prev, newSlot];
           saveToStorage('tutoring_timeSlots', updated);
+          console.log('Slot saved to localStorage:', newSlot.id);
           return updated;
         }
         return prev;
@@ -539,8 +583,13 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         saveToStorage('tutoring_timeSlots', updated);
         return updated;
       });
+      
+      // Отправляем слот на сервер, если есть соединение
       if (socketRef.current && isConnected) {
         socketRef.current.emit('createSlot', newSlot);
+      } else {
+        // Если нет соединения, сохраняем слот локально для последующей синхронизации
+        console.log('No connection, slot saved locally for later sync');
       }
       // Если слот сразу бронируется на ученика, создаём Lesson
       if (isBooked && studentId && studentName) {
@@ -804,7 +853,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
   const deleteSlot = (slotId: string) => {
     setTimeSlots(prev => {
-      const updated = prev.filter(slot => slot.id !== slotId);
+      // Вместо удаления помечаем слот как неактивный
+      const updated = prev.map(slot => 
+        slot.id === slotId ? { ...slot, isDeleted: true } : slot
+      );
       saveToStorage('tutoring_timeSlots', updated);
       return updated;
     });
