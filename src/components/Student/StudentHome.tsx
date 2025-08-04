@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, Star, Users, MapPin, BookOpen, RefreshCw, Wifi, WifiOff, Heart, MoreHorizontal } from 'lucide-react';
+import { Search, Filter, Star, Users, MapPin, BookOpen, RefreshCw, Wifi, WifiOff, Heart, MoreHorizontal, Calendar as CalendarIcon } from 'lucide-react';
 import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
 import { ru } from 'date-fns/locale';
@@ -10,6 +10,7 @@ import { FilterOptions, TimeSlot, User } from '../../types';
 import { io, Socket } from 'socket.io-client';
 import { SERVER_URL, WEBSOCKET_URL } from '../../config';
 import TeacherProfilePage from './TeacherProfilePage';
+import StudentCalendar from './StudentCalendar';
 import BookingModal from '../Shared/BookingModal';
 import { User as UserIcon } from 'lucide-react';
 
@@ -36,6 +37,7 @@ const StudentHome: React.FC = () => {
   });
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [selectedBookingSlot, setSelectedBookingSlot] = useState<TimeSlot | null>(null);
+  const [showCalendar, setShowCalendar] = useState(false);
 
   // Новые состояния для календаря в фильтрах
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -337,6 +339,14 @@ const StudentHome: React.FC = () => {
         >
           <BookOpen className="h-5 w-5 inline mr-2" />
           Овербукинг - Автоподбор преподавателя
+        </button>
+        
+        <button
+          onClick={() => setShowCalendar(true)}
+          className="bg-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center space-x-2"
+        >
+          <CalendarIcon className="h-5 w-5" />
+          <span>Календарь свободных слотов</span>
         </button>
         
         <button
@@ -921,6 +931,13 @@ const StudentHome: React.FC = () => {
           teacher={selectedTeacher}
           onClose={() => setShowTeacherProfilePage(false)}
           onBookLesson={handleBookLesson}
+        />
+      )}
+
+      {/* Календарь свободных слотов */}
+      {showCalendar && (
+        <StudentCalendar
+          onClose={() => setShowCalendar(false)}
         />
       )}
     </div>

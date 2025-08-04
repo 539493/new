@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { User as UserIcon, Star, MapPin, Clock, BookOpen, MessageCircle, Phone, Mail, ArrowLeft, Heart, Share2 } from 'lucide-react';
+import { User as UserIcon, Star, MapPin, Clock, BookOpen, MessageCircle, Phone, Mail, ArrowLeft, Heart, Share2, Calendar, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { TeacherProfile } from '../../types';
+import { useData } from '../../contexts/DataContext';
+import { TeacherProfile, TimeSlot } from '../../types';
+import BookingModal from '../Shared/BookingModal';
 
 interface TeacherProfilePageProps {
   teacher: any;
@@ -11,8 +13,17 @@ interface TeacherProfilePageProps {
 
 const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClose, onBookLesson }) => {
   const { user } = useAuth();
+  const { timeSlots, bookLesson } = useData();
   const [isLiked, setIsLiked] = useState(false);
   const [showContactInfo, setShowContactInfo] = useState(false);
+  const [showSlots, setShowSlots] = useState(false);
+  const [showBookingModal, setShowBookingModal] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
+
+  // Получаем слоты этого преподавателя
+  const teacherSlots = timeSlots.filter(slot => slot.teacherId === teacher.id);
+  const availableSlots = teacherSlots.filter(slot => !slot.isBooked);
+  const bookedSlots = teacherSlots.filter(slot => slot.isBooked);
 
   const profile = teacher.profile as TeacherProfile;
 
@@ -32,6 +43,32 @@ const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClos
       case 'mini-group': return 'Мини-группа';
       default: return format;
     }
+  };
+
+  const handleBookSlot = (slot: TimeSlot) => {
+    setSelectedSlot(slot);
+    setShowBookingModal(true);
+  };
+
+  const handleConfirmBooking = async (comment: string) => {
+    if (user && selectedSlot) {
+      console.log('Booking lesson:', selectedSlot.id, 'for user:', user.name, 'with comment:', comment);
+      bookLesson(selectedSlot.id, user.id, user.name, comment);
+      setShowBookingModal(false);
+      setSelectedSlot(null);
+    }
+  };
+
+  const formatDate = (date: string, time: string) => {
+    const dateObj = new Date(`${date}T${time}`);
+    return dateObj.toLocaleDateString('ru-RU', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   return (
@@ -119,6 +156,13 @@ const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClos
                 >
                   <BookOpen className="h-5 w-5" />
                   <span>Записаться на урок</span>
+                </button>
+                <button
+                  onClick={() => setShowSlots(!showSlots)}
+                  className="bg-green-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center space-x-2"
+                >
+                  <Calendar className="h-5 w-5" />
+                  <span>Посмотреть слоты ({availableSlots.length})</span>
                 </button>
                 <button
                   onClick={() => setShowContactInfo(!showContactInfo)}
@@ -276,6 +320,82 @@ const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClos
             </div>
           </div>
 
+          {/* Available Slots */}
+          {showSlots && (
+            <div className="mb-8">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">Доступные слоты</h2>
+              {availableSlots.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {availableSlots.map((slot) => (
+                    <div key={slot.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-gray-900 mb-1">{slot.subject}</h3>
+                          <div className="flex items-center space-x-2 text-sm text-gray-600 mb-2">
+                            <Clock className="h-3 w-3" />
+                            <span>{formatDate(slot.date, slot.startTime)}</span>
+                          </div>
+                          <div className="flex items-center space-x-2 text-sm text-gray-600 mb-2">
+                            <MapPin className="h-3 w-3" />
+                            <span>{getFormatLabel(slot.format)}</span>
+                          </div>
+                          <div className="text-lg font-bold text-blue-600">
+                            {slot.price} ₽
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleBookSlot(slot)}
+                        className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
+                      >
+                        <BookOpen className="h-4 w-4" />
+                        <span>Забронировать</span>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-gray-50 rounded-lg p-6 text-center">
+                  <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                  <p className="text-gray-600">Нет доступных слотов на данный момент</p>
+                  <p className="text-sm text-gray-500 mt-2">Попробуйте позже или свяжитесь с преподавателем</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Booked Slots */}
+          {bookedSlots.length > 0 && (
+            <div className="mb-8">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">Забронированные уроки</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {bookedSlots.map((slot) => (
+                  <div key={slot.id} className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900 mb-1">{slot.subject}</h3>
+                        <div className="flex items-center space-x-2 text-sm text-gray-600 mb-2">
+                          <Clock className="h-3 w-3" />
+                          <span>{formatDate(slot.date, slot.startTime)}</span>
+                        </div>
+                        <div className="flex items-center space-x-2 text-sm text-gray-600 mb-2">
+                          <MapPin className="h-3 w-3" />
+                          <span>{getFormatLabel(slot.format)}</span>
+                        </div>
+                        <div className="text-lg font-bold text-green-600">
+                          {slot.price} ₽
+                        </div>
+                      </div>
+                    </div>
+                    <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium text-center">
+                      Забронировано
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Additional Info */}
           <div className="bg-gray-50 rounded-lg p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4">Дополнительная информация</h2>
@@ -306,6 +426,72 @@ const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClos
           </div>
         </div>
       </div>
+
+      {/* Booking Modal */}
+      {showBookingModal && selectedSlot && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <div className="flex items-start justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-900">Подтверждение бронирования</h3>
+              <button
+                onClick={() => setShowBookingModal(false)}
+                className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="bg-blue-50 rounded-lg p-4">
+                <h4 className="font-semibold text-gray-900 mb-2">{selectedSlot.subject}</h4>
+                <div className="space-y-2 text-sm text-gray-600">
+                  <div className="flex items-center space-x-2">
+                    <Clock className="h-4 w-4" />
+                    <span>{formatDate(selectedSlot.date, selectedSlot.startTime)}</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <MapPin className="h-4 w-4" />
+                    <span>{getFormatLabel(selectedSlot.format)}</span>
+                  </div>
+                  <div className="text-lg font-bold text-blue-600">
+                    {selectedSlot.price} ₽
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Комментарий к уроку (необязательно)
+                </label>
+                <textarea
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  rows={3}
+                  placeholder="Укажите цели занятия, особенности и т.д."
+                  id="booking-comment"
+                />
+              </div>
+
+              <div className="flex space-x-3 pt-4">
+                <button
+                  onClick={() => {
+                    const comment = (document.getElementById('booking-comment') as HTMLTextAreaElement)?.value || '';
+                    handleConfirmBooking(comment);
+                  }}
+                  className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                >
+                  Подтвердить
+                </button>
+                <button
+                  onClick={() => setShowBookingModal(false)}
+                  className="flex-1 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+                >
+                  Отмена
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
