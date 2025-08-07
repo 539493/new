@@ -94,6 +94,7 @@ export interface Chat {
   participantNames: string[];
   lastMessage?: ChatMessage;
   messages: ChatMessage[];
+  archived?: boolean;
 }
 
 export interface FilterOptions {

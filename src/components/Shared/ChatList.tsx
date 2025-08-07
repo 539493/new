@@ -101,6 +101,9 @@ const ChatList: React.FC = () => {
   const userChats = chats.filter(chat => chat.participants.includes(user?.id || ''));
   
   const filteredChats = userChats.filter(chat => {
+    // Исключаем архивированные чаты
+    if (chat.archived) return false;
+    
     const otherParticipantName = chat.participantNames.find(name => 
       name !== user?.name
     );
