@@ -229,16 +229,21 @@ const StudentHome: React.FC = () => {
     return Array.from(allTeachersMap.values());
   }, [serverTeachers, allUsers]);
 
-  // Показываем всех преподавателей (не фильтруем по слотам)
+  // Фильтруем преподавателей по доступным слотам
   const filteredTeachers = React.useMemo(() => {
     if (Object.keys(filters).length === 0 && !selectedDate && !selectedTimeRange) {
       // Если фильтры не применены, показываем всех преподавателей
       return allTeachers;
     }
 
-    // Если есть фильтры, показываем всех преподавателей, но с фильтрацией слотов
-    return allTeachers;
-  }, [allTeachers, filters, selectedDate, selectedTimeRange]);
+    // Если есть фильтры, показываем только тех преподавателей, у которых есть подходящие слоты
+    const teachersWithSlots = allTeachers.filter(teacher => {
+      const teacherSlots = filteredSlots.filter(slot => slot.teacherId === teacher.id);
+      return teacherSlots.length > 0;
+    });
+
+    return teachersWithSlots;
+  }, [allTeachers, filters, selectedDate, selectedTimeRange, filteredSlots]);
 
   function getTeacherProfileById(teacherId: string) {
     const teacher = serverTeachers.find(t => t.id === teacherId) ||
@@ -282,8 +287,22 @@ const StudentHome: React.FC = () => {
     }
   }, [timeSlots]);
 
+  // Автоматическое применение фильтров при их изменении
+  React.useEffect(() => {
+    if (Object.keys(filters).length > 0 || selectedDate || selectedTimeRange) {
+      applyFilters();
+    }
+  }, [filters, selectedDate, selectedTimeRange]);
+
   React.useEffect(() => {
     console.log('DEBUG: timeSlots у ученика', timeSlots);
+  }, [timeSlots]);
+
+  // Первоначальная загрузка слотов при монтировании компонента
+  React.useEffect(() => {
+    if (timeSlots.length > 0) {
+      loadAvailableSlots();
+    }
   }, [timeSlots]);
 
   const handleTeacherClick = (teacher: any) => {
