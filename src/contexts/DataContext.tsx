@@ -1083,6 +1083,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   };
 
   const markChatAsRead = (chatId: string) => {
+    console.log('DEBUG: markChatAsRead called with chatId:', chatId);
     setChats(prev => {
       const updated = prev.map(chat => 
         chat.id === chatId 
@@ -1090,6 +1091,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           : chat
       );
       saveToStorage('tutoring_chats', updated);
+      console.log('DEBUG: markChatAsRead - updated chats:', updated.length);
       return updated;
     });
 
@@ -1099,6 +1101,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   };
 
   const clearChatMessages = (chatId: string) => {
+    console.log('DEBUG: clearChatMessages called with chatId:', chatId);
     setChats(prev => {
       const updated = prev.map(chat => 
         chat.id === chatId 
@@ -1106,6 +1109,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           : chat
       );
       saveToStorage('tutoring_chats', updated);
+      console.log('DEBUG: clearChatMessages - updated chats:', updated.length);
       return updated;
     });
 
@@ -1115,6 +1119,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   };
 
   const archiveChat = (chatId: string) => {
+    console.log('DEBUG: archiveChat called with chatId:', chatId);
     setChats(prev => {
       const updated = prev.map(chat => 
         chat.id === chatId 
@@ -1122,6 +1127,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           : chat
       );
       saveToStorage('tutoring_chats', updated);
+      console.log('DEBUG: archiveChat - updated chats:', updated.length);
       return updated;
     });
 

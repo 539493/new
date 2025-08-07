@@ -142,7 +142,9 @@ const ChatList: React.FC = () => {
   };
 
   const handleDeleteChat = (chatId: string) => {
+    console.log('DEBUG: handleDeleteChat called with chatId:', chatId);
     if (confirm('Вы уверены, что хотите удалить этот чат? Это действие нельзя отменить.')) {
+      console.log('DEBUG: User confirmed delete, calling deleteChat');
       deleteChat(chatId);
       if (selectedChatId === chatId) {
         setSelectedChatId(null);
@@ -153,18 +155,22 @@ const ChatList: React.FC = () => {
   };
 
   const handleMarkAsRead = (chatId: string) => {
+    console.log('DEBUG: handleMarkAsRead called with chatId:', chatId);
     markChatAsRead(chatId);
     setShowChatMenu(null);
   };
 
   const handleClearMessages = (chatId: string) => {
+    console.log('DEBUG: handleClearMessages called with chatId:', chatId);
     if (confirm('Вы уверены, что хотите очистить все сообщения в этом чате?')) {
+      console.log('DEBUG: User confirmed clear, calling clearChatMessages');
       clearChatMessages(chatId);
       setShowChatMenu(null);
     }
   };
 
   const handleArchiveChat = (chatId: string) => {
+    console.log('DEBUG: handleArchiveChat called with chatId:', chatId);
     archiveChat(chatId);
     setShowChatMenu(null);
   };
@@ -275,21 +281,36 @@ const ChatList: React.FC = () => {
                     {showChatMenu === chat.id && (
                       <div className="absolute right-2 top-12 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10 min-w-[150px]">
                         <button
-                          onClick={() => handleMarkAsRead(chat.id)}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            console.log('DEBUG: Mark as read button clicked for chat:', chat.id);
+                            handleMarkAsRead(chat.id);
+                          }}
                           className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2"
                         >
                           <Eye className="w-4 h-4" />
                           <span>Отметить как прочитанное</span>
                         </button>
                         <button
-                          onClick={() => handleClearMessages(chat.id)}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            console.log('DEBUG: Clear messages button clicked for chat:', chat.id);
+                            handleClearMessages(chat.id);
+                          }}
                           className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2"
                         >
                           <MessageSquare className="w-4 h-4" />
                           <span>Очистить сообщения</span>
                         </button>
                         <button
-                          onClick={() => handleArchiveChat(chat.id)}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            console.log('DEBUG: Archive chat button clicked for chat:', chat.id);
+                            handleArchiveChat(chat.id);
+                          }}
                           className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2"
                         >
                           <Archive className="w-4 h-4" />
@@ -297,7 +318,12 @@ const ChatList: React.FC = () => {
                         </button>
                         <div className="border-t border-gray-100 my-1"></div>
                         <button
-                          onClick={() => handleDeleteChat(chat.id)}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            console.log('DEBUG: Delete chat button clicked for chat:', chat.id);
+                            handleDeleteChat(chat.id);
+                          }}
                           className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
                         >
                           <Trash2 className="w-4 h-4" />
