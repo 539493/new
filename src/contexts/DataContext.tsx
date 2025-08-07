@@ -91,96 +91,10 @@ const getInitialData = () => {
   nextWeek.setDate(nextWeek.getDate() + 7);
 
   return {
-    timeSlots: [
-      {
-        id: 'demo_slot_1',
-        teacherId: 'teacher1',
-        teacherName: 'Анна Петрова',
-        teacherAvatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
-        subject: 'Математика',
-        date: tomorrow.toISOString().split('T')[0],
-        startTime: '10:00',
-        endTime: '11:00',
-        duration: 60,
-        price: 2500,
-        format: 'online' as const,
-        lessonType: 'regular' as const,
-        experience: 'professional' as const,
-        grades: ['9', '10', '11'],
-        goals: ['Подготовка к ЕГЭ', 'Олимпиады'],
-        bio: 'Опытный преподаватель математики с 10-летним стажем',
-        rating: 4.8,
-        isBooked: false,
-        country: 'Россия'
-      },
-      {
-        id: 'demo_slot_2',
-        teacherId: 'teacher2',
-        teacherName: 'Михаил Сидоров',
-        teacherAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-        subject: 'Английский язык',
-        date: dayAfterTomorrow.toISOString().split('T')[0],
-        startTime: '16:00',
-        endTime: '17:00',
-        duration: 60,
-        price: 2000,
-        format: 'online' as const,
-        lessonType: 'regular' as const,
-        experience: 'experienced' as const,
-        grades: ['7', '8', '9', '10', '11'],
-        goals: ['Разговорный английский', 'Подготовка к ЕГЭ'],
-        bio: 'Преподаватель английского языка с опытом работы в международных компаниях',
-        rating: 4.6,
-        isBooked: false,
-        country: 'Россия'
-      },
-      {
-        id: 'demo_slot_3',
-        teacherId: 'teacher3',
-        teacherName: 'Елена Козлова',
-        teacherAvatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
-        subject: 'Русский язык',
-        date: nextWeek.toISOString().split('T')[0],
-        startTime: '12:00',
-        endTime: '13:30',
-        duration: 90,
-        price: 4500,
-        format: 'offline' as const,
-        lessonType: 'regular' as const,
-        experience: 'professional' as const,
-        grades: ['10', '11'],
-        goals: ['Подготовка к ЕГЭ', 'Сочинения'],
-        bio: 'Филолог с 15-летним опытом преподавания',
-        rating: 4.9,
-        isBooked: false,
-        country: 'Россия',
-        city: 'Москва'
-      }
-    ],
+    timeSlots: [],
     lessons: [],
     chats: [],
-    studentProfiles: {
-      'student1': {
-        id: 'student1',
-        name: 'Алексей Иванов',
-        email: 'alex.ivanov@example.com',
-        avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face',
-        grade: '10',
-        subjects: ['Математика', 'Физика'],
-        goals: ['Подготовка к ЕГЭ', 'Олимпиады'],
-        experience: 'experienced'
-      },
-      'student2': {
-        id: 'student2',
-        name: 'Мария Сидорова',
-        email: 'maria.sidorova@example.com',
-        avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face',
-        grade: '9',
-        subjects: ['Английский язык', 'История'],
-        goals: ['Разговорный английский', 'Подготовка к ЕГЭ'],
-        experience: 'beginner'
-      }
-    }
+    studentProfiles: {}
   };
 };
 
