@@ -17,7 +17,8 @@ const ChatList: React.FC = () => {
     deleteChat,
     markChatAsRead,
     clearChatMessages,
-    archiveChat
+    archiveChat,
+    getOrCreateChat
   } = useData();
   const { user } = useAuth();
   
@@ -194,6 +195,24 @@ const ChatList: React.FC = () => {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Мои чаты</h1>
         <p className="text-gray-600">Общайтесь с преподавателями и учениками</p>
+        
+        {/* Кнопка для создания тестового чата */}
+        <button
+          onClick={() => {
+            if (user) {
+              const testChatId = getOrCreateChat(
+                user.id,
+                'test-teacher-id',
+                user.name,
+                'Тестовый преподаватель'
+              );
+              console.log('DEBUG: Created test chat with ID:', testChatId);
+            }
+          }}
+          className="mt-4 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+        >
+          Создать тестовый чат
+        </button>
       </div>
 
       <div className="bg-white rounded-lg shadow-lg overflow-hidden" style={{ height: 'calc(100vh - 200px)' }}>
