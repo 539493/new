@@ -117,11 +117,11 @@ const StudentHome: React.FC = () => {
   };
 
   const clearFilters = () => {
-    console.log('Clearing filters and hiding all slots');
+    console.log('Clearing filters and loading all available slots');
     setFilters({});
     setSelectedDate(null);
     setSelectedTimeRange(null);
-    setFilteredSlots([]);
+    loadAvailableSlots(); // Загружаем все доступные слоты вместо пустого массива
     setShowFilters(false);
   };
 
@@ -231,17 +231,29 @@ const StudentHome: React.FC = () => {
 
   // Фильтруем преподавателей по доступным слотам
   const filteredTeachers = React.useMemo(() => {
+    console.log('DEBUG: filteredTeachers recalculating', {
+      filtersCount: Object.keys(filters).length,
+      selectedDate,
+      selectedTimeRange,
+      filteredSlotsCount: filteredSlots.length,
+      allTeachersCount: allTeachers.length
+    });
+
     if (Object.keys(filters).length === 0 && !selectedDate && !selectedTimeRange) {
       // Если фильтры не применены, показываем всех преподавателей
+      console.log('DEBUG: No filters applied, showing all teachers');
       return allTeachers;
     }
 
     // Если есть фильтры, показываем только тех преподавателей, у которых есть подходящие слоты
     const teachersWithSlots = allTeachers.filter(teacher => {
       const teacherSlots = filteredSlots.filter(slot => slot.teacherId === teacher.id);
-      return teacherSlots.length > 0;
+      const hasSlots = teacherSlots.length > 0;
+      console.log(`DEBUG: Teacher ${teacher.name} (${teacher.id}) has ${teacherSlots.length} slots: ${hasSlots}`);
+      return hasSlots;
     });
 
+    console.log(`DEBUG: Filtered teachers result: ${teachersWithSlots.length} out of ${allTeachers.length}`);
     return teachersWithSlots;
   }, [allTeachers, filters, selectedDate, selectedTimeRange, filteredSlots]);
 
