@@ -58,6 +58,7 @@ export interface TimeSlot {
   grades: string[];
   rating?: number;
   bookedStudentId?: string;
+  lessonId?: string;
 }
 
 export interface Lesson {

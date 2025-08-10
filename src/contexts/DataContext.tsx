@@ -524,6 +524,12 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           lessonType: newSlot.lessonType,
         };
         setLessons(prev => [...prev, newLesson]);
+        
+        // Обновляем слот, добавляя lessonId
+        setTimeSlots(prev => 
+          prev.map(s => s.id === newSlot.id ? { ...s, lessonId: newLesson.id } : s)
+        );
+        
         getOrCreateChat(studentId, newSlot.teacherId, studentName, newSlot.teacherName);
         // --- СТАТИСТИКА ---
         if (user && user.role === 'teacher') {
@@ -560,11 +566,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
     console.log('Booking lesson for slot:', slot);
 
-    // Отмечаем слот как забронированный и сохраняем bookedStudentId
-    setTimeSlots(prev => 
-      prev.map(s => s.id === slotId ? { ...s, isBooked: true, bookedStudentId: studentId } : s)
-    );
-
     // Создаем урок
     const newLesson: Lesson = {
       id: `lesson_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -583,6 +584,16 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       lessonType: slot.lessonType,
       comment: comment || '',
     };
+
+    // Отмечаем слот как забронированный и сохраняем bookedStudentId и lessonId
+    setTimeSlots(prev => 
+      prev.map(s => s.id === slotId ? { 
+        ...s, 
+        isBooked: true, 
+        bookedStudentId: studentId,
+        lessonId: newLesson.id 
+      } : s)
+    );
 
     setLessons(prev => [...prev, newLesson]);
 
@@ -604,11 +615,14 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
     console.log('Cancelling lesson:', lesson);
 
-    // Находим соответствующий слот
+    // Находим соответствующий слот по lessonId или по совпадению параметров
     const slot = timeSlots.find(s => 
-      s.teacherId === lesson.teacherId && 
-      s.date === lesson.date && 
-      s.startTime === lesson.startTime
+      s.lessonId === lessonId || (
+        s.teacherId === lesson.teacherId && 
+        s.date === lesson.date && 
+        s.startTime === lesson.startTime &&
+        s.isBooked
+      )
     );
 
     // Удаляем урок
@@ -617,7 +631,12 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     // Освобождаем слот
     if (slot) {
       setTimeSlots(prev => 
-        prev.map(s => s.id === slot.id ? { ...s, isBooked: false } : s)
+        prev.map(s => s.id === slot.id ? { 
+          ...s, 
+          isBooked: false, 
+          bookedStudentId: undefined,
+          lessonId: undefined 
+        } : s)
       );
 
       // Отправляем информацию об отмене на сервер
@@ -658,7 +677,12 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         s.teacherId === lesson.teacherId && 
         s.date === lesson.date && 
         s.startTime === lesson.startTime 
-          ? { ...s, isBooked: false } 
+          ? { 
+              ...s, 
+              isBooked: false, 
+              bookedStudentId: undefined,
+              lessonId: undefined 
+            } 
           : s
       )
     );
@@ -752,6 +776,29 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
   const completeLesson = (lessonId: string) => {
     console.log('Вызвана completeLesson для урока', lessonId, 'isConnected:', isConnected, 'socketRef:', !!socketRef.current);
+    
+    // Находим урок
+    const lesson = lessons.find(l => l.id === lessonId);
+    if (!lesson) return;
+
+    // Обновляем статус урока на 'completed'
+    setLessons(prev => 
+      prev.map(l => l.id === lessonId ? { ...l, status: 'completed' } : l)
+    );
+
+    // Находим соответствующий слот и освобождаем его
+    const slot = timeSlots.find(s => s.lessonId === lessonId);
+    if (slot) {
+      setTimeSlots(prev => 
+        prev.map(s => s.id === slot.id ? { 
+          ...s, 
+          isBooked: false, 
+          bookedStudentId: undefined,
+          lessonId: undefined 
+        } : s)
+      );
+    }
+
     if (socketRef.current && isConnected) {
       socketRef.current.emit('lessonCompleted', { lessonId });
       console.log('Sent lessonCompleted to server', lessonId);
