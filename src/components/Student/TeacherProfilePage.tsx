@@ -100,12 +100,12 @@ const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClos
         </div>
 
         {/* Content */}
-        <div className="p-8">
+        <div className="p-6">
           {/* Hero Section */}
-          <div className="text-center mb-12">
-            <div className="flex justify-center mb-6">
+          <div className="text-center mb-8">
+            <div className="flex justify-center mb-4">
               <div className="relative">
-                <div className="w-40 h-40 rounded-full bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 p-1">
+                <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 p-1">
                   {profile?.avatar ? (
                     <img 
                       src={profile.avatar} 
@@ -114,92 +114,92 @@ const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClos
                     />
                   ) : (
                     <div className="w-full h-full bg-white rounded-full flex items-center justify-center">
-                      <UserIcon className="h-20 w-20 text-gray-400" />
+                      <UserIcon className="h-16 w-16 text-gray-400" />
                     </div>
                   )}
                 </div>
-                <div className="absolute -bottom-2 -right-2 bg-green-500 rounded-full p-2">
-                  <CheckCircle className="w-6 h-6 text-white" />
+                <div className="absolute -bottom-1 -right-1 bg-green-500 rounded-full p-1.5">
+                  <CheckCircle className="w-4 h-4 text-white" />
                 </div>
               </div>
             </div>
             
-            <h1 className="text-4xl font-bold text-gray-900 mb-3">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
               {profile?.name || teacher.name || 'Репетитор'}
             </h1>
             
-            <div className="flex items-center justify-center space-x-6 text-gray-600 mb-6">
+            <div className="flex items-center justify-center space-x-4 text-gray-600 mb-4">
               {profile?.rating && (
-                <div className="flex items-center space-x-2 bg-yellow-100 px-4 py-2 rounded-full">
-                  <Star className="h-5 w-5 text-yellow-500 fill-current" />
-                  <span className="font-semibold text-yellow-700">{profile.rating}</span>
+                <div className="flex items-center space-x-2 bg-yellow-100 px-3 py-1.5 rounded-full">
+                  <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                  <span className="font-semibold text-yellow-700 text-sm">{profile.rating}</span>
                 </div>
               )}
               {profile?.city && (
-                <div className="flex items-center space-x-2 bg-blue-100 px-4 py-2 rounded-full">
-                  <MapPin className="h-4 w-4 text-blue-600" />
-                  <span className="font-medium text-blue-700">{profile.city}</span>
+                <div className="flex items-center space-x-2 bg-blue-100 px-3 py-1.5 rounded-full">
+                  <MapPin className="h-3 w-3 text-blue-600" />
+                  <span className="font-medium text-blue-700 text-sm">{profile.city}</span>
                 </div>
               )}
               {profile?.experience && (
-                <div className="flex items-center space-x-2 bg-purple-100 px-4 py-2 rounded-full">
-                  <Award className="h-4 w-4 text-purple-600" />
-                  <span className="font-medium text-purple-700">{getExperienceLabel(profile.experience)}</span>
+                <div className="flex items-center space-x-2 bg-purple-100 px-3 py-1.5 rounded-full">
+                  <Award className="h-3 w-3 text-purple-600" />
+                  <span className="font-medium text-purple-700 text-sm">{getExperienceLabel(profile.experience)}</span>
                 </div>
               )}
             </div>
 
             {/* Main CTA Button */}
-            <div className="mb-8">
+            <div className="mb-6">
               <button
                 onClick={() => onBookLesson(teacher.id)}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-2xl font-bold text-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center space-x-3 mx-auto"
+                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold text-base hover:from-blue-700 hover:to-purple-700 transition-all duration-200 transform hover:scale-102 shadow-md hover:shadow-lg flex items-center justify-center space-x-2 mx-auto"
               >
-                <BookOpen className="h-6 w-6" />
+                <BookOpen className="h-5 w-5" />
                 <span>Записаться на урок</span>
               </button>
             </div>
           </div>
 
           {/* Quick Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 text-center border border-blue-200">
-              <div className="text-3xl font-bold text-blue-600 mb-2">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-6">
+            <div className="bg-white rounded-lg p-2 text-center border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 group">
+              <div className="text-xl font-bold text-blue-600 mb-0.5 group-hover:text-blue-700 transition-colors">
                 {profile?.lessonsCount || 0}
               </div>
-              <div className="text-sm text-blue-700 font-medium">Проведено уроков</div>
+              <div className="text-xs text-gray-500 font-medium">Проведено уроков</div>
             </div>
-            <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-6 text-center border border-green-200">
-              <div className="text-3xl font-bold text-green-600 mb-2">
+            <div className="bg-white rounded-lg p-2 text-center border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 group">
+              <div className="text-xl font-bold text-emerald-600 mb-0.5 group-hover:text-emerald-700 transition-colors">
                 {profile?.students?.length || 0}
               </div>
-              <div className="text-sm text-green-700 font-medium">Учеников</div>
+              <div className="text-xs text-gray-500 font-medium">Учеников</div>
             </div>
-            <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-6 text-center border border-purple-200">
-              <div className="text-3xl font-bold text-purple-600 mb-2">
+            <div className="bg-white rounded-lg p-2 text-center border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 group">
+              <div className="text-xl font-bold text-purple-600 mb-0.5 group-hover:text-purple-700 transition-colors">
                 {profile?.rating || 0}
               </div>
-              <div className="text-sm text-purple-700 font-medium">Рейтинг</div>
+              <div className="text-xs text-gray-500 font-medium">Рейтинг</div>
             </div>
-            <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-2xl p-6 text-center border border-orange-200">
-              <div className="text-3xl font-bold text-orange-600 mb-2">
+            <div className="bg-white rounded-lg p-2 text-center border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 group">
+              <div className="text-xl font-bold text-orange-600 mb-0.5 group-hover:text-orange-700 transition-colors">
                 {profile?.hourlyRate || 0}
               </div>
-              <div className="text-sm text-orange-700 font-medium">₽/час</div>
+              <div className="text-xs text-gray-500 font-medium">₽/час</div>
             </div>
           </div>
 
           {/* About Section */}
           {profile?.bio && (
-            <div className="mb-12">
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                  <GraduationCap className="w-4 h-4 text-white" />
+            <div className="mb-8">
+              <div className="flex items-center space-x-2 mb-4">
+                <div className="w-6 h-6 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                  <GraduationCap className="w-3 h-3 text-white" />
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900">О преподавателе</h2>
+                <h2 className="text-xl font-bold text-gray-900">О преподавателе</h2>
               </div>
-              <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-2xl p-8 border border-gray-200">
-                <p className="text-gray-700 leading-relaxed text-lg whitespace-pre-line">
+              <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl p-6 border border-gray-200">
+                <p className="text-gray-700 leading-relaxed text-base whitespace-pre-line">
                   {profile.bio}
                 </p>
               </div>
@@ -207,20 +207,20 @@ const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClos
           )}
 
           {/* Subjects and Grades */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             {profile?.subjects && profile.subjects.length > 0 && (
               <div>
-                <div className="flex items-center space-x-3 mb-6">
-                  <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center">
-                    <BookOpen className="w-4 h-4 text-white" />
+                <div className="flex items-center space-x-2 mb-4">
+                  <div className="w-6 h-6 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center">
+                    <BookOpen className="w-3 h-3 text-white" />
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-900">Предметы</h2>
+                  <h2 className="text-xl font-bold text-gray-900">Предметы</h2>
                 </div>
-                <div className="flex flex-wrap gap-3">
+                <div className="flex flex-wrap gap-2">
                   {profile.subjects.map((subject, index) => (
                     <span
                       key={index}
-                      className="bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 px-4 py-2 rounded-full text-sm font-semibold border border-green-200 hover:from-green-200 hover:to-emerald-200 transition-all duration-200"
+                      className="bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 px-3 py-1.5 rounded-full text-xs font-semibold border border-green-200 hover:from-green-200 hover:to-emerald-200 transition-all duration-200"
                     >
                       {subject}
                     </span>
@@ -231,17 +231,17 @@ const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClos
 
             {profile?.grades && profile.grades.length > 0 && (
               <div>
-                <div className="flex items-center space-x-3 mb-6">
-                  <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-                    <Users className="w-4 h-4 text-white" />
+                <div className="flex items-center space-x-2 mb-4">
+                  <div className="w-6 h-6 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                    <Users className="w-3 h-3 text-white" />
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-900">Классы</h2>
+                  <h2 className="text-xl font-bold text-gray-900">Классы</h2>
                 </div>
-                <div className="flex flex-wrap gap-3">
+                <div className="flex flex-wrap gap-2">
                   {profile.grades.map((grade, index) => (
                     <span
                       key={index}
-                      className="bg-gradient-to-r from-purple-100 to-pink-100 text-purple-800 px-4 py-2 rounded-full text-sm font-semibold border border-purple-200 hover:from-purple-200 hover:to-pink-200 transition-all duration-200"
+                      className="bg-gradient-to-r from-purple-100 to-pink-100 text-purple-800 px-3 py-1.5 rounded-full text-xs font-semibold border border-purple-200 hover:from-purple-200 hover:to-pink-200 transition-all duration-200"
                     >
                       {grade}
                     </span>
