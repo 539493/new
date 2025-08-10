@@ -618,8 +618,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     // Находим соответствующий слот по lessonId или по совпадению параметров
     const slot = timeSlots.find(s => 
       s.lessonId === lessonId || (
-        s.teacherId === lesson.teacherId && 
-        s.date === lesson.date && 
+      s.teacherId === lesson.teacherId && 
+      s.date === lesson.date && 
         s.startTime === lesson.startTime &&
         s.isBooked
       )

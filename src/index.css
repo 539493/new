@@ -2,6 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Скрытие скроллбара для мобильной навигации */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Safari and Chrome */
+}
+
 /* Кастомные стили для календаря */
 .custom-calendar {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;

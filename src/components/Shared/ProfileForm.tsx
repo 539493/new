@@ -449,7 +449,7 @@ const ProfileForm: React.FC = () => {
       <Modal open={editMode} onClose={() => setEditMode(false)}>
         <div className="w-[720px] max-w-full max-h-[80vh] overflow-y-auto">
           <div className="space-y-8 p-4">
-            {/* Avatar */}
+          {/* Avatar */}
               <div className="flex items-center gap-8">
                 <div className="h-20 w-20 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center overflow-hidden">
               {(user.role === 'student' ? studentProfile.avatar : teacherProfile.avatar) ? (
@@ -778,7 +778,7 @@ const ProfileForm: React.FC = () => {
             </button>
           </div>
         </div>
-        </div>
+      </div>
       </Modal>
     </div>
   );
