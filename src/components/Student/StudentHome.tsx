@@ -108,7 +108,8 @@ const StudentHome: React.FC = () => {
       
       console.log('Filter results:', results.length);
       setFilteredSlots(results);
-      setShowFilters(false);
+      // Убираем автоматическое скрытие фильтров - панель остается открытой
+      // setShowFilters(false);
     } catch (error) {
       console.error('Error applying filters:', error);
     } finally {
@@ -122,7 +123,8 @@ const StudentHome: React.FC = () => {
     setSelectedDate(null);
     setSelectedTimeRange(null);
     loadAvailableSlots(); // Загружаем все доступные слоты вместо пустого массива
-    setShowFilters(false);
+    // Убираем автоматическое скрытие фильтров - панель остается открытой
+    // setShowFilters(false);
   };
 
   const refreshSlots = () => {
@@ -403,10 +405,19 @@ const StudentHome: React.FC = () => {
           </div>
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center space-x-2 px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            className={`flex items-center space-x-2 px-6 py-3 border rounded-lg transition-colors ${
+              (Object.keys(filters).length > 0 || selectedDate || selectedTimeRange)
+                ? 'border-blue-500 bg-blue-50 text-blue-700 hover:bg-blue-100'
+                : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+            }`}
           >
             <Filter className="h-5 w-5" />
             <span>Фильтры</span>
+            {(Object.keys(filters).length > 0 || selectedDate || selectedTimeRange) && (
+              <span className="ml-1 bg-blue-500 text-white text-xs rounded-full px-2 py-0.5">
+                {(Object.keys(filters).length + (selectedDate ? 1 : 0) + (selectedTimeRange ? 1 : 0))}
+              </span>
+            )}
           </button>
           <button
             onClick={applyFilters}
@@ -428,6 +439,18 @@ const StudentHome: React.FC = () => {
         {/* Filter Panel */}
         {showFilters && (
           <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-semibold text-gray-900">Фильтры поиска</h3>
+              <button
+                onClick={() => setShowFilters(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors p-1"
+                title="Закрыть фильтры"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Класс</label>
