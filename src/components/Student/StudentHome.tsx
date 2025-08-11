@@ -18,6 +18,28 @@ const StudentHome: React.FC = () => {
   const { getFilteredSlots, bookLesson, timeSlots, isConnected } = useData();
   const { user } = useAuth();
   
+  // CSS анимация для результатов поиска
+  React.useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    `;
+    document.head.appendChild(style);
+    
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+  
   const [filters, setFilters] = useState<FilterOptions>({});
   const [showFilters, setShowFilters] = useState(false);
   const [filteredSlots, setFilteredSlots] = useState<TimeSlot[]>([]);
@@ -108,6 +130,18 @@ const StudentHome: React.FC = () => {
       
       console.log('Filter results:', results.length);
       setFilteredSlots(results);
+      
+      // Автоматическая прокрутка к результатам поиска
+      setTimeout(() => {
+        const teachersSection = document.querySelector('[data-section="teachers"]');
+        if (teachersSection) {
+          teachersSection.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start' 
+          });
+        }
+      }, 100);
+      
       // Убираем автоматическое скрытие фильтров - панель остается открытой
       // setShowFilters(false);
     } catch (error) {
@@ -580,35 +614,52 @@ const StudentHome: React.FC = () => {
       </div>
 
       {/* Преподаватели в виде карточек */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {filteredTeachers.length === 0 ? (
-          <div className="col-span-full text-center py-12">
-            <div className="text-gray-400 text-lg mb-2">
-              {Object.keys(filters).length > 0 || selectedDate || selectedTimeRange 
-                ? "Нет преподавателей подходящих под фильтры" 
-                : "Нет доступных преподавателей"}
-            </div>
-            <p className="text-gray-500">
-              {Object.keys(filters).length > 0 || selectedDate || selectedTimeRange 
-                ? "Попробуйте изменить фильтры или воспользуйтесь овербукингом"
-                : "Попробуйте воспользоваться овербукингом"}
-            </p>
+      <div className="mb-8" data-section="teachers">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-gray-900">Найденные преподаватели</h2>
+          <div className="flex items-center space-x-2 text-sm text-gray-600">
+            <span>Найдено: {filteredTeachers.length}</span>
+            {(Object.keys(filters).length > 0 || selectedDate || selectedTimeRange) && (
+              <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">
+                Фильтры применены
+              </span>
+            )}
           </div>
-        ) : (
-          filteredTeachers.map(teacher => {
-            const profile = teacher.profile;
-            const teacherSlots = filteredSlots.filter(slot => slot.teacherId === teacher.id);
-            const availableSlots = teacherSlots.filter(slot => !slot.isBooked);
-            const hasAvailableSlots = availableSlots.length > 0;
-            const minPrice = teacherSlots.length > 0 ? Math.min(...teacherSlots.map(slot => slot.price)) : profile?.hourlyRate || 0;
-            const maxPrice = teacherSlots.length > 0 ? Math.max(...teacherSlots.map(slot => slot.price)) : profile?.hourlyRate || 0;
-            
-            return (
-              <div 
-                key={teacher.id} 
-                className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer max-w-sm"
-                onClick={() => handleTeacherClick(teacher)}
-              >
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {filteredTeachers.length === 0 ? (
+            <div className="col-span-full text-center py-12">
+              <div className="text-gray-400 text-lg mb-2">
+                {Object.keys(filters).length > 0 || selectedDate || selectedTimeRange 
+                  ? "Нет преподавателей подходящих под фильтры" 
+                  : "Нет доступных преподавателей"}
+              </div>
+              <p className="text-gray-500">
+                {Object.keys(filters).length > 0 || selectedDate || selectedTimeRange 
+                  ? "Попробуйте изменить фильтры или воспользуйтесь овербукингом"
+                  : "Попробуйте воспользоваться овербукингом"}
+              </p>
+            </div>
+          ) : (
+            filteredTeachers.map((teacher, index) => {
+              const profile = teacher.profile;
+              const teacherSlots = filteredSlots.filter(slot => slot.teacherId === teacher.id);
+              const availableSlots = teacherSlots.filter(slot => !slot.isBooked);
+              const hasAvailableSlots = availableSlots.length > 0;
+              const minPrice = teacherSlots.length > 0 ? Math.min(...teacherSlots.map(slot => slot.price)) : profile?.hourlyRate || 0;
+              const maxPrice = teacherSlots.length > 0 ? Math.max(...teacherSlots.map(slot => slot.price)) : profile?.hourlyRate || 0;
+              
+              return (
+                <div 
+                  key={teacher.id} 
+                  className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300 transform hover:scale-105 cursor-pointer max-w-sm"
+                  style={{
+                    animationDelay: `${index * 50}ms`,
+                    animation: 'fadeInUp 0.5s ease-out forwards'
+                  }}
+                  onClick={() => handleTeacherClick(teacher)}
+                >
                 {/* Изображение */}
                 <div className="aspect-square bg-gradient-to-br from-blue-400 to-indigo-500 rounded-t-lg flex items-center justify-center">
                   {profile?.avatar ? (
@@ -696,8 +747,8 @@ const StudentHome: React.FC = () => {
                 </div>
               </div>
             );
-          })
-        )}
+          })}
+        </div>
       </div>
 
       {/* Overbooking Modal */}
