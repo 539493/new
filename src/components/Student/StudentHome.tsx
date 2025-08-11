@@ -107,6 +107,7 @@ const StudentHome: React.FC = () => {
   };
 
   const applyFilters = () => {
+    console.log('=== ФУНКЦИЯ APPLYFILTERS ВЫЗВАНА ===');
     console.log('Applying filters:', filters);
     setLoading(true);
     
@@ -143,6 +144,7 @@ const StudentHome: React.FC = () => {
       }, 100);
       
       // Автоматически закрываем панель фильтров после применения
+      console.log('Закрываем панель фильтров автоматически');
       setShowFilters(false);
     } catch (error) {
       console.error('Error applying filters:', error);
