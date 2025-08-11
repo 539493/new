@@ -142,8 +142,8 @@ const StudentHome: React.FC = () => {
         }
       }, 100);
       
-      // Убираем автоматическое скрытие фильтров - панель остается открытой
-      // setShowFilters(false);
+      // Автоматически закрываем панель фильтров после применения
+      setShowFilters(false);
     } catch (error) {
       console.error('Error applying filters:', error);
     } finally {
@@ -157,8 +157,8 @@ const StudentHome: React.FC = () => {
     setSelectedDate(null);
     setSelectedTimeRange(null);
     loadAvailableSlots(); // Загружаем все доступные слоты вместо пустого массива
-    // Убираем автоматическое скрытие фильтров - панель остается открытой
-    // setShowFilters(false);
+    // Автоматически закрываем панель фильтров после сброса
+    setShowFilters(false);
   };
 
   const refreshSlots = () => {
