@@ -145,7 +145,10 @@ const StudentHome: React.FC = () => {
       
       // Автоматически закрываем панель фильтров после применения
       console.log('Закрываем панель фильтров автоматически');
-      setShowFilters(false);
+      setTimeout(() => {
+        setShowFilters(false);
+        console.log('Панель фильтров закрыта');
+      }, 100);
     } catch (error) {
       console.error('Error applying filters:', error);
     } finally {
