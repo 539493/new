@@ -660,94 +660,95 @@ const StudentHome: React.FC = () => {
                   }}
                   onClick={() => handleTeacherClick(teacher)}
                 >
-                {/* Изображение */}
-                <div className="aspect-square bg-gradient-to-br from-blue-400 to-indigo-500 rounded-t-lg flex items-center justify-center">
-                  {profile?.avatar ? (
-                    <img 
-                      src={profile.avatar} 
-                      alt={teacher.name} 
-                      className="w-full h-full object-cover rounded-t-lg"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-blue-400 to-indigo-500 rounded-t-lg flex items-center justify-center">
-                      <UserIcon className="h-12 w-12 text-white" />
-                    </div>
-                  )}
-                </div>
-                
-                {/* Информация */}
-                <div className="p-3">
-                  <div className="flex items-start justify-between mb-2">
-                    <h3 className="font-semibold text-gray-900 text-xs leading-tight">
-                      {profile?.name || teacher.name || 'Репетитор'}
-                    </h3>
-                    <div className="flex items-center space-x-1">
-                      <button className="text-gray-400 hover:text-red-500 transition-colors">
-                        <Heart className="h-3 w-3" />
-                      </button>
-                      <button className="text-gray-400 hover:text-gray-600 transition-colors">
-                        <MoreHorizontal className="h-3 w-3" />
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <div className="text-xs text-gray-600 mb-2">
-                    {profile?.subjects?.slice(0, 2).join(', ')}...
-                  </div>
-                  
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-medium text-gray-900">
-                      от {minPrice} ₽
-                    </span>
-                    {profile?.rating && (
-                      <div className="flex items-center space-x-1">
-                        <Star className="h-2 w-2 text-yellow-400 fill-current" />
-                        <span className="text-xs text-gray-600">{profile.rating}</span>
+                  {/* Изображение */}
+                  <div className="aspect-square bg-gradient-to-br from-blue-400 to-indigo-500 rounded-t-lg flex items-center justify-center">
+                    {profile?.avatar ? (
+                      <img 
+                        src={profile.avatar} 
+                        alt={teacher.name} 
+                        className="w-full h-full object-cover rounded-t-lg"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-blue-400 to-indigo-500 rounded-t-lg flex items-center justify-center">
+                        <UserIcon className="h-12 w-12 text-white" />
                       </div>
                     )}
                   </div>
                   
-                  <div className="flex items-center text-xs text-gray-500 mb-2">
-                    <MapPin className="h-2 w-2 mr-1" />
-                    {profile?.city || 'Онлайн'}
-                  </div>
-                  
-                  {/* Индикатор статуса преподавателя */}
-                  <div className="flex items-center text-xs text-gray-500 mb-2">
-                    <div className={`w-2 h-2 rounded-full mr-1 ${isConnected ? 'bg-green-500' : 'bg-gray-400'}`}></div>
-                    <span className="text-xs text-gray-500">
-                      {isConnected ? 'Онлайн' : 'Слоты доступны'}
-                    </span>
-                  </div>
-                  
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation(); // Предотвращаем всплытие события
-                      if (hasAvailableSlots) {
-                        // Находим первый доступный слот для этого преподавателя
-                        const availableSlot = availableSlots[0];
-                        if (availableSlot && user) {
-                          console.log('Opening booking modal for slot:', availableSlot.id, 'for teacher:', teacher.id);
-                          setSelectedBookingSlot(availableSlot);
-                          setShowBookingModal(true);
+                  {/* Информация */}
+                  <div className="p-3">
+                    <div className="flex items-start justify-between mb-2">
+                      <h3 className="font-semibold text-gray-900 text-xs leading-tight">
+                        {profile?.name || teacher.name || 'Репетитор'}
+                      </h3>
+                      <div className="flex items-center space-x-1">
+                        <button className="text-gray-400 hover:text-red-500 transition-colors">
+                          <Heart className="h-3 w-3" />
+                        </button>
+                        <button className="text-gray-400 hover:text-gray-600 transition-colors">
+                          <MoreHorizontal className="h-3 w-3" />
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div className="text-xs text-gray-600 mb-2">
+                      {profile?.subjects?.slice(0, 2).join(', ')}...
+                    </div>
+                    
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-medium text-gray-900">
+                        от {minPrice} ₽
+                      </span>
+                      {profile?.rating && (
+                        <div className="flex items-center space-x-1">
+                          <Star className="h-2 w-2 text-yellow-400 fill-current" />
+                          <span className="text-xs text-gray-600">{profile.rating}</span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="flex items-center text-xs text-gray-500 mb-2">
+                      <MapPin className="h-2 w-2 mr-1" />
+                      {profile?.city || 'Онлайн'}
+                    </div>
+                    
+                    {/* Индикатор статуса преподавателя */}
+                    <div className="flex items-center text-xs text-gray-500 mb-2">
+                      <div className={`w-2 h-2 rounded-full mr-1 ${isConnected ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                      <span className="text-xs text-gray-500">
+                        {isConnected ? 'Онлайн' : 'Слоты доступны'}
+                      </span>
+                    </div>
+                    
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation(); // Предотвращаем всплытие события
+                        if (hasAvailableSlots) {
+                          // Находим первый доступный слот для этого преподавателя
+                          const availableSlot = availableSlots[0];
+                          if (availableSlot && user) {
+                            console.log('Opening booking modal for slot:', availableSlot.id, 'for teacher:', teacher.id);
+                            setSelectedBookingSlot(availableSlot);
+                            setShowBookingModal(true);
+                          }
+                        } else {
+                          // Если нет доступных слотов, открываем профиль преподавателя
+                          handleTeacherClick(teacher);
                         }
-                      } else {
-                        // Если нет доступных слотов, открываем профиль преподавателя
-                        handleTeacherClick(teacher);
-                      }
-                    }}
-                    className={`w-full py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                      hasAvailableSlots 
-                        ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                        : 'bg-green-600 text-white hover:bg-green-700'
-                    }`}
-                  >
-                    {hasAvailableSlots ? 'Забронировать' : 'Календарь'}
-                  </button>
+                      }}
+                      className={`w-full py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                        hasAvailableSlots 
+                          ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                          : 'bg-green-600 text-white hover:bg-green-700'
+                      }`}
+                    >
+                      {hasAvailableSlots ? 'Забронировать' : 'Календарь'}
+                    </button>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })
+          )}
         </div>
       </div>
 
