@@ -166,11 +166,8 @@ const StudentHome: React.FC = () => {
     setLoading(true);
     
     setTimeout(() => {
-      if (Object.keys(filters).length === 0 && !selectedDate && !selectedTimeRange) {
-        loadAvailableSlots();
-      } else {
-        applyFilters();
-      }
+      // Просто обновляем все доступные слоты
+      loadAvailableSlots();
       setLoading(false);
     }, 500);
   };
@@ -190,12 +187,9 @@ const StudentHome: React.FC = () => {
       console.log('Booking lesson:', selectedBookingSlot.id, 'for user:', user.name, 'with comment:', comment);
       bookLesson(selectedBookingSlot.id, user.id, user.name, comment);
       
+      // После бронирования просто обновляем все доступные слоты
       setTimeout(() => {
-        if (Object.keys(filters).length === 0 && !selectedDate && !selectedTimeRange) {
-          loadAvailableSlots();
-        } else {
-          applyFilters();
-        }
+        loadAvailableSlots();
       }, 100);
     }
   };
@@ -335,12 +329,13 @@ const StudentHome: React.FC = () => {
     }
   }, [timeSlots]);
 
-  // Автоматическое применение фильтров при их изменении
-  React.useEffect(() => {
-    if (Object.keys(filters).length > 0 || selectedDate || selectedTimeRange) {
-      applyFilters();
-    }
-  }, [filters, selectedDate, selectedTimeRange]);
+  // Убираем автоматическое применение фильтров при их изменении
+  // Теперь фильтры применяются только при нажатии кнопки "Применить"
+  // React.useEffect(() => {
+  //   if (Object.keys(filters).length > 0 || selectedDate || selectedTimeRange) {
+  //     applyFilters();
+  //   }
+  // }, [filters, selectedDate, selectedTimeRange]);
 
   React.useEffect(() => {
     console.log('DEBUG: timeSlots у ученика', timeSlots);
