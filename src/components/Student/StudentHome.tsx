@@ -1,44 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, Star, Users, MapPin, BookOpen, RefreshCw, Wifi, WifiOff, Heart, MoreHorizontal, Calendar as CalendarIcon } from 'lucide-react';
-import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
-import { format, parse, startOfWeek, getDay } from 'date-fns';
-import { ru } from 'date-fns/locale';
-import 'react-big-calendar/lib/css/react-big-calendar.css';
+import { Search, Filter, Star, Users, MapPin, BookOpen, RefreshCw, Wifi, WifiOff, Heart, MoreHorizontal, Calendar as CalendarIcon, TrendingUp, Award, Clock, User, BookOpen as BookOpenIcon, MessageCircle, BarChart3, Trophy, Lightbulb } from 'lucide-react';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { FilterOptions, TimeSlot, User } from '../../types';
-import { io, Socket } from 'socket.io-client';
-import { SERVER_URL, WEBSOCKET_URL } from '../../config';
+import { FilterOptions, TimeSlot, User as UserType } from '../../types';
 import TeacherProfilePage from './TeacherProfilePage';
 import StudentCalendar from './StudentCalendar';
 import BookingModal from '../Shared/BookingModal';
-import { User as UserIcon } from 'lucide-react';
+import TeacherSearch from './TeacherSearch';
+import Analytics from '../Shared/Analytics';
+import LessonsList from '../Shared/LessonsList';
+import UserProfile from '../Shared/UserProfile';
+import Achievements from '../Shared/Achievements';
+import Recommendations from '../Shared/Recommendations';
+import QuickActions from '../Shared/QuickActions';
 
 const StudentHome: React.FC = () => {
-  const { getFilteredSlots, bookLesson, timeSlots, isConnected } = useData();
+  const { getFilteredSlots, bookLesson, timeSlots, lessons, isConnected } = useData();
   const { user } = useAuth();
-  
-  // CSS анимация для результатов поиска
-  React.useEffect(() => {
-    const style = document.createElement('style');
-    style.textContent = `
-      @keyframes fadeInUp {
-        from {
-          opacity: 0;
-          transform: translateY(20px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-    `;
-    document.head.appendChild(style);
-    
-    return () => {
-      document.head.removeChild(style);
-    };
-  }, []);
   
   const [filters, setFilters] = useState<FilterOptions>({});
   const [showFilters, setShowFilters] = useState(false);
@@ -60,990 +38,653 @@ const StudentHome: React.FC = () => {
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [selectedBookingSlot, setSelectedBookingSlot] = useState<TimeSlot | null>(null);
   const [showCalendar, setShowCalendar] = useState(false);
-
-  // Новые состояния для календаря в фильтрах
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTimeRange, setSelectedTimeRange] = useState<{ start: string; end: string } | null>(null);
+  const [showTeacherSearch, setShowTeacherSearch] = useState(false);
+  const [selectedTeacher, setSelectedTeacher] = useState<UserType | null>(null);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showLessonsList, setShowLessonsList] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
+  const [showAchievements, setShowAchievements] = useState(false);
+  const [showRecommendations, setShowRecommendations] = useState(false);
 
-  const subjects = ['Математика', 'Русский язык', 'Английский язык'];
+  const subjects = ['Математика', 'Русский язык', 'Английский язык', 'Физика', 'Химия', 'Биология', 'История', 'Литература'];
   const grades = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', 'Студент', 'Взрослый'];
   const goals = ['подготовка к экзаменам', 'помощь с домашним заданием', 'углубленное изучение', 'разговорная практика'];
   const experiences = ['beginner', 'experienced', 'professional'];
   const formats = ['online', 'offline', 'mini-group'];
-  const durations = [45, 60];
-  const locales = { 'ru': ru };
-  const localizer = dateFnsLocalizer({ format, parse, startOfWeek, getDay, locales });
+  const durations = [45, 60, 90, 120];
 
   const { allUsers } = useData();
-  const [serverTeachers, setServerTeachers] = useState<User[]>([]);
+  const [serverTeachers, setServerTeachers] = useState<UserType[]>([]);
 
   // Загружаем преподавателей с сервера при монтировании
   useEffect(() => {
-    fetch(`${SERVER_URL}/api/teachers`)
-      .then(res => res.json())
-      .then(data => setServerTeachers(Array.isArray(data) ? data : []))
-      .catch(() => setServerTeachers([]));
-  }, []);
-
-  const socket = React.useRef<Socket | null>(null);
-  React.useEffect(() => {
-    if (!socket.current) {
-      socket.current = io(WEBSOCKET_URL);
-    }
-  }, []);
+    // В реальном приложении здесь был бы API вызов
+    setServerTeachers(allUsers.filter(u => u.role === 'teacher'));
+  }, [allUsers]);
 
   // Функция для загрузки всех доступных слотов
   const loadAvailableSlots = () => {
     console.log('StudentHome: Loading available slots...');
-    console.log('StudentHome: Total timeSlots in context:', timeSlots.length);
-    
-    // Показываем все незабронированные слоты, независимо от статуса преподавателя
-    const availableSlots = timeSlots.filter(slot => !slot.isBooked);
-    
-    console.log('StudentHome: Available slots to display:', availableSlots.length);
-    setFilteredSlots(availableSlots);
-    
-    return availableSlots;
-  };
-
-  const applyFilters = () => {
-    console.log('=== ФУНКЦИЯ APPLYFILTERS ВЫЗВАНА ===');
-    console.log('Applying filters:', filters);
-    setLoading(true);
-    
-    try {
-      let results = getFilteredSlots(filters);
-      
-      // Дополнительная фильтрация по дате и времени
-      if (selectedDate) {
-        const selectedDateStr = format(selectedDate, 'yyyy-MM-dd');
-        results = results.filter(slot => slot.date === selectedDateStr);
-      }
-      
-      if (selectedTimeRange) {
-        results = results.filter(slot => {
-          const slotHour = parseInt(slot.startTime.split(':')[0]);
-          const startHour = parseInt(selectedTimeRange.start.split(':')[0]);
-          const endHour = parseInt(selectedTimeRange.end.split(':')[0]);
-          return slotHour >= startHour && slotHour < endHour;
-        });
-      }
-      
-      console.log('Filter results:', results.length);
-      setFilteredSlots(results);
-      
-      // Автоматическая прокрутка к результатам поиска
-      setTimeout(() => {
-        const teachersSection = document.querySelector('[data-section="teachers"]');
-        if (teachersSection) {
-          teachersSection.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'start' 
-          });
-        }
-      }, 100);
-      
-      // Автоматически закрываем панель фильтров после применения
-      console.log('Закрываем панель фильтров автоматически');
-      setTimeout(() => {
-        setShowFilters(false);
-        console.log('Панель фильтров закрыта');
-      }, 100);
-    } catch (error) {
-      console.error('Error applying filters:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const clearFilters = () => {
-    console.log('Clearing filters and loading all available slots');
-    setFilters({});
-    setSelectedDate(null);
-    setSelectedTimeRange(null);
-    loadAvailableSlots(); // Загружаем все доступные слоты вместо пустого массива
-    // Панель фильтров остается открытой после сброса
-    // setShowFilters(false);
-  };
-
-  const refreshSlots = () => {
-    console.log('Refreshing slots manually');
     setLoading(true);
     
     setTimeout(() => {
-      // Просто обновляем все доступные слоты
-      loadAvailableSlots();
+      const filtered = getFilteredSlots(filters);
+      setFilteredSlots(filtered);
       setLoading(false);
     }, 500);
   };
 
-  const handleBookSlot = (slotId: string) => {
-    if (user) {
-      const slot = timeSlots.find(s => s.id === slotId);
-      if (slot) {
-        setSelectedBookingSlot(slot);
-        setShowBookingModal(true);
-      }
-    }
+  // Применяем фильтры при их изменении
+  useEffect(() => {
+    loadAvailableSlots();
+  }, [filters]);
+
+  // Обработчик бронирования урока
+  const handleBookLesson = (slot: TimeSlot) => {
+    setSelectedBookingSlot(slot);
+    setShowBookingModal(true);
   };
 
+  // Обработчик подтверждения бронирования
   const handleConfirmBooking = async (comment: string) => {
     if (user && selectedBookingSlot) {
-      console.log('Booking lesson:', selectedBookingSlot.id, 'for user:', user.name, 'with comment:', comment);
-      bookLesson(selectedBookingSlot.id, user.id, user.name, comment);
-      
-      // После бронирования просто обновляем все доступные слоты
-      setTimeout(() => {
+      try {
+        await bookLesson(selectedBookingSlot.id, user.id, user.name, comment);
+        setShowBookingModal(false);
+        setSelectedBookingSlot(null);
+        // Перезагружаем слоты
         loadAvailableSlots();
-      }, 100);
-    }
-  };
-
-  const handleOverbooking = () => {
-    setShowOverbookingModal(false);
-    if (socket.current) {
-      const requestData = {
-        studentId: user?.id,
-        studentName: user?.name,
-        ...overbookingData,
-      };
-      (socket.current as Socket).emit('overbookingRequest', requestData);
-    } else {
-      console.error('Socket not connected');
-    }
-    alert('Заявка на овербукинг отправлена! Мы подберем лучшего преподавателя за 5 часов до занятия.');
-  };
-
-  const getExperienceLabel = (exp: string) => {
-    switch (exp) {
-      case 'beginner': return 'Начинающий';
-      case 'experienced': return 'Опытный';
-      case 'professional': return 'Профессионал';
-      default: return exp;
-    }
-  };
-
-  const getFormatIcon = (format: string): JSX.Element | null => {
-    switch (format) {
-      case 'online': return null;
-      case 'offline': return <MapPin className="h-4 w-4" />;
-      case 'mini-group': return <Users className="h-4 w-4" />;
-      default: return null;
-    }
-  };
-
-  // Собираем всех преподавателей (не только с доступными слотами)
-  const allTeachers: { id: string; name: string; avatar?: string; rating?: number; profile?: any }[] = React.useMemo(() => {
-    // Получаем всех преподавателей из разных источников
-    const teachersFromServer = serverTeachers.map(teacher => ({
-      id: teacher.id,
-      name: teacher.name || teacher.profile?.name || 'Репетитор',
-      avatar: teacher.avatar || teacher.profile?.avatar,
-      rating: teacher.profile?.rating,
-      profile: teacher.profile
-    }));
-
-    const teachersFromUsers = allUsers
-      ?.filter((u: any) => u.role === 'teacher')
-      .map((user: any) => ({
-        id: user.id,
-        name: user.name || user.profile?.name || 'Репетитор',
-        avatar: user.avatar || user.profile?.avatar,
-        rating: user.profile?.rating,
-        profile: user.profile
-      })) || [];
-
-    // Объединяем и убираем дубликаты
-    const allTeachersMap = new Map();
-    [...teachersFromServer, ...teachersFromUsers].forEach(teacher => {
-      if (!allTeachersMap.has(teacher.id)) {
-        allTeachersMap.set(teacher.id, teacher);
+      } catch (error) {
+        console.error('Error booking lesson:', error);
       }
-    });
-
-    return Array.from(allTeachersMap.values());
-  }, [serverTeachers, allUsers]);
-
-  // Фильтруем преподавателей по доступным слотам
-  const filteredTeachers = React.useMemo(() => {
-    console.log('DEBUG: filteredTeachers recalculating', {
-      filtersCount: Object.keys(filters).length,
-      selectedDate,
-      selectedTimeRange,
-      filteredSlotsCount: filteredSlots.length,
-      allTeachersCount: allTeachers.length
-    });
-
-    if (Object.keys(filters).length === 0 && !selectedDate && !selectedTimeRange) {
-      // Если фильтры не применены, показываем всех преподавателей
-      console.log('DEBUG: No filters applied, showing all teachers');
-      return allTeachers;
     }
-
-    // Если есть фильтры, показываем только тех преподавателей, у которых есть подходящие слоты
-    const teachersWithSlots = allTeachers.filter(teacher => {
-      const teacherSlots = filteredSlots.filter(slot => slot.teacherId === teacher.id);
-      const hasSlots = teacherSlots.length > 0;
-      console.log(`DEBUG: Teacher ${teacher.name} (${teacher.id}) has ${teacherSlots.length} slots: ${hasSlots}`);
-      return hasSlots;
-    });
-
-    console.log(`DEBUG: Filtered teachers result: ${teachersWithSlots.length} out of ${allTeachers.length}`);
-    return teachersWithSlots;
-  }, [allTeachers, filters, selectedDate, selectedTimeRange, filteredSlots]);
-
-  function getTeacherProfileById(teacherId: string) {
-    const teacher = serverTeachers.find(t => t.id === teacherId) ||
-      allUsers?.find((u: any) => u.id === teacherId && u.role === 'teacher');
-    const profile = teacher && teacher.profile ? teacher.profile : null;
-    return profile;
-  }
-
-  // Функция для получения пользователя по id
-  function getUserById(userId: string) {
-    try {
-      const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
-      return users.find((u: any) => u.id === userId && u.role === 'teacher') || null;
-    } catch {
-      return null;
-    }
-  }
-
-  const [modalSlot, setModalSlot] = useState<any>(null);
-  const [selectedTeacher, setSelectedTeacher] = useState<any>(null);
-  const [showTeacherModal, setShowTeacherModal] = useState(false);
-  const [showTeacherProfilePage, setShowTeacherProfilePage] = useState(false);
-  const [teacherPosts, setTeacherPosts] = useState<any[]>([]);
-
-  // Автоматическая подгрузка постов преподавателя
-  useEffect(() => {
-    if (!selectedTeacher) return;
-    function updatePosts() {
-      const teacher = getUserById(selectedTeacher.id);
-      setTeacherPosts(teacher?.posts || []);
-    }
-    updatePosts();
-    window.addEventListener('storage', updatePosts);
-    return () => window.removeEventListener('storage', updatePosts);
-  }, [selectedTeacher]);
-
-  // Автоматическое обновление filteredSlots при изменении timeSlots, если фильтры уже применены
-  React.useEffect(() => {
-    if (Object.keys(filters).length > 0 || selectedDate || selectedTimeRange) {
-      applyFilters();
-    }
-  }, [timeSlots]);
-
-  // Убираем автоматическое применение фильтров при их изменении
-  // Теперь фильтры применяются только при нажатии кнопки "Применить"
-  // React.useEffect(() => {
-  //   if (Object.keys(filters).length > 0 || selectedDate || selectedTimeRange) {
-  //     applyFilters();
-  //   }
-  // }, [filters, selectedDate, selectedTimeRange]);
-
-  React.useEffect(() => {
-    console.log('DEBUG: timeSlots у ученика', timeSlots);
-  }, [timeSlots]);
-
-  // Первоначальная загрузка слотов при монтировании компонента
-  React.useEffect(() => {
-    if (timeSlots.length > 0) {
-      loadAvailableSlots();
-    }
-  }, [timeSlots]);
-
-  const handleTeacherClick = (teacher: any) => {
-    console.log('Teacher clicked:', teacher);
-    const teacherUser = getUserById(teacher.id);
-    console.log('Teacher user data:', teacherUser);
-    setSelectedTeacher(teacherUser);
-    setShowTeacherProfilePage(true);
   };
 
-  const handleBookLesson = (teacherId: string) => {
-    // Здесь можно добавить логику для бронирования урока
-    console.log('Booking lesson for teacher:', teacherId);
-    setShowTeacherProfilePage(false);
-    // Можно открыть модальное окно для выбора времени
+  // Обработчик изменения фильтров
+  const handleFilterChange = (key: keyof FilterOptions, value: any) => {
+    setFilters(prev => ({
+      ...prev,
+      [key]: value
+    }));
   };
+
+  // Обработчик сброса фильтров
+  const handleResetFilters = () => {
+    setFilters({});
+    setSelectedDate(null);
+    setSelectedTimeRange(null);
+  };
+
+  // Обработчик выбора преподавателя
+  const handleTeacherSelect = (teacher: UserType) => {
+    setSelectedTeacher(teacher);
+    setShowTeacherSearch(false);
+  };
+
+  // Обработчик бронирования урока у конкретного преподавателя
+  const handleBookLessonWithTeacher = (slot: TimeSlot) => {
+    setSelectedBookingSlot(slot);
+    setShowBookingModal(true);
+  };
+
+  // Получение статистики
+  const getStats = () => {
+    const totalSlots = filteredSlots.length;
+    const onlineSlots = filteredSlots.filter(s => s.format === 'online').length;
+    const offlineSlots = filteredSlots.filter(s => s.format === 'offline').length;
+    const averagePrice = totalSlots > 0 
+      ? Math.round(filteredSlots.reduce((sum, s) => sum + s.price, 0) / totalSlots)
+      : 0;
+
+    return { totalSlots, onlineSlots, offlineSlots, averagePrice };
+  };
+
+  const stats = getStats();
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Рекомендации для вас</h1>
-            <p className="text-gray-600">Выберите подходящий урок или воспользуйтесь овербукингом</p>
+    <div className="space-y-8 animate-fade-in-up">
+      {/* Заголовок и приветствие */}
+      <div className="text-center">
+        <h1 className="text-4xl font-bold text-gray-900 mb-4">
+          Добро пожаловать, {user?.name}! 👋
+        </h1>
+        <p className="text-xl text-gray-600 mb-6">
+          Найдите идеального преподавателя для достижения ваших целей
+        </p>
+        
+        {/* Статус соединения */}
+        <div className="inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-gray-100 text-gray-700">
+          {isConnected ? (
+            <>
+              <Wifi className="h-4 w-4 text-green-500" />
+              <span className="text-sm font-medium">Подключено к серверу</span>
+            </>
+          ) : (
+            <>
+              <WifiOff className="h-4 w-4 text-red-500" />
+              <span className="text-sm font-medium">Работаем офлайн</span>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Статистика */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-3xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-3xl font-bold">{stats.totalSlots}</div>
+              <div className="text-blue-100">Доступных уроков</div>
+            </div>
+            <BookOpen className="h-12 w-12 text-blue-200" />
           </div>
-          <div className="flex items-center space-x-2">
-            {isConnected ? (
-              <div className="flex items-center space-x-1 text-green-600">
-                <Wifi className="h-4 w-4" />
-                <span className="text-sm">Real-time</span>
-              </div>
-            ) : (
-              <div className="flex items-center space-x-1 text-amber-600">
-                <WifiOff className="h-4 w-4" />
-                <span className="text-sm">Offline (кэшированные данные)</span>
-                <button 
-                  onClick={() => window.location.reload()}
-                  className="ml-2 text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded hover:bg-amber-200"
-                >
-                  Переподключиться
-                </button>
-              </div>
-            )}
+        </div>
+
+        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-3xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-3xl font-bold">{stats.onlineSlots}</div>
+              <div className="text-green-100">Онлайн уроков</div>
+            </div>
+            <Wifi className="h-12 w-12 text-green-200" />
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-3xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-3xl font-bold">{stats.offlineSlots}</div>
+              <div className="text-purple-100">Очных уроков</div>
+            </div>
+            <MapPin className="h-12 w-12 text-purple-200" />
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-3xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-3xl font-bold">{stats.averagePrice}₽</div>
+              <div className="text-orange-100">Средняя цена</div>
+            </div>
+            <TrendingUp className="h-12 w-12 text-orange-200" />
           </div>
         </div>
       </div>
 
-      {/* Action Buttons */}
-      <div className="mb-6 flex flex-wrap gap-4">
-        <button
-          onClick={() => setShowOverbookingModal(true)}
-          className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-6 py-3 rounded-lg font-medium hover:from-green-600 hover:to-emerald-600 transition-all duration-200 shadow-lg hover:shadow-xl"
-        >
-          <BookOpen className="h-5 w-5 inline mr-2" />
-          Овербукинг - Автоподбор преподавателя
-        </button>
-        
-        <button
-          onClick={() => setShowCalendar(true)}
-          className="bg-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center space-x-2"
-        >
-          <CalendarIcon className="h-5 w-5" />
-          <span>Календарь свободных слотов</span>
-        </button>
-        
-        <button
-          onClick={refreshSlots}
-          disabled={loading}
-          className="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-600 transition-colors disabled:opacity-50 flex items-center space-x-2"
-        >
-          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-          <span>Обновить</span>
-        </button>
+      {/* Быстрые действия */}
+      <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6">
+        <QuickActions
+          userRole="student"
+          onAction={(action) => {
+            switch (action) {
+              case 'book-lesson':
+                setShowTeacherSearch(true);
+                break;
+              case 'find-teacher':
+                setShowTeacherSearch(true);
+                break;
+              case 'schedule':
+                setShowLessonsList(true);
+                break;
+              case 'messages':
+                // TODO: Открыть чаты
+                console.log('Open messages');
+                break;
+              case 'goals':
+                setShowProfile(true);
+                break;
+              case 'progress':
+                setShowAnalytics(true);
+                break;
+              default:
+                console.log('Action:', action);
+            }
+          }}
+        />
       </div>
 
-      {/* Search and Filter */}
-      <div className="mb-6 space-y-4">
-        <div className="flex space-x-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+      {/* Поиск и фильтры */}
+      <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+          {/* Поиск */}
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
               placeholder="Поиск по предмету или преподавателю..."
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
             />
           </div>
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center space-x-2 px-6 py-3 border rounded-lg transition-colors ${
-              (Object.keys(filters).length > 0 || selectedDate || selectedTimeRange)
-                ? 'border-blue-500 bg-blue-50 text-blue-700 hover:bg-blue-100'
-                : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-            }`}
-          >
-            <Filter className="h-5 w-5" />
-            <span>Фильтры</span>
-            {(Object.keys(filters).length > 0 || selectedDate || selectedTimeRange) && (
-              <span className="ml-1 bg-blue-500 text-white text-xs rounded-full px-2 py-0.5">
-                {(Object.keys(filters).length + (selectedDate ? 1 : 0) + (selectedTimeRange ? 1 : 0))}
-              </span>
-            )}
-          </button>
-          <button
-            onClick={applyFilters}
-            disabled={loading}
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-          >
-            {loading ? 'Применение...' : 'Применить'}
-          </button>
-          {(Object.keys(filters).length > 0 || selectedDate || selectedTimeRange) && (
+
+          {/* Кнопки действий */}
+          <div className="flex items-center space-x-3">
             <button
-              onClick={clearFilters}
-              className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+              onClick={() => setShowRecommendations(!showRecommendations)}
+              className="flex items-center space-x-2 px-4 py-3 bg-teal-100 text-teal-700 rounded-2xl hover:bg-teal-200 transition-all duration-200 hover:scale-105"
             >
-              Сбросить
+              <Lightbulb className="h-5 w-5" />
+              <span>{showRecommendations ? 'Скрыть рекомендации' : 'Рекомендации'}</span>
             </button>
-          )}
+            
+            <button
+              onClick={() => setShowAchievements(!showAchievements)}
+              className="flex items-center space-x-2 px-4 py-3 bg-yellow-100 text-yellow-700 rounded-2xl hover:bg-yellow-200 transition-all duration-200 hover:scale-105"
+            >
+              <Trophy className="h-5 w-5" />
+              <span>{showAchievements ? 'Скрыть достижения' : 'Достижения'}</span>
+            </button>
+            
+            <button
+              onClick={() => setShowProfile(!showProfile)}
+              className="flex items-center space-x-2 px-4 py-3 bg-rose-100 text-rose-700 rounded-2xl hover:bg-rose-200 transition-all duration-200 hover:scale-105"
+            >
+              <User className="h-5 w-5" />
+              <span>{showProfile ? 'Скрыть профиль' : 'Профиль'}</span>
+            </button>
+            
+            <button
+              onClick={() => setShowLessonsList(!showLessonsList)}
+              className="flex items-center space-x-2 px-4 py-3 bg-indigo-100 text-indigo-700 rounded-2xl hover:bg-indigo-200 transition-all duration-200 hover:scale-105"
+            >
+              <BookOpen className="h-5 w-5" />
+              <span>{showLessonsList ? 'Скрыть уроки' : 'Мои уроки'}</span>
+            </button>
+            
+            <button
+              onClick={() => setShowAnalytics(!showAnalytics)}
+              className="flex items-center space-x-2 px-4 py-3 bg-emerald-100 text-emerald-700 rounded-2xl hover:bg-emerald-200 transition-all duration-200 hover:scale-105"
+            >
+              <BarChart3 className="h-5 w-5" />
+              <span>{showAnalytics ? 'Скрыть аналитику' : 'Аналитика'}</span>
+            </button>
+            
+            <button
+              onClick={() => setShowTeacherSearch(!showTeacherSearch)}
+              className="flex items-center space-x-2 px-4 py-3 bg-purple-100 text-purple-700 rounded-2xl hover:bg-purple-200 transition-all duration-200 hover:scale-105"
+            >
+              <Users className="h-5 w-5" />
+              <span>{showTeacherSearch ? 'Скрыть поиск' : 'Найти преподавателя'}</span>
+            </button>
+            
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex items-center space-x-2 px-4 py-3 bg-gray-100 text-gray-700 rounded-2xl hover:bg-gray-200 transition-all duration-200 hover:scale-105"
+            >
+              <Filter className="h-5 w-5" />
+              <span>Фильтры</span>
+            </button>
+            
+            <button
+              onClick={loadAvailableSlots}
+              disabled={loading}
+              className="flex items-center space-x-2 px-4 py-3 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 disabled:opacity-200 hover:scale-105"
+            >
+              <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
+              <span>{loading ? 'Загрузка...' : 'Обновить'}</span>
+            </button>
+          </div>
         </div>
 
-        {/* Filter Panel */}
+        {/* Расширенные фильтры */}
         {showFilters && (
-          <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">Фильтры поиска</h3>
-              <button
-                onClick={() => setShowFilters(false)}
-                className="text-gray-400 hover:text-gray-600 transition-colors p-1"
-                title="Закрыть фильтры"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Класс</label>
-                <select
-                  value={filters.grade || ''}
-                  onChange={(e) => setFilters({ ...filters, grade: e.target.value })}
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Любой</option>
-                  {grades.map(grade => (
-                    <option key={grade} value={grade}>{grade}</option>
-                  ))}
-                </select>
-              </div>
-
+          <div className="mt-6 p-6 bg-gray-50 rounded-2xl space-y-6 animate-slide-in-top">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Предмет */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Предмет</label>
                 <select
                   value={filters.subject || ''}
-                  onChange={(e) => setFilters({ ...filters, subject: e.target.value })}
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  onChange={(e) => handleFilterChange('subject', e.target.value || undefined)}
+                  className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                 >
-                  <option value="">Любой</option>
+                  <option value="">Все предметы</option>
                   {subjects.map(subject => (
                     <option key={subject} value={subject}>{subject}</option>
                   ))}
                 </select>
               </div>
 
+              {/* Класс */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Класс</label>
+                <select
+                  value={filters.grade || ''}
+                  onChange={(e) => handleFilterChange('grade', e.target.value || undefined)}
+                  className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                >
+                  <option value="">Все классы</option>
+                  {grades.map(grade => (
+                    <option key={grade} value={grade}>{grade}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Опыт */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Опыт</label>
                 <select
                   value={filters.experience || ''}
-                  onChange={(e) => setFilters({ ...filters, experience: e.target.value })}
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  onChange={(e) => handleFilterChange('experience', e.target.value || undefined)}
+                  className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                 >
-                  <option value="">Любой</option>
-                  {experiences.map(exp => (
-                    <option key={exp} value={exp}>{getExperienceLabel(exp)}</option>
+                  <option value="">Любой опыт</option>
+                  <option value="beginner">Начинающий</option>
+                  <option value="experienced">Опытный</option>
+                  <option value="professional">Профессионал</option>
+                </select>
+              </div>
+
+              {/* Формат */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Формат</label>
+                <select
+                  value={filters.format || ''}
+                  onChange={(e) => handleFilterChange('format', e.target.value || undefined)}
+                  className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                >
+                  <option value="">Любой формат</option>
+                  <option value="online">Онлайн</option>
+                  <option value="offline">Очно</option>
+                  <option value="mini-group">Мини-группа</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Дополнительные фильтры */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Длительность (мин)</label>
+                <select
+                  value={filters.duration || ''}
+                  onChange={(e) => handleFilterChange('duration', e.target.value ? parseInt(e.target.value) : undefined)}
+                  className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                >
+                  <option value="">Любая</option>
+                  {durations.map(duration => (
+                    <option key={duration} value={duration}>{duration}</option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Формат</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Минимальный рейтинг</label>
                 <select
-                  value={filters.format || ''}
-                  onChange={(e) => setFilters({ ...filters, format: e.target.value })}
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  value={filters.minRating || ''}
+                  onChange={(e) => handleFilterChange('minRating', e.target.value ? parseInt(e.target.value) : undefined)}
+                  className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                 >
                   <option value="">Любой</option>
-                  {formats.map(format => (
-                    <option key={format} value={format}>
-                      {format === 'online' ? 'Онлайн' : format === 'offline' ? 'Оффлайн' : 'Мини-группа'}
-                    </option>
-                  ))}
+                  <option value="4">4+ звезды</option>
+                  <option value="4.5">4.5+ звезды</option>
+                  <option value="5">5 звезд</option>
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Город</label>
+                <input
+                  type="text"
+                  value={filters.city || ''}
+                  onChange={(e) => handleFilterChange('city', e.target.value || undefined)}
+                  placeholder="Введите город"
+                  className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                />
               </div>
             </div>
 
-            {/* Календарь в фильтрах */}
-            <div className="border-t pt-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Выберите дату и время</h3>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Календарь */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Дата</label>
-                  <Calendar
-                    localizer={localizer}
-                    events={[]}
-                    startAccessor="start"
-                    endAccessor="end"
-                    style={{ height: 300 }}
-                    views={['month']}
-                    view="month"
-                    selectable
-                    onSelectSlot={(slotInfo) => {
-                      setSelectedDate(slotInfo.start);
-                    }}
-                    onSelectEvent={() => {}}
-                    className="border border-gray-300 rounded-lg"
-                  />
-                </div>
-
-                {/* Выбор времени */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Время</label>
-                  <div className="space-y-3">
-                    <div>
-                      <label className="block text-xs text-gray-600 mb-1">Начало</label>
-                      <input
-                        type="time"
-                        value={selectedTimeRange?.start || ''}
-                        onChange={(e) => setSelectedTimeRange(prev => ({
-                          start: e.target.value,
-                          end: prev?.end || '23:00'
-                        }))}
-                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs text-gray-600 mb-1">Конец</label>
-                      <input
-                        type="time"
-                        value={selectedTimeRange?.end || ''}
-                        onChange={(e) => setSelectedTimeRange(prev => ({
-                          start: prev?.start || '00:00',
-                          end: e.target.value
-                        }))}
-                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                  </div>
-                  
-                  {selectedDate && (
-                    <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                      <p className="text-sm text-blue-800">
-                        Выбрана дата: {format(selectedDate, 'dd MMMM yyyy', { locale: ru })}
-                      </p>
-                    </div>
-                  )}
-                </div>
+            {/* Кнопки управления фильтрами */}
+            <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+              <button
+                onClick={handleResetFilters}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-xl transition-all duration-200"
+              >
+                Сбросить фильтры
+              </button>
+              
+              <div className="text-sm text-gray-500">
+                Найдено: {filteredSlots.length} уроков
               </div>
             </div>
           </div>
         )}
       </div>
 
-      {/* Преподаватели в виде карточек */}
-      <div className="mb-8" data-section="teachers">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Найденные преподаватели</h2>
-          <div className="flex items-center space-x-2 text-sm text-gray-600">
-            <span>Найдено: {filteredTeachers.length}</span>
-            {(Object.keys(filters).length > 0 || selectedDate || selectedTimeRange) && (
-              <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">
-                Фильтры применены
-              </span>
-            )}
+      {/* Рекомендации */}
+      {showRecommendations && user && (
+        <div className="animate-slide-in-top">
+          <Recommendations
+            userId={user.id}
+            userRole="student"
+            timeSlots={timeSlots}
+            lessons={lessons}
+            allUsers={allUsers}
+          />
+        </div>
+      )}
+
+      {/* Достижения */}
+      {showAchievements && user && (
+        <div className="animate-slide-in-top">
+          <Achievements
+            userId={user.id}
+            achievements={[
+              {
+                id: '1',
+                title: 'Первый урок',
+                description: 'Завершите свой первый урок',
+                icon: '🎯',
+                category: 'academic',
+                points: 50,
+                isUnlocked: true,
+                unlockedAt: new Date().toISOString(),
+                userId: user.id
+              },
+              {
+                id: '2',
+                title: 'Неделя обучения',
+                description: 'Занимайтесь 7 дней подряд',
+                icon: '🔥',
+                category: 'participation',
+                points: 100,
+                isUnlocked: false,
+                userId: user.id
+              },
+              {
+                id: '3',
+                title: 'Отличник',
+                description: 'Получите 5 звезд за урок',
+                icon: '⭐',
+                category: 'excellence',
+                points: 200,
+                isUnlocked: false,
+                userId: user.id
+              }
+            ]}
+            currentLevel={2}
+            currentPoints={150}
+            totalPoints={150}
+            streak={3}
+            rank={25}
+          />
+        </div>
+      )}
+
+      {/* Профиль пользователя */}
+      {showProfile && user && (
+        <div className="animate-slide-in-top">
+          <UserProfile
+            user={user}
+            isEditable={true}
+            onProfileUpdate={async (updatedProfile) => {
+              // TODO: Обновление профиля через API
+              console.log('Profile updated:', updatedProfile);
+            }}
+          />
+        </div>
+      )}
+
+      {/* Список уроков */}
+      {showLessonsList && user && (
+        <div className="animate-slide-in-top">
+          <LessonsList
+            lessons={lessons.filter(l => l.studentId === user.id)}
+            timeSlots={timeSlots.filter(s => !s.isBooked)}
+            userRole="student"
+            onLessonClick={(lesson) => console.log('Lesson clicked:', lesson)}
+            onBookLesson={handleBookLesson}
+          />
+        </div>
+      )}
+
+      {/* Аналитика */}
+      {showAnalytics && user && (
+        <div className="animate-slide-in-top">
+          <Analytics userId={user.id} userRole="student" />
+        </div>
+      )}
+
+      {/* Поиск преподавателей */}
+      {showTeacherSearch && (
+        <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6 animate-slide-in-top">
+          <TeacherSearch
+            onTeacherSelect={handleTeacherSelect}
+            onBookLesson={handleBookLessonWithTeacher}
+          />
+        </div>
+      )}
+
+      {/* Результаты поиска */}
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-gray-900">
+            Доступные уроки ({filteredSlots.length})
+          </h2>
+          
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={() => setShowCalendar(!showCalendar)}
+              className="flex items-center space-x-2 px-4 py-2 bg-purple-100 text-purple-700 rounded-2xl hover:bg-purple-200 transition-all duration-200 hover:scale-105"
+            >
+              <CalendarIcon className="h-5 w-5" />
+              <span>{showCalendar ? 'Список' : 'Календарь'}</span>
+            </button>
           </div>
         </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filteredTeachers.length === 0 ? (
-            <div className="col-span-full text-center py-12">
-              <div className="text-gray-400 text-lg mb-2">
-                {Object.keys(filters).length > 0 || selectedDate || selectedTimeRange 
-                  ? "Нет преподавателей подходящих под фильтры" 
-                  : "Нет доступных преподавателей"}
+
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="bg-white rounded-3xl shadow-lg border border-gray-100 p-6 animate-pulse">
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 bg-gray-200 rounded-2xl"></div>
+                    <div className="space-y-2">
+                      <div className="h-4 bg-gray-200 rounded w-24"></div>
+                      <div className="h-3 bg-gray-200 rounded w-32"></div>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="h-4 bg-gray-200 rounded w-full"></div>
+                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                  </div>
+                  <div className="h-10 bg-gray-200 rounded-2xl"></div>
+                </div>
               </div>
-              <p className="text-gray-500">
-                {Object.keys(filters).length > 0 || selectedDate || selectedTimeRange 
-                  ? "Попробуйте изменить фильтры или воспользуйтесь овербукингом"
-                  : "Попробуйте воспользоваться овербукингом"}
-              </p>
-            </div>
-          ) : (
-            filteredTeachers.map((teacher, index) => {
-              const profile = teacher.profile;
-              const teacherSlots = filteredSlots.filter(slot => slot.teacherId === teacher.id);
-              const availableSlots = teacherSlots.filter(slot => !slot.isBooked);
-              const hasAvailableSlots = availableSlots.length > 0;
-              const minPrice = teacherSlots.length > 0 ? Math.min(...teacherSlots.map(slot => slot.price)) : profile?.hourlyRate || 0;
-              const maxPrice = teacherSlots.length > 0 ? Math.max(...teacherSlots.map(slot => slot.price)) : profile?.hourlyRate || 0;
-              
-              return (
-                <div 
-                  key={teacher.id} 
-                  className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300 transform hover:scale-105 cursor-pointer max-w-sm"
-                  style={{
-                    animationDelay: `${index * 50}ms`,
-                    animation: 'fadeInUp 0.5s ease-out forwards'
-                  }}
-                  onClick={() => handleTeacherClick(teacher)}
-                >
-                  {/* Изображение */}
-                  <div className="aspect-square bg-gradient-to-br from-blue-400 to-indigo-500 rounded-t-lg flex items-center justify-center">
-                    {profile?.avatar ? (
-                      <img 
-                        src={profile.avatar} 
-                        alt={teacher.name} 
-                        className="w-full h-full object-cover rounded-t-lg"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-blue-400 to-indigo-500 rounded-t-lg flex items-center justify-center">
-                        <UserIcon className="h-12 w-12 text-white" />
-                      </div>
-                    )}
+            ))}
+          </div>
+        ) : filteredSlots.length === 0 ? (
+          <div className="text-center py-12">
+            <BookOpen className="h-16 w-16 mx-auto text-gray-300 mb-4" />
+            <h3 className="text-xl font-semibold text-gray-600 mb-2">Уроки не найдены</h3>
+            <p className="text-gray-500 mb-6">
+              Попробуйте изменить фильтры или загрузить больше уроков
+            </p>
+            <button
+              onClick={loadAvailableSlots}
+              className="px-6 py-3 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all duration-200 hover:scale-105"
+            >
+              Обновить поиск
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredSlots.map((slot, index) => (
+              <div
+                key={slot.id}
+                className="bg-white rounded-3xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-all duration-300 hover:scale-105 animate-fade-in-up"
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
+                {/* Заголовок карточки */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center">
+                      <BookOpen className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">{slot.subject}</h3>
+                      <p className="text-sm text-gray-600">{slot.teacherName}</p>
+                    </div>
                   </div>
                   
-                  {/* Информация */}
-                  <div className="p-3">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="font-semibold text-gray-900 text-xs leading-tight">
-                        {profile?.name || teacher.name || 'Репетитор'}
-                      </h3>
-                      <div className="flex items-center space-x-1">
-                        <button className="text-gray-400 hover:text-red-500 transition-colors">
-                          <Heart className="h-3 w-3" />
-                        </button>
-                        <button className="text-gray-400 hover:text-gray-600 transition-colors">
-                          <MoreHorizontal className="h-3 w-3" />
-                        </button>
-                      </div>
-                    </div>
-                    
-                    <div className="text-xs text-gray-600 mb-2">
-                      {profile?.subjects?.slice(0, 2).join(', ')}...
-                    </div>
-                    
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-medium text-gray-900">
-                        от {minPrice} ₽
-                      </span>
-                      {profile?.rating && (
-                        <div className="flex items-center space-x-1">
-                          <Star className="h-2 w-2 text-yellow-400 fill-current" />
-                          <span className="text-xs text-gray-600">{profile.rating}</span>
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="flex items-center text-xs text-gray-500 mb-2">
-                      <MapPin className="h-2 w-2 mr-1" />
-                      {profile?.city || 'Онлайн'}
-                    </div>
-                    
-                    {/* Индикатор статуса преподавателя */}
-                    <div className="flex items-center text-xs text-gray-500 mb-2">
-                      <div className={`w-2 h-2 rounded-full mr-1 ${isConnected ? 'bg-green-500' : 'bg-gray-400'}`}></div>
-                      <span className="text-xs text-gray-500">
-                        {isConnected ? 'Онлайн' : 'Слоты доступны'}
-                      </span>
-                    </div>
-                    
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation(); // Предотвращаем всплытие события
-                        if (hasAvailableSlots) {
-                          // Находим первый доступный слот для этого преподавателя
-                          const availableSlot = availableSlots[0];
-                          if (availableSlot && user) {
-                            console.log('Opening booking modal for slot:', availableSlot.id, 'for teacher:', teacher.id);
-                            setSelectedBookingSlot(availableSlot);
-                            setShowBookingModal(true);
-                          }
-                        } else {
-                          // Если нет доступных слотов, открываем профиль преподавателя
-                          handleTeacherClick(teacher);
-                        }
-                      }}
-                      className={`w-full py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                        hasAvailableSlots 
-                          ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                          : 'bg-green-600 text-white hover:bg-green-700'
-                      }`}
-                    >
-                      {hasAvailableSlots ? 'Забронировать' : 'Календарь'}
-                    </button>
+                  <div className="flex items-center space-x-1">
+                    {slot.rating && (
+                      <>
+                        <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                        <span className="text-sm font-medium text-gray-700">{slot.rating}</span>
+                      </>
+                    )}
                   </div>
                 </div>
-              );
-            })
-          )}
-        </div>
+
+                {/* Детали урока */}
+                <div className="space-y-3 mb-4">
+                  <div className="flex items-center space-x-2 text-sm text-gray-600">
+                    <Clock className="h-4 w-4" />
+                    <span>{slot.startTime} - {slot.endTime}</span>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2 text-sm text-gray-600">
+                    <MapPin className="h-4 w-4" />
+                    <span>{slot.format === 'online' ? 'Онлайн' : 'Очно'}</span>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2 text-sm text-gray-600">
+                    <User className="h-4 w-4" />
+                    <span>{slot.experience === 'beginner' ? 'Начинающий' : 
+                           slot.experience === 'experienced' ? 'Опытный' : 'Профессионал'}</span>
+                  </div>
+                </div>
+
+                {/* Цена и кнопка */}
+                <div className="flex items-center justify-between">
+                  <div className="text-2xl font-bold text-blue-600">
+                    {slot.price} ₽
+                  </div>
+                  
+                  <button
+                    onClick={() => handleBookLesson(slot)}
+                    className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 hover:scale-105 shadow-lg"
+                  >
+                    Забронировать
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Overbooking Modal */}
-      {showOverbookingModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-            <div className="p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Овербукинг - Автоподбор преподавателя</h2>
-              <p className="text-gray-600 mb-6">
-                Заполните форму, и мы автоматически подберем лучшего доступного преподавателя за 5 часов до занятия
-              </p>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Класс</label>
-                    <select
-                      value={overbookingData.grade}
-                      onChange={(e) => setOverbookingData({ ...overbookingData, grade: e.target.value })}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      required
-                    >
-                      <option value="">Выберите класс</option>
-                      {grades.map(grade => (
-                        <option key={grade} value={grade}>{grade}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Предмет</label>
-                    <select
-                      value={overbookingData.subject}
-                      onChange={(e) => setOverbookingData({ ...overbookingData, subject: e.target.value })}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      required
-                    >
-                      <option value="">Выберите предмет</option>
-                      {subjects.map(subject => (
-                        <option key={subject} value={subject}>{subject}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Дата занятия</label>
-                    <input
-                      type="date"
-                      value={overbookingData.date}
-                      onChange={e => setOverbookingData({ ...overbookingData, date: e.target.value })}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      required
-                      min={new Date().toISOString().split('T')[0]}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Время начала</label>
-                    <input
-                      type="time"
-                      value={overbookingData.startTime}
-                      onChange={e => setOverbookingData({ ...overbookingData, startTime: e.target.value })}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      required
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Цель занятий</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {goals.map(goal => (
-                      <label key={goal} className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          checked={overbookingData.goals.includes(goal)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setOverbookingData({
-                                ...overbookingData,
-                                goals: [...overbookingData.goals, goal]
-                              });
-                            } else {
-                              setOverbookingData({
-                                ...overbookingData,
-                                goals: overbookingData.goals.filter(g => g !== goal)
-                              });
-                            }
-                          }}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                        <span className="text-sm text-gray-700">{goal}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Опыт преподавателя</label>
-                    <select
-                      value={overbookingData.experience}
-                      onChange={(e) => setOverbookingData({ ...overbookingData, experience: e.target.value })}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">Любой</option>
-                      {experiences.map(exp => (
-                        <option key={exp} value={exp}>{getExperienceLabel(exp)}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Продолжительность</label>
-                    <select
-                      value={overbookingData.duration}
-                      onChange={(e) => setOverbookingData({ ...overbookingData, duration: Number(e.target.value) })}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    >
-                      {durations.map(duration => (
-                        <option key={duration} value={duration}>{duration} мин</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Формат</label>
-                    <select
-                      value={overbookingData.format}
-                      onChange={(e) => setOverbookingData({ ...overbookingData, format: e.target.value })}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    >
-                      {formats.map(format => (
-                        <option key={format} value={format}>
-                          {format === 'online' ? 'Онлайн' : format === 'offline' ? 'Оффлайн' : 'Мини-группа'}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                {overbookingData.format === 'offline' && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Город</label>
-                    <input
-                      type="text"
-                      value={overbookingData.city}
-                      onChange={(e) => setOverbookingData({ ...overbookingData, city: e.target.value })}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      placeholder="Введите ваш город"
-                    />
-                  </div>
-                )}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Примечание</label>
-                  <textarea
-                    value={overbookingData.comment}
-                    onChange={e => setOverbookingData({ ...overbookingData, comment: e.target.value })}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    rows={2}
-                    placeholder="Например: хочу разобрать домашнее задание или подготовиться к контрольной..."
-                  />
-                </div>
-              </div>
-              <div className="flex space-x-4 mt-6">
-                <button
-                  onClick={handleOverbooking}
-                  disabled={!overbookingData.grade || !overbookingData.subject || !overbookingData.date || !overbookingData.startTime}
-                  className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 text-white py-3 px-4 rounded-lg font-medium hover:from-green-600 hover:to-emerald-600 transition-all duration-200 disabled:opacity-50"
-                >
-                  Отправить заявку
-                </button>
-                <button
-                  onClick={() => setShowOverbookingModal(false)}
-                  className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-                >
-                  Отмена
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Модальное окно с полной страницей преподавателя */}
-      {showTeacherModal && selectedTeacher && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-8 relative overflow-y-auto max-h-[90vh]">
-            <button className="absolute top-4 right-4 text-gray-400 hover:text-gray-700" onClick={() => setShowTeacherModal(false)} title="Закрыть">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            <div className="flex flex-col items-center mb-6">
-              {selectedTeacher.avatar ? (
-                <img src={selectedTeacher.avatar} alt="avatar" className="w-24 h-24 rounded-full object-cover mb-2" />
-              ) : (
-                <div className="w-24 h-24 rounded-full bg-gradient-to-r from-blue-400 to-indigo-500 flex items-center justify-center mb-2">
-                  <UserIcon className="h-12 w-12 text-white" />
-                </div>
-              )}
-              <h2 className="text-2xl font-bold text-gray-900">{selectedTeacher.name}</h2>
-              <div className="text-gray-500">{selectedTeacher.email}</div>
-            </div>
-            {(() => {
-              const profile = selectedTeacher.profile || {};
-              const fieldMap: { key: string; label: string; icon: React.ReactNode }[] = [
-                { key: 'bio', label: 'О себе', icon: <UserIcon className="inline-block w-5 h-5 mr-2 text-blue-500" /> },
-                { key: 'country', label: 'Страна', icon: <span className="inline-block w-5 h-5 mr-2">🌍</span> },
-                { key: 'city', label: 'Город', icon: <span className="inline-block w-5 h-5 mr-2">🏙️</span> },
-                { key: 'experience', label: 'Опыт', icon: <span className="inline-block w-5 h-5 mr-2">🎓</span> },
-                { key: 'rating', label: 'Рейтинг', icon: <span className="inline-block w-5 h-5 mr-2">⭐</span> },
-                { key: 'hourlyRate', label: 'Цена за час', icon: <span className="inline-block w-5 h-5 mr-2">💸</span> },
-                { key: 'subjects', label: 'Предметы', icon: <span className="inline-block w-5 h-5 mr-2">📚</span> },
-                { key: 'grades', label: 'Классы', icon: <span className="inline-block w-5 h-5 mr-2">🏫</span> },
-                { key: 'format', label: 'Формат', icon: <span className="inline-block w-5 h-5 mr-2">💻</span> },
-                { key: 'duration', label: 'Длительность', icon: <span className="inline-block w-5 h-5 mr-2">⏱️</span> },
-                { key: 'comment', label: 'Комментарий', icon: <span className="inline-block w-5 h-5 mr-2">💬</span> },
-                { key: 'status', label: 'Статус', icon: <span className="inline-block w-5 h-5 mr-2">📋</span> },
-              ];
-              return (
-                <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {fieldMap.map(({ key, label, icon }) => {
-                    const value = profile[key];
-                    if (value === undefined || value === null || value === '' || (Array.isArray(value) && value.length === 0)) return null;
-                    return (
-                      <div key={key} className="flex items-start bg-gray-50 rounded-lg p-4 shadow-sm">
-                        <div className="mt-1">{icon}</div>
-                        <div>
-                          <div className="text-sm font-semibold text-gray-700 mb-1">{label}</div>
-                          {Array.isArray(value) ? (
-                            <div className="flex flex-wrap gap-1">
-                              {value.map((v: string, i: number) => (
-                                <span key={i} className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-xs mr-1 mb-1">{v}</span>
-                              ))}
-            </div>
-                          ) : (
-                            <div className="text-gray-900 text-sm break-all">{String(value)}</div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              );
-            })()}
-            <div className="mb-4">
-              <h3 className="text-lg font-bold mb-2">Записи преподавателя</h3>
-              {teacherPosts.length === 0 ? (
-                <div className="text-gray-400 text-sm">Пока нет записей</div>
-              ) : (
-                <div className="flex flex-col gap-4">
-                  {teacherPosts.map(post => (
-                    <div key={post.id} className="bg-gray-50 rounded-lg p-3 shadow-sm">
-                      <div className="flex items-center gap-2 mb-1">
-                        {selectedTeacher.avatar ? (
-                          <img src={selectedTeacher.avatar} alt="avatar" className="h-7 w-7 rounded-full object-cover" />
-                        ) : (
-                          <UserIcon className="h-5 w-5 text-gray-400" />
-                        )}
-                        <span className="font-medium text-gray-900 text-sm">{selectedTeacher.name}</span>
-                        <span className="text-xs text-gray-400 ml-2">{post.date}</span>
-                      </div>
-                      <div className="text-gray-800 text-sm whitespace-pre-line">{post.text}</div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Модальное окно для бронирования урока */}
-      {showBookingModal && selectedBookingSlot && user && (
+      {/* Модальное окно бронирования */}
+      {showBookingModal && selectedBookingSlot && (
         <BookingModal
           isOpen={showBookingModal}
-          onClose={() => {
-            setShowBookingModal(false);
-            setSelectedBookingSlot(null);
-          }}
+          onClose={() => setShowBookingModal(false)}
           onConfirm={handleConfirmBooking}
           slot={selectedBookingSlot}
-          teacher={getUserById(selectedBookingSlot.teacherId)}
+          teacher={{ name: selectedBookingSlot.teacherName, avatar: selectedBookingSlot.teacherAvatar }}
           student={user}
-        />
-      )}
-
-      {/* Полная страница преподавателя */}
-      {showTeacherProfilePage && selectedTeacher && (
-        <TeacherProfilePage
-          teacher={selectedTeacher}
-          onClose={() => setShowTeacherProfilePage(false)}
-          onBookLesson={handleBookLesson}
-        />
-      )}
-
-      {/* Календарь свободных слотов */}
-      {showCalendar && (
-        <StudentCalendar
-          onClose={() => setShowCalendar(false)}
         />
       )}
     </div>

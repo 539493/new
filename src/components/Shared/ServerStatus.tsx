@@ -1,73 +1,49 @@
-import React, { useEffect, useState } from 'react';
-import { io, Socket } from 'socket.io-client';
-import { SERVER_URL, SOCKET_CONFIG } from '../../config';
+import React, { useState, useEffect } from 'react';
+import { Wifi, WifiOff, RefreshCw, CheckCircle, AlertCircle, XCircle, X } from 'lucide-react';
+import { useData } from '../../contexts/DataContext';
 
 const ServerStatus: React.FC = () => {
-  const [isConnected, setIsConnected] = useState(false);
-  const [socket, setSocket] = useState<Socket | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { isConnected } = useData();
+  const [isVisible, setIsVisible] = useState(false);
+  const [lastStatus, setLastStatus] = useState<boolean | null>(null);
 
   useEffect(() => {
-    const newSocket = io(SERVER_URL, SOCKET_CONFIG);
-
-    newSocket.on('connect', () => {
-      console.log('Connected to server');
-      setIsConnected(true);
-      setError(null);
-    });
-
-    newSocket.on('connect_error', (err) => {
-      console.error('Connection error:', err);
-      setIsConnected(false);
-      setError('Ошибка подключения к серверу');
-    });
-
-    newSocket.on('disconnect', () => {
-      console.log('Disconnected from server');
-      setIsConnected(false);
-    });
-
-    setSocket(newSocket);
-
-    return () => {
-      newSocket.disconnect();
-    };
-  }, []);
-
-  const testVideoConnection = () => {
-    if (socket) {
-      socket.emit('video-join', {
-        roomId: 'test-room',
-        userName: 'Test User',
-        userRole: 'test'
-      });
+    // Показываем статус только при изменении состояния соединения
+    if (lastStatus !== null && lastStatus !== isConnected) {
+      setIsVisible(true);
+      const timer = setTimeout(() => setIsVisible(false), 5000);
+      return () => clearTimeout(timer);
     }
-  };
+    setLastStatus(isConnected);
+  }, [isConnected, lastStatus]);
+
+  if (!isVisible) return null;
 
   return (
-    <div className="p-4 bg-white rounded-lg shadow">
-      <h3 className="text-lg font-semibold mb-4">Статус сервера</h3>
-      
-      <div className="space-y-3">
+    <div className={`fixed top-20 right-4 z-50 transition-all duration-500 ease-out ${
+      isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full'
+    }`}>
+      <div className={`flex items-center space-x-3 p-4 rounded-2xl shadow-2xl backdrop-blur-xl border-2 ${
+        isConnected
+          ? 'bg-green-50 border-green-200 text-green-800'
+          : 'bg-red-50 border-red-200 text-red-800'
+      }`}>
         <div className="flex items-center space-x-2">
-          <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
-          <span className="text-sm">
-            {isConnected ? 'Подключено к серверу' : 'Не подключено к серверу'}
+          {isConnected ? (
+            <CheckCircle className="h-5 w-5 text-green-600 animate-pulse" />
+          ) : (
+            <XCircle className="h-5 w-5 text-red-600 animate-pulse" />
+          )}
+          <span className="font-medium">
+            {isConnected ? 'Соединение установлено' : 'Соединение потеряно'}
           </span>
         </div>
-
-        {error && (
-          <div className="text-red-600 text-sm">
-            {error}
-          </div>
-        )}
-
+        
         <button
-          onClick={testVideoConnection}
-          disabled={!isConnected}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          onClick={() => setIsVisible(false)}
+          className="p-1 hover:bg-white/20 rounded-lg transition-colors duration-200"
         >
-          Тест видео подключения
+          <X className="h-4 w-4" />
         </button>
       </div>
     </div>
