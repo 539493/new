@@ -699,12 +699,12 @@
 }
 
 body {
-  @apply font-sans bg-background-light text-text-light transition-colors duration-300;
+  @apply font-sans bg-gray-50 text-gray-900 transition-colors duration-300;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 .dark body {
-  @apply bg-background-dark text-text-dark;
+  @apply bg-gray-900 text-gray-100;
 }
 
 h1 {
@@ -740,7 +740,7 @@ p, span, div, input, textarea {
 
 /* Skeleton */
 .skeleton {
-  @apply bg-border-light dark:bg-border-dark rounded animate-pulse;
+  @apply bg-gray-200 dark:bg-gray-700 rounded animate-pulse;
   min-height: 1em;
 }
 
