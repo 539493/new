@@ -12,114 +12,6 @@
   display: none;  /* Safari and Chrome */
 }
 
-/* Плавные переходы для всех элементов */
-* {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Улучшенные анимации появления */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes fadeInLeft {
-  from {
-    opacity: 0;
-    transform: translateX(-30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes fadeInRight {
-  from {
-    opacity: 0;
-    transform: translateX(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes scaleIn {
-  from {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes slideInFromTop {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Классы анимаций */
-.animate-fade-in-up {
-  animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.animate-fade-in-left {
-  animation: fadeInLeft 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.animate-fade-in-right {
-  animation: fadeInRight 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.animate-scale-in {
-  animation: scaleIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.animate-slide-in-top {
-  animation: slideInFromTop 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Улучшенные hover эффекты */
-.hover-lift {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.hover-lift:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-}
-
-.hover-scale {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.hover-scale:hover {
-  transform: scale(1.02);
-}
-
-.hover-glow {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.hover-glow:hover {
-  box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
-}
-
 /* Кастомные стили для календаря */
 .custom-calendar {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -136,7 +28,6 @@
   font-size: 0.875rem;
   position: relative;
   overflow: hidden;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .custom-calendar .rbc-header::before {
@@ -147,16 +38,11 @@
   width: 100%;
   height: 100%;
   background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-  transition: left 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: left 0.5s;
 }
 
 .custom-calendar .rbc-header:hover::before {
   left: 100%;
-}
-
-.custom-calendar .rbc-header:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
 }
 
 .custom-calendar .rbc-toolbar {
@@ -173,14 +59,14 @@
   background: white;
   border: 2px solid #e5e7eb;
   color: #374151;
-  padding: 12px 24px;
+  padding: 10px 20px;
   border-radius: 16px;
   font-weight: 600;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   margin: 0 4px;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .custom-calendar .rbc-toolbar button::before {
@@ -191,7 +77,7 @@
   width: 100%;
   height: 100%;
   background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.1), transparent);
-  transition: left 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: left 0.5s;
 }
 
 .custom-calendar .rbc-toolbar button:hover::before {
@@ -201,29 +87,24 @@
 .custom-calendar .rbc-toolbar button:hover {
   background: #f8fafc;
   border-color: #3b82f6;
-  transform: translateY(-3px);
-  box-shadow: 0 12px 30px rgba(59, 130, 246, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);
 }
 
 .custom-calendar .rbc-toolbar button.rbc-active {
   background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
   border-color: #3b82f6;
   color: white;
-  box-shadow: 0 12px 30px rgba(59, 130, 246, 0.4);
-  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+  transform: translateY(-1px);
 }
 
 .custom-calendar .rbc-month-view {
   border: none;
   border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
   background: white;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.custom-calendar .rbc-month-view:hover {
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
 }
 
 .custom-calendar .rbc-month-header {
@@ -232,7 +113,7 @@
 
 .custom-calendar .rbc-month-row {
   border: none;
-  transition: background-color 0.3s ease;
+  transition: background-color 0.2s ease;
 }
 
 .custom-calendar .rbc-month-row:hover {
@@ -243,9 +124,8 @@
   padding: 12px 8px;
   font-weight: 600;
   color: #374151;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s ease;
   position: relative;
-  cursor: pointer;
 }
 
 .custom-calendar .rbc-date-cell:hover {
@@ -264,23 +144,23 @@
   border-radius: 12px;
   font-weight: 700;
   color: #92400e;
-  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
-  animation: pulse 3s infinite;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+  animation: pulse 2s infinite;
 }
 
 @keyframes pulse {
   0%, 100% {
-    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
   }
   50% {
-    box-shadow: 0 8px 30px rgba(245, 158, 11, 0.6);
+    box-shadow: 0 4px 20px rgba(245, 158, 11, 0.5);
   }
 }
 
 .custom-calendar .rbc-event {
   border: none;
   border-radius: 16px;
-  padding: 8px 16px;
+  padding: 6px 12px;
   font-size: 0.875rem;
   font-weight: 600;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -297,7 +177,7 @@
   width: 100%;
   height: 100%;
   background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-  transition: left 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: left 0.5s;
 }
 
 .custom-calendar .rbc-event:hover::before {
@@ -305,8 +185,8 @@
 }
 
 .custom-calendar .rbc-event:hover {
-  transform: translateY(-4px) scale(1.03);
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
 }
 
 .custom-calendar .rbc-event-content {
@@ -319,13 +199,8 @@
   border: none;
   border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
   background: white;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.custom-calendar .rbc-time-view:hover {
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
 }
 
 .custom-calendar .rbc-time-header {
@@ -349,7 +224,7 @@
 .custom-calendar .rbc-time-slot {
   border: none;
   border-bottom: 1px solid #f1f5f9;
-  transition: background-color 0.3s ease;
+  transition: background-color 0.2s ease;
 }
 
 .custom-calendar .rbc-time-slot:hover {
@@ -372,16 +247,16 @@
   background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   height: 4px;
   border-radius: 2px;
-  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.6);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.5);
   animation: glow 2s ease-in-out infinite alternate;
 }
 
 @keyframes glow {
   from {
-    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.6);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.5);
   }
   to {
-    box-shadow: 0 8px 30px rgba(239, 68, 68, 0.9);
+    box-shadow: 0 4px 20px rgba(239, 68, 68, 0.8);
   }
 }
 
@@ -398,45 +273,32 @@
   color: white;
   border: none;
   border-radius: 12px;
-  padding: 8px 16px;
+  padding: 6px 12px;
   font-size: 0.75rem;
   font-weight: 600;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
 .custom-calendar .rbc-show-more:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 35px rgba(59, 130, 246, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
 }
 
 /* Улучшенные стили для модального окна */
 .modal-backdrop {
-  backdrop-filter: blur(12px);
-  background: rgba(0, 0, 0, 0.7);
-  animation: backdropFadeIn 0.3s ease-out;
-}
-
-@keyframes backdropFadeIn {
-  from {
-    opacity: 0;
-    backdrop-filter: blur(0px);
-  }
-  to {
-    opacity: 1;
-    backdrop-filter: blur(12px);
-  }
+  backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.6);
 }
 
 .modal-content {
   animation: modalSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  transform-origin: center;
 }
 
 @keyframes modalSlideIn {
   from {
     opacity: 0;
-    transform: scale(0.85) translateY(-40px);
+    transform: scale(0.9) translateY(-30px);
   }
   to {
     opacity: 1;
@@ -450,14 +312,12 @@
   color: white;
   border: none;
   border-radius: 16px;
-  padding: 14px 28px;
+  padding: 12px 24px;
   font-weight: 600;
-  font-size: 0.95rem;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
   position: relative;
   overflow: hidden;
-  cursor: pointer;
 }
 
 .btn-primary::before {
@@ -468,7 +328,7 @@
   width: 100%;
   height: 100%;
   background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-  transition: left 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: left 0.5s;
 }
 
 .btn-primary:hover::before {
@@ -476,12 +336,7 @@
 }
 
 .btn-primary:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 35px rgba(59, 130, 246, 0.5);
-}
-
-.btn-primary:active {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
 }
 
@@ -490,23 +345,17 @@
   color: #374151;
   border: 2px solid #e5e7eb;
   border-radius: 16px;
-  padding: 14px 28px;
+  padding: 12px 24px;
   font-weight: 600;
-  font-size: 0.95rem;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .btn-secondary:hover {
   background: #f8fafc;
   border-color: #3b82f6;
-  transform: translateY(-3px);
-  box-shadow: 0 12px 30px rgba(59, 130, 246, 0.2);
-}
-
-.btn-secondary:active {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);
 }
 
 /* Улучшенные поля ввода */
@@ -514,45 +363,31 @@
   background: #f8fafc;
   border: 2px solid #e2e8f0;
   border-radius: 16px;
-  padding: 14px 18px;
+  padding: 12px 16px;
   font-weight: 500;
-  font-size: 0.95rem;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  outline: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .input-modern:focus {
   background: white;
   border-color: #3b82f6;
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
-  transform: translateY(-1px);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  outline: none;
 }
 
 .input-modern:hover {
   background: white;
   border-color: #cbd5e1;
-  transform: translateY(-1px);
-}
-
-.input-modern:invalid {
-  border-color: #ef4444;
-  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
 }
 
 /* Карточки с градиентами */
 .card-gradient {
   background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-  border-radius: 24px;
-  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.1);
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
   backdrop-filter: blur(10px);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.card-gradient:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.15);
 }
 
 /* Анимации для всех элементов */
@@ -562,33 +397,31 @@
 
 /* Кастомные скроллбары */
 ::-webkit-scrollbar {
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track {
   background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
-  border-radius: 10px;
+  border-radius: 8px;
 }
 
 ::-webkit-scrollbar-thumb {
   background: linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%);
-  border-radius: 10px;
+  border-radius: 8px;
   border: 2px solid #f1f5f9;
-  transition: all 0.3s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
-  transform: scale(1.1);
 }
 
 /* Эффект стекла */
 .glass-effect {
   background: rgba(255, 255, 255, 0.25);
-  backdrop-filter: blur(15px);
+  backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.18);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
 /* Градиентный текст */
@@ -609,116 +442,26 @@
     transform: translateY(0px);
   }
   50% {
-    transform: translateY(-15px);
-  }
-}
-
-/* Улучшенные состояния загрузки */
-.loading-skeleton {
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-  background-size: 200% 100%;
-  animation: loading 1.5s infinite;
-}
-
-@keyframes loading {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
-}
-
-/* Улучшенные уведомления */
-.notification {
-  animation: slideInRight 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@keyframes slideInRight {
-  from {
-    opacity: 0;
-    transform: translateX(100%);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-/* Улучшенные переходы между страницами */
-.page-transition {
-  animation: pageFadeIn 0.5s ease-out;
-}
-
-@keyframes pageFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Улучшенные эффекты фокуса */
-.focus-ring:focus {
-  outline: none;
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
-  transform: scale(1.02);
-}
-
-/* Улучшенные состояния disabled */
-.disabled-state {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none !important;
-  box-shadow: none !important;
-}
-
-/* Улучшенные анимации для списков */
-.list-item {
-  animation: listItemFadeIn 0.5s ease-out;
-}
-
-.list-item:nth-child(1) { animation-delay: 0.1s; }
-.list-item:nth-child(2) { animation-delay: 0.2s; }
-.list-item:nth-child(3) { animation-delay: 0.3s; }
-.list-item:nth-child(4) { animation-delay: 0.4s; }
-.list-item:nth-child(5) { animation-delay: 0.5s; }
-
-@keyframes listItemFadeIn {
-  from {
-    opacity: 0;
-    transform: translateX(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
+    transform: translateY(-10px);
   }
 }
 
 body {
-  @apply font-sans bg-gray-50 text-gray-900 transition-colors duration-300;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  @apply font-sans bg-background-light text-text-light transition-colors duration-300;
 }
-
 .dark body {
-  @apply bg-gray-900 text-gray-100;
+  @apply bg-background-dark text-text-dark;
 }
 
 h1 {
   @apply font-heading text-[32px] font-bold;
 }
-
 h2 {
   @apply font-heading text-[24px] font-semibold;
 }
-
 p, span, div, input, textarea {
   @apply text-base;
 }
-
 .small {
   @apply text-sm font-medium;
 }
@@ -732,7 +475,6 @@ p, span, div, input, textarea {
   height: 32px;
   animation: spin 1s linear infinite;
 }
-
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
@@ -740,48 +482,6 @@ p, span, div, input, textarea {
 
 /* Skeleton */
 .skeleton {
-  @apply bg-gray-200 dark:bg-gray-700 rounded animate-pulse;
+  @apply bg-border-light dark:bg-border-dark rounded animate-pulse;
   min-height: 1em;
-}
-
-/* Улучшенные стили для мобильных устройств */
-@media (max-width: 768px) {
-  .card-gradient {
-    border-radius: 20px;
-    margin: 0.5rem;
-  }
-  
-  .btn-primary, .btn-secondary {
-    padding: 12px 24px;
-    font-size: 0.9rem;
-  }
-  
-  .input-modern {
-    padding: 12px 16px;
-    font-size: 0.9rem;
-  }
-  
-  .custom-calendar .rbc-toolbar button {
-    padding: 10px 20px;
-    font-size: 0.85rem;
-  }
-}
-
-/* Улучшенные стили для темной темы */
-@media (prefers-color-scheme: dark) {
-  .card-gradient {
-    background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
-    border-color: rgba(255, 255, 255, 0.1);
-  }
-  
-  .input-modern {
-    background: #374151;
-    border-color: #4b5563;
-    color: #f9fafb;
-  }
-  
-  .input-modern:focus {
-    background: #4b5563;
-    border-color: #3b82f6;
-  }
 }

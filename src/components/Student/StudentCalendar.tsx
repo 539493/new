@@ -1,324 +1,264 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { Lesson } from '../../types';
-import { Clock, MapPin, User, BookOpen, CheckCircle, XCircle, AlertCircle, X } from 'lucide-react';
+import { TimeSlot } from '../../types';
+import { Clock, MapPin, Star, User, BookOpen, X } from 'lucide-react';
+import BookingModal from '../Shared/BookingModal';
 
-const locales = { 'ru': ru };
-const localizer = dateFnsLocalizer({ format, parse, startOfWeek, getDay, locales });
+const locales = {
+  'ru': ru,
+};
 
-const StudentCalendar: React.FC = () => {
-  const { lessons } = useData();
+const localizer = dateFnsLocalizer({
+  format,
+  parse,
+  startOfWeek,
+  getDay,
+  locales,
+});
+
+interface StudentCalendarProps {
+  onClose: () => void;
+}
+
+const StudentCalendar: React.FC<StudentCalendarProps> = ({ onClose }) => {
+  const { timeSlots, bookLesson } = useData();
   const { user } = useAuth();
-  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
-  const [showLessonModal, setShowLessonModal] = useState(false);
-  const [view, setView] = useState<'month' | 'week' | 'day'>('month');
+  
+  const [selectedEvent, setSelectedEvent] = useState<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showBookingModal, setShowBookingModal] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
 
-  // Фильтруем уроки для текущего студента
-  const studentLessons = lessons.filter(lesson => lesson.studentId === user?.id);
+  // Получаем все доступные слоты
+  const availableSlots = timeSlots.filter(slot => !slot.isBooked);
 
-  // Конвертируем уроки в формат для календаря
-  const calendarEvents = studentLessons.map(lesson => ({
-    id: lesson.id,
-    title: `${lesson.subject} - ${lesson.teacherName}`,
-    start: new Date(`${lesson.date}T${lesson.startTime}`),
-    end: new Date(`${lesson.date}T${lesson.endTime}`),
-    lesson: lesson,
-    resource: lesson
+  // Преобразуем слоты в события для календаря
+  const events = availableSlots.map(slot => ({
+    id: slot.id,
+    title: `${slot.teacherName} - ${slot.subject}`,
+    start: new Date(`${slot.date}T${slot.startTime}`),
+    end: new Date(`${slot.date}T${slot.endTime}`),
+    slot: slot,
+    teacherName: slot.teacherName,
+    subject: slot.subject,
+    price: slot.price,
+    format: slot.format,
+    experience: slot.experience,
+    rating: slot.rating,
+    city: slot.city,
+    teacherAvatar: slot.teacherAvatar
   }));
 
-  // Обработчик клика по событию
-  const handleEventClick = (event: any) => {
-    setSelectedLesson(event.lesson);
-    setShowLessonModal(true);
+  const eventStyleGetter = useCallback((event: any) => {
+    let style: any = {
+      backgroundColor: '#3B82F6',
+      borderRadius: '8px',
+      opacity: 0.9,
+      color: 'white',
+      border: '0px',
+      display: 'block',
+      padding: '4px 8px',
+      fontSize: '12px',
+      fontWeight: '500'
+    };
+
+    // Разные цвета для разных форматов
+    if (event.format === 'offline') {
+      style.backgroundColor = '#10B981';
+    } else if (event.format === 'mini-group') {
+      style.backgroundColor = '#8B5CF6';
+    }
+
+    return { style };
+  }, []);
+
+  const handleSelectEvent = useCallback((event: any) => {
+    setSelectedEvent(event);
+    setIsModalOpen(true);
+  }, []);
+
+  const handleBookSlot = (slot: TimeSlot) => {
+    setSelectedSlot(slot);
+    setShowBookingModal(true);
+    setIsModalOpen(false);
   };
 
-  // Получение цвета для статуса урока
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'bg-green-500';
-      case 'cancelled':
-        return 'bg-red-500';
-      case 'scheduled':
-        return 'bg-blue-500';
-      default:
-        return 'bg-gray-500';
+  const handleConfirmBooking = async (comment: string) => {
+    if (user && selectedSlot) {
+      console.log('Booking lesson:', selectedSlot.id, 'for user:', user.name, 'with comment:', comment);
+      bookLesson(selectedSlot.id, user.id, user.name, comment);
+      setShowBookingModal(false);
+      setSelectedSlot(null);
     }
   };
 
-  // Получение иконки для статуса
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return <CheckCircle className="h-4 w-4 text-white" />;
-      case 'cancelled':
-        return <XCircle className="h-4 w-4 text-white" />;
-      case 'scheduled':
-        return <Clock className="h-4 w-4 text-white" />;
-      default:
-        return <AlertCircle className="h-4 w-4 text-white" />;
+  const getExperienceLabel = (exp: string) => {
+    switch (exp) {
+      case 'beginner': return 'Начинающий';
+      case 'experienced': return 'Опытный';
+      case 'professional': return 'Профессионал';
+      default: return exp;
     }
   };
 
-  // Получение текста статуса
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'Завершен';
-      case 'cancelled':
-        return 'Отменен';
-      case 'scheduled':
-        return 'Запланирован';
-      default:
-        return 'Неизвестно';
+  const getFormatLabel = (format: string) => {
+    switch (format) {
+      case 'online': return 'Онлайн';
+      case 'offline': return 'Оффлайн';
+      case 'mini-group': return 'Мини-группа';
+      default: return format;
     }
   };
-
-  // Кастомный компонент события
-  const EventComponent = ({ event }: { event: any }) => (
-    <div className="flex items-center space-x-2 p-1">
-      <div className={`w-2 h-2 rounded-full ${getStatusColor(event.lesson.status)}`}></div>
-      <span className="text-xs font-medium truncate">{event.title}</span>
-    </div>
-  );
 
   return (
-    <div className="space-y-6 animate-fade-in-up">
-      {/* Заголовок */}
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Мой календарь</h1>
-        <p className="text-gray-600">Планируйте и отслеживайте свои уроки</p>
-      </div>
-
-      {/* Статистика */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-3xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 hover:scale-105">
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center">
-              <BookOpen className="h-6 w-6 text-blue-600" />
-            </div>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-7xl w-full max-h-[90vh] overflow-hidden relative">
+        {/* Header */}
+        <div className="bg-white border-b border-gray-200 p-6 rounded-t-2xl">
+          <div className="flex items-center justify-between">
             <div>
-              <div className="text-2xl font-bold text-gray-900">
-                {studentLessons.length}
-              </div>
-              <div className="text-sm text-gray-600">Всего уроков</div>
+              <h1 className="text-3xl font-bold text-gray-900">Календарь свободных слотов</h1>
+              <p className="text-gray-600 mt-2">Выберите удобное время для занятия с преподавателем</p>
             </div>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+            >
+              <X className="w-6 h-6 text-gray-600" />
+            </button>
           </div>
         </div>
 
-        <div className="bg-white rounded-3xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 hover:scale-105">
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-green-100 rounded-2xl flex items-center justify-center">
-              <CheckCircle className="h-6 w-6 text-green-600" />
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-gray-900">
-                {studentLessons.filter(l => l.status === 'completed').length}
-              </div>
-              <div className="text-sm text-gray-600">Завершено</div>
-            </div>
+        {/* Calendar */}
+        <div className="p-6">
+          <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+            <Calendar
+              localizer={localizer}
+              events={events}
+              startAccessor="start"
+              endAccessor="end"
+              style={{ height: 600 }}
+              eventPropGetter={eventStyleGetter}
+              onSelectEvent={handleSelectEvent}
+              views={['month', 'week', 'day']}
+              messages={{
+                next: "Следующий",
+                previous: "Предыдущий",
+                today: "Сегодня",
+                month: "Месяц",
+                week: "Неделя",
+                day: "День",
+                noEventsInRange: "Нет свободных слотов в выбранном диапазоне",
+                showMore: (total: number) => `+${total} еще`,
+              }}
+              className="custom-calendar"
+            />
           </div>
         </div>
 
-        <div className="bg-white rounded-3xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 hover:scale-105">
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center">
-              <Clock className="h-6 w-6 text-blue-600" />
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-gray-900">
-                {studentLessons.filter(l => l.status === 'scheduled').length}
-              </div>
-              <div className="text-sm text-gray-600">Запланировано</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-3xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 hover:scale-105">
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-purple-100 rounded-2xl flex items-center justify-center">
-              <User className="h-6 w-6 text-purple-600" />
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-gray-900">
-                {new Set(studentLessons.map(l => l.teacherId)).size}
-              </div>
-              <div className="text-sm text-gray-600">Преподавателей</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Переключатели вида */}
-      <div className="flex justify-center space-x-2">
-        {(['month', 'week', 'day'] as const).map((viewType) => (
-          <button
-            key={viewType}
-            onClick={() => setView(viewType)}
-            className={`px-6 py-3 rounded-2xl font-medium transition-all duration-200 hover:scale-105 ${
-              view === viewType
-                ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
-                : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
-            }`}
-          >
-            {viewType === 'month' ? 'Месяц' : viewType === 'week' ? 'Неделя' : 'День'}
-          </button>
-        ))}
-      </div>
-
-      {/* Календарь */}
-      <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
-        <Calendar
-          localizer={localizer}
-          events={calendarEvents}
-          startAccessor="start"
-          endAccessor="end"
-          style={{ height: 600 }}
-          view={view}
-          onView={(newView) => setView(newView as any)}
-          onSelectEvent={handleEventClick}
-          eventPropGetter={(event) => ({
-            className: 'hover:shadow-lg transition-all duration-200 cursor-pointer'
-          })}
-          components={{
-            event: EventComponent
-          }}
-          className="custom-calendar"
-          messages={{
-            next: "Следующий",
-            previous: "Предыдущий",
-            today: "Сегодня",
-            month: "Месяц",
-            week: "Неделя",
-            day: "День",
-            agenda: "Повестка",
-            date: "Дата",
-            time: "Время",
-            event: "Событие",
-            noEventsInRange: "В выбранном диапазоне нет событий."
-          }}
-        />
-      </div>
-
-      {/* Модальное окно урока */}
-      {showLessonModal && selectedLesson && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 modal-backdrop">
-          <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto modal-content">
-            {/* Заголовок */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className="text-2xl font-bold text-gray-900">Детали урока</h2>
-              <button
-                onClick={() => setShowLessonModal(false)}
-                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-2xl transition-all duration-200 hover:scale-110"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-
-            {/* Содержимое */}
-            <div className="p-6 space-y-6">
-              {/* Статус */}
-              <div className="flex items-center space-x-3">
-                <div className={`w-4 h-4 rounded-full ${getStatusColor(selectedLesson.status)}`}></div>
-                <span className="text-sm font-medium text-gray-600">
-                  {getStatusText(selectedLesson.status)}
-                </span>
-              </div>
-
-              {/* Основная информация */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-3">
-                    <BookOpen className="h-5 w-5 text-blue-600" />
-                    <div>
-                      <span className="text-sm text-gray-600">Предмет</span>
-                      <div className="font-semibold text-gray-900">{selectedLesson.subject}</div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-3">
-                    <User className="h-5 w-5 text-green-600" />
-                    <div>
-                      <span className="text-sm text-gray-600">Преподаватель</span>
-                      <div className="font-semibold text-gray-900">{selectedLesson.teacherName}</div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-3">
-                    <Clock className="h-5 w-5 text-purple-600" />
-                    <div>
-                      <span className="text-sm text-gray-600">Время</span>
-                      <div className="font-semibold text-gray-900">
-                        {selectedLesson.startTime} - {selectedLesson.endTime}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-3">
-                    <Calendar className="h-5 w-5 text-indigo-600" />
-                    <div>
-                      <span className="text-sm text-gray-600">Дата</span>
-                      <div className="font-semibold text-gray-900">
-                        {new Date(selectedLesson.date).toLocaleDateString('ru-RU')}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-3">
-                    <MapPin className="h-5 w-5 text-orange-600" />
-                    <div>
-                      <span className="text-sm text-gray-600">Формат</span>
-                      <div className="font-semibold text-gray-900">
-                        {selectedLesson.format === 'online' ? 'Онлайн' : 'Очно'}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-3">
-                    <div className="w-5 h-5 text-red-600 flex items-center justify-center">
-                      ₽
-                    </div>
-                    <div>
-                      <span className="text-sm text-gray-600">Стоимость</span>
-                      <div className="font-semibold text-gray-900">{selectedLesson.price} ₽</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Комментарий */}
-              {selectedLesson.comment && (
-                <div className="bg-gray-50 rounded-2xl p-4">
-                  <h4 className="font-medium text-gray-900 mb-2">Комментарий к уроку</h4>
-                  <p className="text-gray-700">{selectedLesson.comment}</p>
-                </div>
-              )}
-
-              {/* Действия */}
-              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+        {/* Event Details Modal */}
+        {isModalOpen && selectedEvent && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+              <div className="flex items-start justify-between mb-4">
+                <h3 className="text-xl font-bold text-gray-900">Детали слота</h3>
                 <button
-                  onClick={() => setShowLessonModal(false)}
-                  className="px-6 py-2 text-gray-700 border border-gray-300 rounded-2xl hover:bg-gray-50 transition-all duration-200"
+                  onClick={() => setIsModalOpen(false)}
+                  className="p-1 rounded-full hover:bg-gray-100 transition-colors"
                 >
-                  Закрыть
+                  <X className="w-5 h-5 text-gray-600" />
                 </button>
-                {selectedLesson.status === 'scheduled' && (
-                  <button className="px-6 py-2 bg-red-600 text-white rounded-2xl hover:bg-red-700 transition-all duration-200 hover:scale-105">
-                    Отменить урок
+              </div>
+
+              <div className="space-y-4">
+                {/* Teacher Info */}
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center overflow-hidden">
+                    {selectedEvent.teacherAvatar ? (
+                      <img 
+                        src={selectedEvent.teacherAvatar} 
+                        alt={selectedEvent.teacherName} 
+                        className="w-12 h-12 object-cover rounded-full"
+                      />
+                    ) : (
+                      <User className="h-6 w-6 text-white" />
+                    )}
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900">{selectedEvent.teacherName}</h4>
+                    <div className="flex items-center space-x-2 text-sm text-gray-600">
+                      {selectedEvent.rating && (
+                        <div className="flex items-center space-x-1">
+                          <Star className="h-3 w-3 text-yellow-400 fill-current" />
+                          <span>{selectedEvent.rating}</span>
+                        </div>
+                      )}
+                      {selectedEvent.experience && (
+                        <span className="text-blue-600">{getExperienceLabel(selectedEvent.experience)}</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Slot Details */}
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2">
+                    <BookOpen className="h-4 w-4 text-gray-500" />
+                    <span className="font-medium">{selectedEvent.subject}</span>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Clock className="h-4 w-4 text-gray-500" />
+                    <span className="text-gray-700">
+                      {format(selectedEvent.start, 'dd MMMM yyyy, HH:mm', { locale: ru })} - {format(selectedEvent.end, 'HH:mm', { locale: ru })}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <MapPin className="h-4 w-4 text-gray-500" />
+                    <span className="text-gray-700">{getFormatLabel(selectedEvent.format)}</span>
+                  </div>
+
+                  <div className="text-lg font-bold text-blue-600">
+                    {selectedEvent.price} ₽
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex space-x-3 pt-4">
+                  <button
+                    onClick={() => handleBookSlot(selectedEvent.slot)}
+                    className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
+                  >
+                    <BookOpen className="h-4 w-4" />
+                    <span>Забронировать</span>
                   </button>
-                )}
+                  <button
+                    onClick={() => setIsModalOpen(false)}
+                    className="flex-1 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+                  >
+                    Отмена
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {/* Booking Modal */}
+        {showBookingModal && selectedSlot && (
+          <BookingModal
+            slot={selectedSlot}
+            onClose={() => setShowBookingModal(false)}
+            onConfirm={handleConfirmBooking}
+          />
+        )}
+      </div>
     </div>
   );
 };

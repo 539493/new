@@ -1,53 +1,92 @@
 import React, { useState } from 'react';
-import { Heart, MessageCircle, Share2, Bookmark, MoreHorizontal, ThumbsUp, Smile, User } from 'lucide-react';
-import { Post, Comment } from '../../types';
-import { useData } from '../../contexts/DataContext';
-import { useAuth } from '../../contexts/AuthContext';
+import { 
+  Heart, 
+  MessageCircle, 
+  Share, 
+  MoreHorizontal, 
+  ThumbsUp, 
+  Smile, 
+  Bookmark,
+  Play,
+  Send
+} from 'lucide-react';
+import PostEditor from './PostEditor';
+
+interface Reaction {
+  type: 'like' | 'love' | 'smile' | 'thumbsup';
+  count: number;
+  userReacted: boolean;
+}
+
+interface Comment {
+  id: string;
+  userId: string;
+  userName: string;
+  userAvatar?: string;
+  text: string;
+  date: string;
+}
+
+interface Post {
+  id: string;
+  userId: string;
+  userName: string;
+  userAvatar?: string;
+  text: string;
+  media?: string[];
+  type: 'text' | 'image' | 'video';
+  date: string;
+  reactions: Reaction[];
+  comments: Comment[];
+  isBookmarked: boolean;
+}
 
 interface PostCardProps {
   post: Post;
-  onEdit?: (postId: string) => void;
+  onReaction: (postId: string, reactionType: string) => void;
+  onComment: (postId: string, comment: string) => void;
+  onShare: (postId: string) => void;
+  onBookmark: (postId: string) => void;
+  onEdit?: (postId: string, newText: string) => void;
   onDelete?: (postId: string) => void;
 }
 
-const PostCard: React.FC<PostCardProps> = ({ post, onEdit, onDelete }) => {
-  const { addReaction, addComment, bookmarkPost } = useData();
-  const { user } = useAuth();
+const PostCard: React.FC<PostCardProps> = ({
+  post,
+  onReaction,
+  onComment,
+  onShare,
+  onBookmark,
+  onEdit,
+  onDelete
+}) => {
   const [showComments, setShowComments] = useState(false);
   const [newComment, setNewComment] = useState('');
-  const [isSubmitting, setSubmitting] = useState(false);
-  const [showOptions, setShowOptions] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [showReactions, setShowReactions] = useState(false);
 
-  const handleReaction = (reactionType: string) => {
-    if (!user) return;
-    addReaction(post.id, reactionType);
+  const handleReaction = (type: string) => {
+    onReaction(post.id, type);
+    setShowReactions(false);
   };
 
-  const handleComment = async () => {
-    if (!newComment.trim() || !user) return;
-    
-    setSubmitting(true);
-    try {
-      await addComment(post.id, newComment);
+  const handleComment = () => {
+    if (newComment.trim()) {
+      onComment(post.id, newComment.trim());
       setNewComment('');
-    } catch (error) {
-      console.error('Error adding comment:', error);
-    } finally {
-      setSubmitting(false);
     }
   };
 
-  const handleBookmark = () => {
-    if (!user) return;
-    bookmarkPost(post.id);
+  const handleEdit = (newText: string) => {
+    if (onEdit) {
+      onEdit(post.id, newText);
+      setIsEditing(false);
+    }
   };
 
-  const getReactionIcon = (type: string) => {
-    switch (type) {
-      case 'like': return <ThumbsUp className="h-4 w-4" />;
-      case 'love': return <Heart className="h-4 w-4" />;
-      case 'smile': return <Smile className="h-4 w-4" />;
-      default: return <ThumbsUp className="h-4 w-4" />;
+  const handleDelete = () => {
+    if (onDelete) {
+      onDelete(post.id);
     }
   };
 
@@ -56,219 +95,270 @@ const PostCard: React.FC<PostCardProps> = ({ post, onEdit, onDelete }) => {
     const now = new Date();
     const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
     
-    if (diffInHours < 1) return 'Только что';
-    if (diffInHours < 24) return `${diffInHours} ч назад`;
-    if (diffInHours < 48) return 'Вчера';
+    if (diffInHours < 1) return 'только что';
+    if (diffInHours < 24) return `${diffInHours}ч назад`;
+    if (diffInHours < 48) return 'вчера';
     return date.toLocaleDateString('ru-RU');
   };
 
+  const totalReactions = post.reactions.reduce((sum, reaction) => sum + reaction.count, 0);
+
   return (
-    <div className="bg-white rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.01] border border-gray-100 overflow-hidden animate-fade-in-up">
+    <div className="bg-white rounded-lg border border-gray-200 mb-4">
       {/* Заголовок поста */}
-      <div className="p-6 border-b border-gray-100">
+      <div className="p-4 pb-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            {post.userAvatar ? (
-              <img 
-                src={post.userAvatar} 
-                alt={post.userName} 
-                className="w-12 h-12 rounded-2xl object-cover shadow-md"
-              />
-            ) : (
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-md">
-                <User className="h-6 w-6 text-white" />
-              </div>
-            )}
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center">
+              {post.userAvatar ? (
+                <img src={post.userAvatar} alt={post.userName} className="w-full h-full rounded-full object-cover" />
+              ) : (
+                <span className="text-white text-sm font-medium">
+                  {post.userName.charAt(0).toUpperCase()}
+                </span>
+              )}
+            </div>
             <div>
-              <h3 className="font-semibold text-gray-900 hover:text-blue-600 transition-colors duration-200 cursor-pointer">
-                {post.userName}
-              </h3>
-              <p className="text-sm text-gray-500">{formatDate(post.date)}</p>
+              <div className="font-medium text-gray-900">{post.userName}</div>
+              <div className="text-sm text-gray-500">{formatDate(post.date)}</div>
             </div>
           </div>
           
           <div className="relative">
-            <button
-              onClick={() => setShowOptions(!showOptions)}
-              className="p-2 hover:bg-gray-100 rounded-2xl transition-colors duration-200"
-            >
-              <MoreHorizontal className="h-5 w-5 text-gray-500" />
+            <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
+              <MoreHorizontal className="w-5 h-5" />
             </button>
-            
-            {showOptions && (
-              <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-xl border border-gray-200 py-2 z-10 animate-scale-in">
-                {onEdit && (
-                  <button
-                    onClick={() => onEdit(post.id)}
-                    className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-50 transition-colors duration-200"
-                  >
-                    Редактировать
-                  </button>
-                )}
-                {onDelete && (
-                  <button
-                    onClick={() => onDelete(post.id)}
-                    className="w-full px-4 py-2 text-left text-red-600 hover:bg-red-50 transition-colors duration-200"
-                  >
-                    Удалить
-                  </button>
-                )}
-              </div>
-            )}
+            {/* Выпадающее меню */}
+            <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10">
+              {onEdit && (
+                <button 
+                  onClick={() => setIsEditing(true)}
+                  className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50"
+                >
+                  Редактировать
+                </button>
+              )}
+              {onDelete && (
+                <button 
+                  onClick={handleDelete}
+                  className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-50"
+                >
+                  Удалить
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Содержимое поста */}
-      <div className="p-6">
-        <p className="text-gray-800 text-lg leading-relaxed mb-4">{post.text}</p>
-        
-        {/* Медиа контент */}
-        {post.media && post.media.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            {post.media.map((media, index) => (
-              <div key={index} className="relative group overflow-hidden rounded-2xl">
-                <img 
-                  src={media} 
-                  alt={`Media ${index + 1}`}
-                  className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Реакции */}
-      {post.reactions && post.reactions.length > 0 && (
-        <div className="px-6 pb-4">
-          <div className="flex flex-wrap gap-2">
-            {post.reactions.map((reaction, index) => (
-              <button
-                key={index}
-                onClick={() => handleReaction(reaction.type)}
-                className={`flex items-center space-x-1 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 hover:scale-105 ${
-                  reaction.userReacted
-                    ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                {getReactionIcon(reaction.type)}
-                <span>{reaction.count}</span>
-              </button>
-            ))}
-          </div>
+      {/* Редактирование поста */}
+      {isEditing && onEdit && (
+        <div className="px-4 pb-4">
+          <PostEditor
+            onSubmit={({ text }) => handleEdit(text)}
+            onCancel={() => setIsEditing(false)}
+            initialText={post.text}
+            isEditing={true}
+          />
         </div>
       )}
 
-      {/* Действия */}
-      <div className="px-6 py-4 border-t border-gray-100">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-6">
-            <button
-              onClick={() => handleReaction('like')}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-2xl transition-all duration-200 hover:scale-105 ${
-                post.reactions?.some(r => r.type === 'like' && r.userReacted)
-                  ? 'text-blue-600 bg-blue-50'
-                  : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
-              }`}
-            >
-              <ThumbsUp className="h-5 w-5" />
-              <span className="text-sm font-medium">Нравится</span>
-            </button>
-            
-            <button
-              onClick={() => setShowComments(!showComments)}
-              className="flex items-center space-x-2 px-4 py-2 rounded-2xl text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 hover:scale-105"
-            >
-              <MessageCircle className="h-5 w-5" />
-              <span className="text-sm font-medium">
-                Комментарии ({post.comments?.length || 0})
-              </span>
-            </button>
-            
-            <button className="flex items-center space-x-2 px-4 py-2 rounded-2xl text-gray-600 hover:text-green-600 hover:bg-green-50 transition-all duration-200 hover:scale-105">
-              <Share2 className="h-5 w-5" />
-              <span className="text-sm font-medium">Поделиться</span>
-            </button>
-          </div>
-          
-          <button
-            onClick={handleBookmark}
-            className={`p-2 rounded-2xl transition-all duration-200 hover:scale-110 ${
-              post.isBookmarked
-                ? 'text-blue-600 bg-blue-50'
-                : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
-            }`}
-          >
-            <Bookmark className="h-5 w-5" />
-          </button>
-        </div>
-      </div>
-
-      {/* Комментарии */}
-      {showComments && (
-        <div className="border-t border-gray-100 bg-gray-50/50">
-          <div className="p-6">
-            {/* Добавление комментария */}
-            <div className="flex items-center space-x-3 mb-4">
-              {user?.avatar ? (
-                <img 
-                  src={user.avatar} 
-                  alt={user.name} 
-                  className="w-10 h-10 rounded-2xl object-cover"
-                />
-              ) : (
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center">
-                  <User className="h-5 w-5 text-white" />
-                </div>
-              )}
-              <div className="flex-1">
-                <input
-                  type="text"
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  placeholder="Написать комментарий..."
-                  className="w-full px-4 py-2 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                  onKeyPress={(e) => e.key === 'Enter' && handleComment()}
-                />
-              </div>
-              <button
-                onClick={handleComment}
-                disabled={isSubmitting || !newComment.trim()}
-                className="px-4 py-2 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105"
-              >
-                {isSubmitting ? '...' : 'Отправить'}
-              </button>
+      {/* Контент поста */}
+      {!isEditing && (
+        <>
+          {post.text && (
+            <div className="px-4 pb-3">
+              <p className="text-gray-900 whitespace-pre-line">{post.text}</p>
             </div>
+          )}
 
-            {/* Список комментариев */}
-            <div className="space-y-3">
-              {post.comments?.map((comment: Comment) => (
-                <div key={comment.id} className="flex items-start space-x-3 p-3 bg-white rounded-2xl shadow-sm">
-                  {comment.userAvatar ? (
-                    <img 
-                      src={comment.userAvatar} 
-                      alt={comment.userName} 
-                      className="w-8 h-8 rounded-xl object-cover"
-                    />
-                  ) : (
-                    <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-                      <User className="h-4 w-4 text-white" />
-                    </div>
-                  )}
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <span className="font-medium text-gray-900">{comment.userName}</span>
-                      <span className="text-xs text-gray-500">{formatDate(comment.date)}</span>
-                    </div>
-                    <p className="text-gray-700">{comment.text}</p>
+          {/* Медиафайлы */}
+          {post.media && post.media.length > 0 && (
+            <div className="px-4 pb-3">
+              {post.type === 'video' ? (
+                <div className="relative">
+                  <video 
+                    src={post.media[0]} 
+                    className="w-full rounded-lg"
+                    controls
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Play className="w-12 h-12 text-white opacity-80" />
                   </div>
                 </div>
-              ))}
+              ) : (
+                <div className={`grid gap-2 ${
+                  post.media.length === 1 ? 'grid-cols-1' : 
+                  post.media.length === 2 ? 'grid-cols-2' : 'grid-cols-3'
+                }`}>
+                  {post.media.map((url, index) => (
+                    <div key={index} className="relative aspect-square">
+                      <img 
+                        src={url} 
+                        alt="Post media" 
+                        className="w-full h-full object-cover rounded-lg"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Статистика реакций и комментариев */}
+          {(totalReactions > 0 || post.comments.length > 0) && (
+            <div className="px-4 py-2 border-t border-gray-100">
+              <div className="flex items-center justify-between text-sm text-gray-500">
+                <div className="flex items-center space-x-1">
+                  {totalReactions > 0 && (
+                    <div className="flex items-center space-x-1">
+                      <Heart className="w-4 h-4 text-red-500 fill-current" />
+                      <span>{totalReactions}</span>
+                    </div>
+                  )}
+                  {post.comments.length > 0 && (
+                    <span>{post.comments.length} комментариев</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Кнопки действий */}
+          <div className="px-4 py-2 border-t border-gray-100">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                {/* Кнопка реакций */}
+                <div className="relative">
+                  <button
+                    onClick={() => setShowReactions(!showReactions)}
+                    className={`flex items-center space-x-1 px-3 py-1 rounded-full transition-colors ${
+                      post.reactions.some(r => r.userReacted) 
+                        ? 'text-red-500 bg-red-50' 
+                        : 'text-gray-500 hover:bg-gray-50'
+                    }`}
+                  >
+                    <Heart className={`w-5 h-5 ${post.reactions.some(r => r.userReacted) ? 'fill-current' : ''}`} />
+                    <span className="text-sm">Нравится</span>
+                  </button>
+                  
+                  {/* Панель реакций */}
+                  {showReactions && (
+                    <div className="absolute bottom-full left-0 mb-2 bg-white border border-gray-200 rounded-lg shadow-lg p-2 flex space-x-2">
+                      <button
+                        onClick={() => handleReaction('like')}
+                        className="p-2 hover:bg-gray-50 rounded-full transition-colors"
+                        title="Нравится"
+                      >
+                        <ThumbsUp className="w-6 h-6 text-blue-500" />
+                      </button>
+                      <button
+                        onClick={() => handleReaction('love')}
+                        className="p-2 hover:bg-gray-50 rounded-full transition-colors"
+                        title="Любовь"
+                      >
+                        <Heart className="w-6 h-6 text-red-500" />
+                      </button>
+                      <button
+                        onClick={() => handleReaction('smile')}
+                        className="p-2 hover:bg-gray-50 rounded-full transition-colors"
+                        title="Улыбка"
+                      >
+                        <Smile className="w-6 h-6 text-yellow-500" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  onClick={() => setShowComments(!showComments)}
+                  className="flex items-center space-x-1 px-3 py-1 rounded-full text-gray-500 hover:bg-gray-50 transition-colors"
+                >
+                  <MessageCircle className="w-5 h-5" />
+                  <span className="text-sm">Комментировать</span>
+                </button>
+
+                <button
+                  onClick={() => onShare(post.id)}
+                  className="flex items-center space-x-1 px-3 py-1 rounded-full text-gray-500 hover:bg-gray-50 transition-colors"
+                >
+                  <Share className="w-5 h-5" />
+                  <span className="text-sm">Поделиться</span>
+                </button>
+              </div>
+
+              <button
+                onClick={() => onBookmark(post.id)}
+                className={`p-2 rounded-full transition-colors ${
+                  post.isBookmarked 
+                    ? 'text-blue-500 bg-blue-50' 
+                    : 'text-gray-500 hover:bg-gray-50'
+                }`}
+              >
+                <Bookmark className={`w-5 h-5 ${post.isBookmarked ? 'fill-current' : ''}`} />
+              </button>
             </div>
           </div>
-        </div>
+
+          {/* Секция комментариев */}
+          {showComments && (
+            <div className="px-4 py-3 border-t border-gray-100 bg-gray-50">
+              {/* Список комментариев */}
+              <div className="space-y-3 mb-3">
+                {post.comments.map(comment => (
+                  <div key={comment.id} className="flex items-start space-x-2">
+                    <div className="w-6 h-6 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center">
+                      {comment.userAvatar ? (
+                        <img src={comment.userAvatar} alt={comment.userName} className="w-full h-full rounded-full object-cover" />
+                      ) : (
+                        <span className="text-white text-xs font-medium">
+                          {comment.userName.charAt(0).toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <div className="bg-white rounded-lg p-2">
+                        <div className="flex items-center space-x-2 mb-1">
+                          <span className="font-medium text-sm text-gray-900">{comment.userName}</span>
+                          <span className="text-xs text-gray-500">{formatDate(comment.date)}</span>
+                        </div>
+                        <p className="text-sm text-gray-800">{comment.text}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Добавление комментария */}
+              <div className="flex items-center space-x-2">
+                <div className="w-6 h-6 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-xs font-medium">U</span>
+                </div>
+                <div className="flex-1 flex items-center space-x-2 bg-white rounded-full px-3 py-2">
+                  <input
+                    type="text"
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    placeholder="Написать комментарий..."
+                    className="flex-1 border-none outline-none text-sm"
+                    onKeyPress={(e) => e.key === 'Enter' && handleComment()}
+                  />
+                  <button
+                    onClick={handleComment}
+                    disabled={!newComment.trim()}
+                    className={`p-1 rounded-full transition-colors ${
+                      newComment.trim() 
+                        ? 'text-blue-500 hover:bg-blue-50' 
+                        : 'text-gray-400'
+                    }`}
+                  >
+                    <Send className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
