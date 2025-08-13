@@ -17,11 +17,54 @@ import ProfileForm from './components/Shared/ProfileForm';
 import { Routes, Route } from 'react-router-dom';
 import './index.css';
 
+// Простой компонент для отображения ошибок
+const ErrorFallback: React.FC = () => (
+  <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+    <div className="text-center">
+      <div className="text-red-500 text-6xl mb-4">⚠️</div>
+      <h1 className="text-2xl font-bold text-gray-900 mb-2">Что-то пошло не так</h1>
+      <p className="text-gray-600 mb-4">Приложение не может загрузиться</p>
+      <button 
+        onClick={() => window.location.reload()} 
+        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+      >
+        Перезагрузить страницу
+      </button>
+    </div>
+  </div>
+);
+
 const AppContent: React.FC = () => {
-  const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState(user?.role === 'teacher' ? 'slots' : 'home');
+  const [activeTab, setActiveTab] = useState('home');
   const [isPageTransitioning, setIsPageTransitioning] = useState(false);
   const [previousTab, setPreviousTab] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  // Безопасное получение пользователя
+  let user = null;
+  try {
+    const authContext = useAuth();
+    user = authContext.user;
+    
+    // Устанавливаем активную вкладку на основе роли пользователя
+    if (user && !activeTab) {
+      setActiveTab(user.role === 'teacher' ? 'slots' : 'home');
+    }
+  } catch (error) {
+    console.error('Failed to get auth context:', error);
+    setError('Ошибка авторизации');
+  }
+
+  // Отладочная информация
+  useEffect(() => {
+    console.log('AppContent: user =', user);
+    console.log('AppContent: activeTab =', activeTab);
+  }, [user, activeTab]);
+
+  // Если есть ошибка, показываем fallback
+  if (error) {
+    return <ErrorFallback />;
+  }
 
   // Обработчик изменения вкладки с анимацией
   const handleTabChange = (newTab: string) => {
@@ -38,6 +81,7 @@ const AppContent: React.FC = () => {
   };
 
   if (!user) {
+    console.log('AppContent: No user, showing AuthForm');
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
         <div className="animate-fade-in-up">
@@ -46,6 +90,8 @@ const AppContent: React.FC = () => {
       </div>
     );
   }
+
+  console.log('AppContent: Rendering content for user:', user.name, 'role:', user.role);
 
   const renderContent = () => {
     const content = (() => {
@@ -96,15 +142,20 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    console.log('App: Starting initialization...');
     // Симуляция загрузки приложения
     const timer = setTimeout(() => {
+      console.log('App: Initialization complete, setting isLoading to false');
       setIsLoading(false);
     }, 800);
 
     return () => clearTimeout(timer);
   }, []);
 
+  console.log('App: isLoading =', isLoading);
+
   if (isLoading) {
+    console.log('App: Showing loading screen');
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
         <div className="text-center animate-fade-in-up">
@@ -127,6 +178,7 @@ const App: React.FC = () => {
     );
   }
 
+  console.log('App: Rendering main app with providers');
   return (
     <AuthProvider>
       <DataProvider>

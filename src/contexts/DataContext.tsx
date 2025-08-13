@@ -148,8 +148,12 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       }
     };
 
-    initializeWebSocket();
-  }, []);
+    // Инициализируем WebSocket только после полной инициализации данных
+    if (isInitialized) {
+      const timer = setTimeout(initializeWebSocket, 200);
+      return () => clearTimeout(timer);
+    }
+  }, [isInitialized]);
 
   // Инициализация состояния с данными из localStorage или начальными данными
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>(() => {

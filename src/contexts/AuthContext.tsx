@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { User, StudentProfile, TeacherProfile } from '../types';
 
@@ -63,7 +63,75 @@ const loadUserFromStorage = (): User | null => {
 };
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(() => loadUserFromStorage());
+  const [user, setUser] = useState<User | null>(() => {
+    try {
+      return loadUserFromStorage();
+    } catch (error) {
+      console.warn('Failed to load user from storage:', error);
+      return null;
+    }
+  });
+  
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // Инициализация при монтировании
+  useEffect(() => {
+    const initializeAuth = () => {
+      try {
+        // Проверяем, есть ли пользователи в системе
+        const users = loadUsersFromStorage();
+        if (users.length === 0) {
+          // Создаем тестового пользователя для демонстрации
+          const demoUser: User = {
+            id: 'demo_user_1',
+            email: 'demo@example.com',
+            name: 'Демо Ученик',
+            nickname: 'demo_student',
+            role: 'student',
+            phone: '+7 (999) 123-45-67',
+            avatar: 'https://via.placeholder.com/150',
+            profile: {
+              name: 'Демо Ученик',
+              email: 'demo@example.com',
+              phone: '+7 (999) 123-45-67',
+              grade: '10',
+              preferredSubjects: ['Математика', 'Физика'],
+              goals: ['подготовка к экзаменам'],
+              learningStyle: 'mixed',
+              availability: 'flexible'
+            }
+          };
+          
+          saveUsersToStorage([demoUser]);
+          setUser(demoUser);
+          saveUserToStorage(demoUser);
+          console.log('Demo user created and logged in');
+        }
+        
+        setIsInitialized(true);
+        console.log('AuthContext initialized successfully');
+      } catch (error) {
+        console.error('Failed to initialize AuthContext:', error);
+        setIsInitialized(true); // Все равно помечаем как инициализированный
+      }
+    };
+
+    // Небольшая задержка для правильной последовательности инициализации
+    const timer = setTimeout(initializeAuth, 100);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Показываем загрузочный экран, пока контекст не инициализирован
+  if (!isInitialized) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Инициализация авторизации...</p>
+        </div>
+      </div>
+    );
+  }
 
   const login = async (email: string, password: string): Promise<boolean> => {
     // Симуляция API вызова
