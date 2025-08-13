@@ -99,6 +99,9 @@ const getInitialData = () => {
 };
 
 export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
+  // Состояние загрузки
+  const [isInitialized, setIsInitialized] = useState(false);
+  
   // WebSocket состояние
   const socketRef = useRef<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
@@ -107,18 +110,18 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   useEffect(() => {
     const initializeWebSocket = async () => {
       try {
-        // Проверяем, доступен ли WebSocket в продакшене
+        // В продакшене полностью отключаем WebSocket
         if (import.meta.env.PROD) {
-          // В продакшене отключаем WebSocket для предотвращения ошибок
-          console.log('WebSocket disabled in production mode');
+          console.log('WebSocket completely disabled in production mode');
           setIsConnected(false);
           return;
         }
 
+        // WebSocket только для разработки
         const socket = io(SERVER_URL, SOCKET_CONFIG);
         
         socket.on('connect', () => {
-          console.log('WebSocket connected');
+          console.log('WebSocket connected (development mode)');
           setIsConnected(true);
         });
 
@@ -204,6 +207,36 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     // Используем значения по умолчанию, если AuthContext еще не готов
   }
 
+  // Вспомогательная функция для безопасной отправки WebSocket сообщений
+  const safeEmit = (event: string, data: any) => {
+    if (socketRef.current && isConnected && !import.meta.env.PROD) {
+      try {
+        socketRef.current.emit(event, data);
+      } catch (error) {
+        console.warn(`Failed to emit ${event} via WebSocket:`, error);
+      }
+    }
+  };
+
+  // Инициализация данных при монтировании
+  useEffect(() => {
+    const initializeData = () => {
+      try {
+        loadInitialData();
+        setIsInitialized(true);
+        console.log('DataContext initialized successfully');
+      } catch (error) {
+        console.error('Failed to initialize DataContext:', error);
+        // Даже при ошибке помечаем как инициализированный, чтобы приложение не зависло
+        setIsInitialized(true);
+      }
+    };
+
+    // Небольшая задержка для правильной последовательности инициализации
+    const timer = setTimeout(initializeData, 100);
+    return () => clearTimeout(timer);
+  }, []);
+
   // Функция для загрузки начальных данных
   const loadInitialData = () => {
     // Загружаем данные из localStorage или используем начальные данные
@@ -256,9 +289,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       if (localSlots.length > 0) {
         console.log('Syncing local slots with server:', localSlots.length, 'slots');
         localSlots.forEach((slot: TimeSlot) => {
-          if (socketRef.current) {
-            socketRef.current.emit('createSlot', slot);
-          }
+          safeEmit('createSlot', slot);
         });
       }
     });
@@ -554,13 +585,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         return updated;
       });
       
-      // Отправляем слот на сервер, если есть соединение
-      if (socketRef.current && isConnected) {
-        socketRef.current.emit('createSlot', newSlot);
-      } else {
-        // Если нет соединения, сохраняем слот локально для последующей синхронизации
-        console.log('No connection, slot saved locally for later sync');
-      }
+      // Отправляем слот на сервер для других клиентов
+      safeEmit('createSlot', newSlot);
       // Если слот сразу бронируется на ученика, создаём Lesson
       if (isBooked && studentId && studentName) {
         const newLesson: Lesson = {
@@ -595,9 +621,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           updateProfile(profile);
         }
         // --- КОНЕЦ СТАТИСТИКИ ---
-        if (socketRef.current && isConnected) {
-          socketRef.current.emit('bookSlot', { slotId: newSlot.id, lesson: newLesson, bookedStudentId: studentId });
-        }
+        safeEmit('bookSlot', { slotId: newSlot.id, lesson: newLesson, bookedStudentId: studentId });
       }
       resolve(newSlot);
     });
@@ -659,10 +683,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     console.log('Lesson booked successfully:', newLesson);
 
     // Отправляем информацию о бронировании на сервер
-    if (socketRef.current && isConnected) {
-      socketRef.current.emit('bookSlot', { slotId, lesson: newLesson, bookedStudentId: studentId });
-      console.log('Sent booking info to server for real-time updates');
-    }
+    safeEmit('bookSlot', { slotId, lesson: newLesson, bookedStudentId: studentId });
+    console.log('Sent booking info to server for real-time updates');
   };
 
   const cancelLesson = (lessonId: string) => {
@@ -696,10 +718,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       );
 
       // Отправляем информацию об отмене на сервер
-      if (socketRef.current && isConnected) {
-        socketRef.current.emit('cancelSlot', { slotId: slot.id, lessonId });
-        console.log('Sent cancellation info to server for real-time updates');
-      }
+      safeEmit('cancelSlot', { slotId: slot.id, lessonId });
+      console.log('Sent cancellation info to server for real-time updates');
     }
   };
 
@@ -802,10 +822,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     });
 
     // Отправляем новый чат на сервер для других клиентов
-    if (socketRef.current && isConnected) {
-      socketRef.current.emit('createChat', newChat);
-      console.log('Sent new chat to server for real-time updates');
-    }
+    safeEmit('createChat', newChat);
+    console.log('Sent new chat to server for real-time updates');
 
     return newChat.id;
   };
@@ -824,14 +842,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     // Не добавляем сообщение локально, ждем receiveMessage от сервера
 
     // Отправляем сообщение на сервер для других клиентов
-    if (socketRef.current && isConnected && !import.meta.env.PROD) {
-      try {
-        socketRef.current.emit('sendMessage', { chatId, message: newMessage });
-        console.log('Sent message to server for real-time updates');
-      } catch (error) {
-        console.warn('Failed to send message via WebSocket:', error);
-      }
-    }
+    safeEmit('sendMessage', { chatId, message: newMessage });
+    console.log('Sent message to server for real-time updates');
   };
 
   const completeLesson = (lessonId: string) => {
@@ -859,20 +871,12 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       );
     }
 
-    if (socketRef.current && isConnected && !import.meta.env.PROD) {
-      try {
-        socketRef.current.emit('lessonCompleted', { lessonId });
-        console.log('Sent lessonCompleted to server', lessonId);
-      } catch (error) {
-        console.warn('Failed to send lessonCompleted via WebSocket:', error);
-      }
-    }
+    safeEmit('lessonCompleted', { lessonId });
+    console.log('Sent lessonCompleted to server', lessonId);
   };
 
   const updateStudentProfile = (studentId: string, profile: StudentProfile) => {
-    if (socketRef.current) {
-      socketRef.current.emit('updateStudentProfile', { studentId, profile });
-    }
+    safeEmit('updateStudentProfile', { studentId, profile });
     setStudentProfiles(prev => ({ ...prev, [studentId]: profile }));
   };
 
@@ -885,10 +889,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       saveToStorage('tutoring_timeSlots', updated);
       return updated;
     });
-    if (socketRef.current && isConnected) {
-      socketRef.current.emit('deleteSlot', { slotId });
-      console.log('Sent deleteSlot to server for real-time updates');
-    }
+    safeEmit('deleteSlot', { slotId });
+    console.log('Sent deleteSlot to server for real-time updates');
   };
 
   const clearAllData = () => {
@@ -912,9 +914,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   // Функция для обновления профиля преподавателя на сервере
   const updateTeacherProfile = (teacherId: string, profile: TeacherProfile) => {
     console.log('[updateTeacherProfile] called:', { teacherId, profile, isConnected, socket: !!socketRef.current });
-    if (socketRef.current && isConnected) {
-      socketRef.current.emit('updateTeacherProfile', { teacherId, profile });
-    }
+    safeEmit('updateTeacherProfile', { teacherId, profile });
     // --- Синхронизация профиля в общем списке пользователей ---
     try {
       const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
@@ -964,9 +964,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       return updated;
     });
 
-    if (socketRef.current && isConnected) {
-      socketRef.current.emit('createPost', newPost);
-    }
+    safeEmit('createPost', newPost);
   };
 
   const addReaction = (postId: string, reactionType: string) => {
@@ -1014,9 +1012,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       return updated;
     });
 
-    if (socketRef.current && isConnected) {
-      socketRef.current.emit('addReaction', { postId, reactionType, userId: user.id });
-    }
+    safeEmit('addReaction', { postId, reactionType, userId: user.id });
   };
 
   const addComment = (postId: string, commentText: string) => {
@@ -1041,9 +1037,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       return updated;
     });
 
-    if (socketRef.current && isConnected) {
-      socketRef.current.emit('addComment', { postId, comment: newComment });
-    }
+    safeEmit('addComment', { postId, comment: newComment });
   };
 
   const sharePost = (postId: string) => {
@@ -1076,9 +1070,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       return updated;
     });
 
-    if (socketRef.current && isConnected) {
-      socketRef.current.emit('editPost', { postId, newText });
-    }
+    safeEmit('editPost', { postId, newText });
   };
 
   const deletePost = (postId: string) => {
@@ -1088,9 +1080,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       return updated;
     });
 
-    if (socketRef.current && isConnected) {
-      socketRef.current.emit('deletePost', { postId });
-    }
+    safeEmit('deletePost', { postId });
   };
 
   // Функции для управления чатами
@@ -1102,9 +1092,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       return updated;
     });
 
-    if (socketRef.current && isConnected) {
-      socketRef.current.emit('deleteChat', { chatId });
-    }
+    safeEmit('deleteChat', { chatId });
   };
 
   const markChatAsRead = (chatId: string) => {
@@ -1120,9 +1108,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       return updated;
     });
 
-    if (socketRef.current && isConnected) {
-      socketRef.current.emit('markChatAsRead', { chatId });
-    }
+    safeEmit('markChatAsRead', { chatId });
   };
 
   const clearChatMessages = (chatId: string) => {
@@ -1138,9 +1124,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       return updated;
     });
 
-    if (socketRef.current && isConnected) {
-      socketRef.current.emit('clearChatMessages', { chatId });
-    }
+    safeEmit('clearChatMessages', { chatId });
   };
 
   const archiveChat = (chatId: string) => {
@@ -1156,10 +1140,20 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       return updated;
     });
 
-    if (socketRef.current && isConnected) {
-      socketRef.current.emit('archiveChat', { chatId });
-    }
+    safeEmit('archiveChat', { chatId });
   };
+
+  // Показываем загрузочный экран, пока контекст не инициализирован
+  if (!isInitialized) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Инициализация данных...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <DataContext.Provider

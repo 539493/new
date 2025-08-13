@@ -15,40 +15,8 @@ import Recommendations from '../Shared/Recommendations';
 import QuickActions from '../Shared/QuickActions';
 
 const StudentHome: React.FC = () => {
-  // Безопасное получение данных из контекстов
-  let dataContext = null;
-  let authContext = null;
-  
-  try {
-    dataContext = useData();
-  } catch (error) {
-    console.warn('DataContext not available yet');
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Загрузка данных...</p>
-        </div>
-      </div>
-    );
-  }
-  
-  try {
-    authContext = useAuth();
-  } catch (error) {
-    console.warn('AuthContext not available yet');
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Загрузка авторизации...</p>
-        </div>
-      </div>
-    );
-  }
-
-  const { getFilteredSlots, bookLesson, timeSlots, lessons, isConnected } = dataContext;
-  const { user } = authContext;
+  const { getFilteredSlots, bookLesson, timeSlots, lessons, isConnected } = useData();
+  const { user } = useAuth();
   
   const [filters, setFilters] = useState<FilterOptions>({});
   const [showFilters, setShowFilters] = useState(false);
@@ -87,7 +55,7 @@ const StudentHome: React.FC = () => {
   const formats = ['online', 'offline', 'mini-group'];
   const durations = [45, 60, 90, 120];
 
-  const { allUsers } = dataContext;
+  const { allUsers } = useData();
   const [serverTeachers, setServerTeachers] = useState<UserType[]>([]);
 
   // Загружаем преподавателей с сервера при монтировании
