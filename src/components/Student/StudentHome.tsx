@@ -1,52 +1,60 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Filter, Star, Users, MapPin, BookOpen, RefreshCw, Wifi, WifiOff, Heart, MoreHorizontal, Calendar as CalendarIcon, TrendingUp, Award, Clock, User, BookOpen as BookOpenIcon, MessageCircle, BarChart3, Trophy, Lightbulb } from 'lucide-react';
-import { useData } from '../../contexts/DataContext';
-import { useAuth } from '../../contexts/AuthContext';
-import { FilterOptions, TimeSlot, User as UserType } from '../../types';
-import TeacherProfilePage from './TeacherProfilePage';
-import StudentCalendar from './StudentCalendar';
-import BookingModal from '../Shared/BookingModal';
-import TeacherSearch from './TeacherSearch';
-import Analytics from '../Shared/Analytics';
-import LessonsList from '../Shared/LessonsList';
-import UserProfile from '../Shared/UserProfile';
-import Achievements from '../Shared/Achievements';
-import Recommendations from '../Shared/Recommendations';
-import QuickActions from '../Shared/QuickActions';
 
 const StudentHome: React.FC = () => {
-  const { getFilteredSlots, bookLesson, timeSlots, lessons, isConnected } = useData();
-  const { user } = useAuth();
-  
-  const [filters, setFilters] = useState<FilterOptions>({});
+  const [filters, setFilters] = useState({});
   const [showFilters, setShowFilters] = useState(false);
-  const [filteredSlots, setFilteredSlots] = useState<TimeSlot[]>([]);
   const [loading, setLoading] = useState(false);
-  const [showOverbookingModal, setShowOverbookingModal] = useState(false);
-  const [overbookingData, setOverbookingData] = useState({
-    grade: '',
-    subject: '',
-    goals: [] as string[],
-    experience: '',
-    duration: 60,
-    format: 'online',
-    city: '',
-    date: '',
-    startTime: '',
-    comment: '',
-  });
-  const [showBookingModal, setShowBookingModal] = useState(false);
-  const [selectedBookingSlot, setSelectedBookingSlot] = useState<TimeSlot | null>(null);
-  const [showCalendar, setShowCalendar] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedTimeRange, setSelectedTimeRange] = useState<{ start: string; end: string } | null>(null);
-  const [showTeacherSearch, setShowTeacherSearch] = useState(false);
-  const [selectedTeacher, setSelectedTeacher] = useState<UserType | null>(null);
-  const [showAnalytics, setShowAnalytics] = useState(false);
   const [showLessonsList, setShowLessonsList] = useState(false);
-  const [showProfile, setShowProfile] = useState(false);
-  const [showAchievements, setShowAchievements] = useState(false);
-  const [showRecommendations, setShowRecommendations] = useState(false);
+
+  // Демо-данные
+  const demoTimeSlots = [
+    {
+      id: 'slot_1',
+      subject: 'Математика',
+      teacherName: 'Анна Петрова',
+      teacherAvatar: 'https://via.placeholder.com/40',
+      date: '2024-01-15',
+      startTime: '14:00',
+      endTime: '15:00',
+      duration: 60,
+      format: 'online',
+      price: 1500,
+      experience: 'experienced',
+      rating: 4.8,
+      isBooked: false
+    },
+    {
+      id: 'slot_2',
+      subject: 'Физика',
+      teacherName: 'Михаил Сидоров',
+      teacherAvatar: 'https://via.placeholder.com/40',
+      date: '2024-01-16',
+      startTime: '16:00',
+      endTime: '17:00',
+      duration: 60,
+      format: 'online',
+      price: 1800,
+      experience: 'professional',
+      rating: 4.9,
+      isBooked: false
+    }
+  ];
+
+  const demoLessons = [
+    {
+      id: 'lesson_1',
+      subject: 'Математика',
+      teacherName: 'Елена Козлова',
+      date: '2024-01-10',
+      startTime: '15:00',
+      endTime: '16:00',
+      format: 'online',
+      status: 'completed',
+      price: 1500,
+      duration: 60
+    }
+  ];
 
   const subjects = ['Математика', 'Русский язык', 'Английский язык', 'Физика', 'Химия', 'Биология', 'История', 'Литература'];
   const grades = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', 'Студент', 'Взрослый'];
@@ -55,55 +63,26 @@ const StudentHome: React.FC = () => {
   const formats = ['online', 'offline', 'mini-group'];
   const durations = [45, 60, 90, 120];
 
-  const { allUsers } = useData();
-  const [serverTeachers, setServerTeachers] = useState<UserType[]>([]);
+  // Получаем пользователя из localStorage
+  const user = JSON.parse(localStorage.getItem('tutoring_currentUser') || '{}');
 
-  // Загружаем преподавателей с сервера при монтировании
-  useEffect(() => {
-    // В реальном приложении здесь был бы API вызов
-    setServerTeachers(allUsers.filter(u => u.role === 'teacher'));
-  }, [allUsers]);
-
-  // Функция для загрузки всех доступных слотов
+  // Функция для загрузки доступных слотов
   const loadAvailableSlots = () => {
     console.log('StudentHome: Loading available slots...');
     setLoading(true);
     
     setTimeout(() => {
-      const filtered = getFilteredSlots(filters);
-      setFilteredSlots(filtered);
       setLoading(false);
     }, 500);
   };
 
-  // Применяем фильтры при их изменении
-  useEffect(() => {
-    loadAvailableSlots();
-  }, [filters]);
-
   // Обработчик бронирования урока
-  const handleBookLesson = (slot: TimeSlot) => {
-    setSelectedBookingSlot(slot);
-    setShowBookingModal(true);
-  };
-
-  // Обработчик подтверждения бронирования
-  const handleConfirmBooking = async (comment: string) => {
-    if (user && selectedBookingSlot) {
-      try {
-        await bookLesson(selectedBookingSlot.id, user.id, user.name, comment);
-        setShowBookingModal(false);
-        setSelectedBookingSlot(null);
-        // Перезагружаем слоты
-        loadAvailableSlots();
-      } catch (error) {
-        console.error('Error booking lesson:', error);
-      }
-    }
+  const handleBookLesson = (slot: any) => {
+    alert(`Урок по предмету "${slot.subject}" забронирован!`);
   };
 
   // Обработчик изменения фильтров
-  const handleFilterChange = (key: keyof FilterOptions, value: any) => {
+  const handleFilterChange = (key: string, value: any) => {
     setFilters(prev => ({
       ...prev,
       [key]: value
@@ -113,32 +92,16 @@ const StudentHome: React.FC = () => {
   // Обработчик сброса фильтров
   const handleResetFilters = () => {
     setFilters({});
-    setSelectedDate(null);
-    setSelectedTimeRange(null);
-  };
-
-  // Обработчик выбора преподавателя
-  const handleTeacherSelect = (teacher: UserType) => {
-    setSelectedTeacher(teacher);
-    setShowTeacherSearch(false);
-  };
-
-  // Обработчик бронирования урока у конкретного преподавателя
-  const handleBookLessonWithTeacher = (slot: TimeSlot) => {
-    setSelectedBookingSlot(slot);
-    setShowBookingModal(true);
   };
 
   // Получение статистики
   const getStats = () => {
-    const totalSlots = filteredSlots.length;
-    const onlineSlots = filteredSlots.filter(s => s.format === 'online').length;
-    const offlineSlots = filteredSlots.filter(s => s.format === 'offline').length;
-    const averagePrice = totalSlots > 0 
-      ? Math.round(filteredSlots.reduce((sum, s) => sum + s.price, 0) / totalSlots)
-      : 0;
-
-    return { totalSlots, onlineSlots, offlineSlots, averagePrice };
+    return {
+      totalSlots: demoTimeSlots.length,
+      onlineSlots: demoTimeSlots.filter(s => s.format === 'online').length,
+      offlineSlots: demoTimeSlots.filter(s => s.format === 'offline').length,
+      averagePrice: Math.round(demoTimeSlots.reduce((sum, s) => sum + s.price, 0) / demoTimeSlots.length)
+    };
   };
 
   const stats = getStats();
@@ -148,7 +111,7 @@ const StudentHome: React.FC = () => {
       {/* Заголовок и приветствие */}
       <div className="text-center">
         <h1 className="text-4xl font-bold text-gray-900 mb-4">
-          Добро пожаловать, {user?.name}! 👋
+          Добро пожаловать, {user?.name || 'Ученик'}! 👋
         </h1>
         <p className="text-xl text-gray-600 mb-6">
           Найдите идеального преподавателя для достижения ваших целей
@@ -156,17 +119,8 @@ const StudentHome: React.FC = () => {
         
         {/* Статус соединения */}
         <div className="inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-gray-100 text-gray-700">
-          {isConnected ? (
-            <>
-              <Wifi className="h-4 w-4 text-green-500" />
-              <span className="text-sm font-medium">Подключено к серверу</span>
-            </>
-          ) : (
-            <>
-              <WifiOff className="h-4 w-4 text-red-500" />
-              <span className="text-sm font-medium">Работаем офлайн</span>
-            </>
-          )}
+          <Wifi className="h-4 w-4 text-green-500" />
+          <span className="text-sm font-medium">Приложение готово к работе</span>
         </div>
       </div>
 
@@ -215,34 +169,30 @@ const StudentHome: React.FC = () => {
 
       {/* Быстрые действия */}
       <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6">
-        <QuickActions
-          userRole="student"
-          onAction={(action) => {
-            switch (action) {
-              case 'book-lesson':
-                setShowTeacherSearch(true);
-                break;
-              case 'find-teacher':
-                setShowTeacherSearch(true);
-                break;
-              case 'schedule':
-                setShowLessonsList(true);
-                break;
-              case 'messages':
-                // TODO: Открыть чаты
-                console.log('Open messages');
-                break;
-              case 'goals':
-                setShowProfile(true);
-                break;
-              case 'progress':
-                setShowAnalytics(true);
-                break;
-              default:
-                console.log('Action:', action);
-            }
-          }}
-        />
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">Быстрые действия</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <button
+            onClick={() => setShowLessonsList(!showLessonsList)}
+            className="flex items-center space-x-3 p-4 bg-blue-50 text-blue-700 rounded-2xl hover:bg-blue-100 transition-all duration-200 hover:scale-105"
+          >
+            <BookOpen className="h-6 w-6" />
+            <span className="font-medium">Мои уроки</span>
+          </button>
+          
+          <button
+            className="flex items-center space-x-3 p-4 bg-green-50 text-green-700 rounded-2xl hover:bg-green-100 transition-all duration-200 hover:scale-105"
+          >
+            <Users className="h-6 w-6" />
+            <span className="font-medium">Найти преподавателя</span>
+          </button>
+          
+          <button
+            className="flex items-center space-x-3 p-4 bg-purple-50 text-purple-700 rounded-2xl hover:bg-purple-100 transition-all duration-200 hover:scale-105"
+          >
+            <CalendarIcon className="h-6 w-6" />
+            <span className="font-medium">Расписание</span>
+          </button>
+        </div>
       </div>
 
       {/* Поиск и фильтры */}
@@ -260,54 +210,6 @@ const StudentHome: React.FC = () => {
 
           {/* Кнопки действий */}
           <div className="flex items-center space-x-3">
-            <button
-              onClick={() => setShowRecommendations(!showRecommendations)}
-              className="flex items-center space-x-2 px-4 py-3 bg-teal-100 text-teal-700 rounded-2xl hover:bg-teal-200 transition-all duration-200 hover:scale-105"
-            >
-              <Lightbulb className="h-5 w-5" />
-              <span>{showRecommendations ? 'Скрыть рекомендации' : 'Рекомендации'}</span>
-            </button>
-            
-            <button
-              onClick={() => setShowAchievements(!showAchievements)}
-              className="flex items-center space-x-2 px-4 py-3 bg-yellow-100 text-yellow-700 rounded-2xl hover:bg-yellow-200 transition-all duration-200 hover:scale-105"
-            >
-              <Trophy className="h-5 w-5" />
-              <span>{showAchievements ? 'Скрыть достижения' : 'Достижения'}</span>
-            </button>
-            
-            <button
-              onClick={() => setShowProfile(!showProfile)}
-              className="flex items-center space-x-2 px-4 py-3 bg-rose-100 text-rose-700 rounded-2xl hover:bg-rose-200 transition-all duration-200 hover:scale-105"
-            >
-              <User className="h-5 w-5" />
-              <span>{showProfile ? 'Скрыть профиль' : 'Профиль'}</span>
-            </button>
-            
-            <button
-              onClick={() => setShowLessonsList(!showLessonsList)}
-              className="flex items-center space-x-2 px-4 py-3 bg-indigo-100 text-indigo-700 rounded-2xl hover:bg-indigo-200 transition-all duration-200 hover:scale-105"
-            >
-              <BookOpen className="h-5 w-5" />
-              <span>{showLessonsList ? 'Скрыть уроки' : 'Мои уроки'}</span>
-            </button>
-            
-            <button
-              onClick={() => setShowAnalytics(!showAnalytics)}
-              className="flex items-center space-x-2 px-4 py-3 bg-emerald-100 text-emerald-700 rounded-2xl hover:bg-emerald-200 transition-all duration-200 hover:scale-105"
-            >
-              <BarChart3 className="h-5 w-5" />
-              <span>{showAnalytics ? 'Скрыть аналитику' : 'Аналитика'}</span>
-            </button>
-            
-            <button
-              onClick={() => setShowTeacherSearch(!showTeacherSearch)}
-              className="flex items-center space-x-2 px-4 py-3 bg-purple-100 text-purple-700 rounded-2xl hover:bg-purple-200 transition-all duration-200 hover:scale-105"
-            >
-              <Users className="h-5 w-5" />
-              <span>{showTeacherSearch ? 'Скрыть поиск' : 'Найти преподавателя'}</span>
-            </button>
-            
             <button
               onClick={() => setShowFilters(!showFilters)}
               className="flex items-center space-x-2 px-4 py-3 bg-gray-100 text-gray-700 rounded-2xl hover:bg-gray-200 transition-all duration-200 hover:scale-105"
@@ -335,8 +237,7 @@ const StudentHome: React.FC = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Предмет</label>
                 <select
-                  value={filters.subject || ''}
-                  onChange={(e) => handleFilterChange('subject', e.target.value || undefined)}
+                  onChange={(e) => handleFilterChange('subject', e.target.value)}
                   className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                 >
                   <option value="">Все предметы</option>
@@ -350,8 +251,7 @@ const StudentHome: React.FC = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Класс</label>
                 <select
-                  value={filters.grade || ''}
-                  onChange={(e) => handleFilterChange('grade', e.target.value || undefined)}
+                  onChange={(e) => handleFilterChange('grade', e.target.value)}
                   className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                 >
                   <option value="">Все классы</option>
@@ -365,8 +265,7 @@ const StudentHome: React.FC = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Опыт</label>
                 <select
-                  value={filters.experience || ''}
-                  onChange={(e) => handleFilterChange('experience', e.target.value || undefined)}
+                  onChange={(e) => handleFilterChange('experience', e.target.value)}
                   className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                 >
                   <option value="">Любой опыт</option>
@@ -380,8 +279,7 @@ const StudentHome: React.FC = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Формат</label>
                 <select
-                  value={filters.format || ''}
-                  onChange={(e) => handleFilterChange('format', e.target.value || undefined)}
+                  onChange={(e) => handleFilterChange('format', e.target.value)}
                   className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                 >
                   <option value="">Любой формат</option>
@@ -389,48 +287,6 @@ const StudentHome: React.FC = () => {
                   <option value="offline">Очно</option>
                   <option value="mini-group">Мини-группа</option>
                 </select>
-              </div>
-            </div>
-
-            {/* Дополнительные фильтры */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Длительность (мин)</label>
-                <select
-                  value={filters.duration || ''}
-                  onChange={(e) => handleFilterChange('duration', e.target.value ? parseInt(e.target.value) : undefined)}
-                  className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                >
-                  <option value="">Любая</option>
-                  {durations.map(duration => (
-                    <option key={duration} value={duration}>{duration}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Минимальный рейтинг</label>
-                <select
-                  value={filters.minRating || ''}
-                  onChange={(e) => handleFilterChange('minRating', e.target.value ? parseInt(e.target.value) : undefined)}
-                  className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                >
-                  <option value="">Любой</option>
-                  <option value="4">4+ звезды</option>
-                  <option value="4.5">4.5+ звезды</option>
-                  <option value="5">5 звезд</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Город</label>
-                <input
-                  type="text"
-                  value={filters.city || ''}
-                  onChange={(e) => handleFilterChange('city', e.target.value || undefined)}
-                  placeholder="Введите город"
-                  className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                />
               </div>
             </div>
 
@@ -444,114 +300,81 @@ const StudentHome: React.FC = () => {
               </button>
               
               <div className="text-sm text-gray-500">
-                Найдено: {filteredSlots.length} уроков
+                Найдено: {demoTimeSlots.length} уроков
               </div>
             </div>
           </div>
         )}
       </div>
 
-      {/* Рекомендации */}
-      {showRecommendations && user && (
-        <div className="animate-slide-in-top">
-          <Recommendations
-            userId={user.id}
-            userRole="student"
-            timeSlots={timeSlots}
-            lessons={lessons}
-            allUsers={allUsers}
-          />
-        </div>
-      )}
-
-      {/* Достижения */}
-      {showAchievements && user && (
-        <div className="animate-slide-in-top">
-          <Achievements
-            userId={user.id}
-            achievements={[
-              {
-                id: '1',
-                title: 'Первый урок',
-                description: 'Завершите свой первый урок',
-                icon: '🎯',
-                category: 'academic',
-                points: 50,
-                isUnlocked: true,
-                unlockedAt: new Date().toISOString(),
-                userId: user.id
-              },
-              {
-                id: '2',
-                title: 'Неделя обучения',
-                description: 'Занимайтесь 7 дней подряд',
-                icon: '🔥',
-                category: 'participation',
-                points: 100,
-                isUnlocked: false,
-                userId: user.id
-              },
-              {
-                id: '3',
-                title: 'Отличник',
-                description: 'Получите 5 звезд за урок',
-                icon: '⭐',
-                category: 'excellence',
-                points: 200,
-                isUnlocked: false,
-                userId: user.id
-              }
-            ]}
-            currentLevel={2}
-            currentPoints={150}
-            totalPoints={150}
-            streak={3}
-            rank={25}
-          />
-        </div>
-      )}
-
-      {/* Профиль пользователя */}
-      {showProfile && user && (
-        <div className="animate-slide-in-top">
-          <UserProfile
-            user={user}
-            isEditable={true}
-            onProfileUpdate={async (updatedProfile) => {
-              // TODO: Обновление профиля через API
-              console.log('Profile updated:', updatedProfile);
-            }}
-          />
-        </div>
-      )}
-
       {/* Список уроков */}
-      {showLessonsList && user && (
-        <div className="animate-slide-in-top">
-          <LessonsList
-            lessons={lessons.filter(l => l.studentId === user.id)}
-            timeSlots={timeSlots.filter(s => !s.isBooked)}
-            userRole="student"
-            onLessonClick={(lesson) => console.log('Lesson clicked:', lesson)}
-            onBookLesson={handleBookLesson}
-          />
-        </div>
-      )}
-
-      {/* Аналитика */}
-      {showAnalytics && user && (
-        <div className="animate-slide-in-top">
-          <Analytics userId={user.id} userRole="student" />
-        </div>
-      )}
-
-      {/* Поиск преподавателей */}
-      {showTeacherSearch && (
+      {showLessonsList && (
         <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6 animate-slide-in-top">
-          <TeacherSearch
-            onTeacherSelect={handleTeacherSelect}
-            onBookLesson={handleBookLessonWithTeacher}
-          />
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Мои уроки</h2>
+          
+          {/* Запланированные уроки */}
+          <div className="mb-8">
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">Запланированные уроки</h3>
+            {demoLessons.filter(l => l.status === 'scheduled').length === 0 ? (
+              <div className="text-center py-8">
+                <BookOpen className="h-16 w-16 mx-auto text-gray-300 mb-4" />
+                <p className="text-gray-600 mb-2">Нет запланированных уроков</p>
+                <p className="text-gray-500 text-sm">Забронируйте урок на главной странице</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {demoLessons.filter(l => l.status === 'scheduled').map(lesson => (
+                  <div key={lesson.id} className="flex items-center justify-between p-4 bg-blue-50 rounded-2xl">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-12 h-12 bg-blue-500 rounded-2xl flex items-center justify-center">
+                        <BookOpen className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-gray-900">{lesson.subject}</h4>
+                        <p className="text-sm text-gray-600">{lesson.teacherName}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold text-gray-900">{lesson.date} {lesson.startTime}</p>
+                      <p className="text-sm text-gray-600">{lesson.format === 'online' ? 'Онлайн' : 'Очно'}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Завершенные уроки */}
+          <div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">Завершенные уроки</h3>
+            {demoLessons.filter(l => l.status === 'completed').length === 0 ? (
+              <div className="text-center py-8">
+                <Clock className="h-16 w-16 mx-auto text-gray-300 mb-4" />
+                <p className="text-gray-600 mb-2">Нет завершенных уроков</p>
+                <p className="text-gray-500 text-sm">Ваши завершенные уроки будут отображаться здесь</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {demoLessons.filter(l => l.status === 'completed').map(lesson => (
+                  <div key={lesson.id} className="flex items-center justify-between p-4 bg-green-50 rounded-2xl">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-12 h-12 bg-green-500 rounded-2xl flex items-center justify-center">
+                        <BookOpen className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-gray-900">{lesson.subject}</h4>
+                        <p className="text-sm text-gray-600">{lesson.teacherName}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold text-gray-900">{lesson.date} {lesson.startTime}</p>
+                      <p className="text-sm text-gray-600">{lesson.format === 'online' ? 'Онлайн' : 'Очно'}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -559,18 +382,8 @@ const StudentHome: React.FC = () => {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold text-gray-900">
-            Доступные уроки ({filteredSlots.length})
+            Доступные уроки ({demoTimeSlots.length})
           </h2>
-          
-          <div className="flex items-center space-x-3">
-            <button
-              onClick={() => setShowCalendar(!showCalendar)}
-              className="flex items-center space-x-2 px-4 py-2 bg-purple-100 text-purple-700 rounded-2xl hover:bg-purple-200 transition-all duration-200 hover:scale-105"
-            >
-              <CalendarIcon className="h-5 w-5" />
-              <span>{showCalendar ? 'Список' : 'Календарь'}</span>
-            </button>
-          </div>
         </div>
 
         {loading ? (
@@ -594,23 +407,9 @@ const StudentHome: React.FC = () => {
               </div>
             ))}
           </div>
-        ) : filteredSlots.length === 0 ? (
-          <div className="text-center py-12">
-            <BookOpen className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-            <h3 className="text-xl font-semibold text-gray-600 mb-2">Уроки не найдены</h3>
-            <p className="text-gray-500 mb-6">
-              Попробуйте изменить фильтры или загрузить больше уроков
-            </p>
-            <button
-              onClick={loadAvailableSlots}
-              className="px-6 py-3 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all duration-200 hover:scale-105"
-            >
-              Обновить поиск
-            </button>
-          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredSlots.map((slot, index) => (
+            {demoTimeSlots.map((slot, index) => (
               <div
                 key={slot.id}
                 className="bg-white rounded-3xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-all duration-300 hover:scale-105 animate-fade-in-up"
@@ -641,8 +440,8 @@ const StudentHome: React.FC = () => {
                 {/* Детали урока */}
                 <div className="space-y-3 mb-4">
                   <div className="flex items-center space-x-2 text-sm text-gray-600">
-                    <Clock className="h-4 w-4" />
-                    <span>{slot.startTime} - {slot.endTime}</span>
+                    <CalendarIcon className="h-4 w-4" />
+                    <span>{slot.date} {slot.startTime} - {slot.endTime}</span>
                   </div>
                   
                   <div className="flex items-center space-x-2 text-sm text-gray-600">
@@ -675,18 +474,6 @@ const StudentHome: React.FC = () => {
           </div>
         )}
       </div>
-
-      {/* Модальное окно бронирования */}
-      {showBookingModal && selectedBookingSlot && (
-        <BookingModal
-          isOpen={showBookingModal}
-          onClose={() => setShowBookingModal(false)}
-          onConfirm={handleConfirmBooking}
-          slot={selectedBookingSlot}
-          teacher={{ name: selectedBookingSlot.teacherName, avatar: selectedBookingSlot.teacherAvatar }}
-          student={user}
-        />
-      )}
     </div>
   );
 };
