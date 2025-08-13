@@ -249,6 +249,13 @@ const LessonsList: React.FC<LessonsListProps> = ({
         </div>
 
         <div className="flex items-center space-x-3">
+          {/* Иконка календаря для учеников */}
+          {userRole === 'student' && (
+            <div className="flex items-center justify-center w-10 h-10 bg-blue-100 text-blue-600 rounded-xl hover:bg-blue-200 transition-all duration-200 cursor-pointer" title="Календарь уроков">
+              <Calendar className="h-5 w-5" />
+            </div>
+          )}
+
           {showFilters && (
             <button
               onClick={() => setShowFiltersPanel(!showFiltersPanel)}
@@ -570,4 +577,5 @@ const LessonsList: React.FC<LessonsListProps> = ({
 };
 
 export default LessonsList;
+
 
