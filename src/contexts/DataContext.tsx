@@ -103,6 +103,51 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   const socketRef = useRef<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
 
+  // Безопасная инициализация WebSocket
+  useEffect(() => {
+    const initializeWebSocket = async () => {
+      try {
+        // Проверяем, доступен ли WebSocket в продакшене
+        if (import.meta.env.PROD) {
+          // В продакшене отключаем WebSocket для предотвращения ошибок
+          console.log('WebSocket disabled in production mode');
+          setIsConnected(false);
+          return;
+        }
+
+        const socket = io(SERVER_URL, SOCKET_CONFIG);
+        
+        socket.on('connect', () => {
+          console.log('WebSocket connected');
+          setIsConnected(true);
+        });
+
+        socket.on('disconnect', () => {
+          console.log('WebSocket disconnected');
+          setIsConnected(false);
+        });
+
+        socket.on('connect_error', (error) => {
+          console.warn('WebSocket connection error:', error);
+          setIsConnected(false);
+        });
+
+        socketRef.current = socket;
+
+        return () => {
+          if (socket) {
+            socket.disconnect();
+          }
+        };
+      } catch (error) {
+        console.warn('Failed to initialize WebSocket:', error);
+        setIsConnected(false);
+      }
+    };
+
+    initializeWebSocket();
+  }, []);
+
   // Инициализация состояния с данными из localStorage или начальными данными
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>(() => {
     const saved = loadFromStorage('tutoring_timeSlots', []);
@@ -146,7 +191,18 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     return loadFromStorage('tutoring_posts', []);
   });
 
-  const { user, updateProfile } = useAuth();
+  // Безопасное получение пользователя из AuthContext
+  let user: User | null = null;
+  let updateProfile: ((profile: StudentProfile | TeacherProfile) => void) = () => {};
+  
+  try {
+    const authContext = useAuth();
+    user = authContext.user;
+    updateProfile = authContext.updateProfile;
+  } catch (error) {
+    console.warn('AuthContext not available yet, using default values');
+    // Используем значения по умолчанию, если AuthContext еще не готов
+  }
 
   // Функция для загрузки начальных данных
   const loadInitialData = () => {
@@ -768,9 +824,13 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     // Не добавляем сообщение локально, ждем receiveMessage от сервера
 
     // Отправляем сообщение на сервер для других клиентов
-    if (socketRef.current && isConnected) {
-      socketRef.current.emit('sendMessage', { chatId, message: newMessage });
-      console.log('Sent message to server for real-time updates');
+    if (socketRef.current && isConnected && !import.meta.env.PROD) {
+      try {
+        socketRef.current.emit('sendMessage', { chatId, message: newMessage });
+        console.log('Sent message to server for real-time updates');
+      } catch (error) {
+        console.warn('Failed to send message via WebSocket:', error);
+      }
     }
   };
 
@@ -799,9 +859,13 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       );
     }
 
-    if (socketRef.current && isConnected) {
-      socketRef.current.emit('lessonCompleted', { lessonId });
-      console.log('Sent lessonCompleted to server', lessonId);
+    if (socketRef.current && isConnected && !import.meta.env.PROD) {
+      try {
+        socketRef.current.emit('lessonCompleted', { lessonId });
+        console.log('Sent lessonCompleted to server', lessonId);
+      } catch (error) {
+        console.warn('Failed to send lessonCompleted via WebSocket:', error);
+      }
     }
   };
 
