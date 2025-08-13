@@ -1,11 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { DataProvider } from './contexts/DataContext';
 import AuthForm from './components/Auth/AuthForm';
 import Navigation from './components/Layout/Navigation';
 import StudentHome from './components/Student/StudentHome';
 import TeacherHome from './components/Teacher/TeacherHome';
-import { Routes, Route } from 'react-router-dom';
 import './index.css';
 
 // Простой компонент для отображения ошибок
