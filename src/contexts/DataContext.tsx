@@ -99,61 +99,9 @@ const getInitialData = () => {
 };
 
 export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
-  // Состояние загрузки
-  const [isInitialized, setIsInitialized] = useState(false);
-  
   // WebSocket состояние
   const socketRef = useRef<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-
-  // Безопасная инициализация WebSocket
-  useEffect(() => {
-    const initializeWebSocket = async () => {
-      try {
-        // В продакшене полностью отключаем WebSocket
-        if (import.meta.env.PROD) {
-          console.log('WebSocket completely disabled in production mode');
-          setIsConnected(false);
-          return;
-        }
-
-        // WebSocket только для разработки
-        const socket = io(SERVER_URL, SOCKET_CONFIG);
-        
-        socket.on('connect', () => {
-          console.log('WebSocket connected (development mode)');
-          setIsConnected(true);
-        });
-
-        socket.on('disconnect', () => {
-          console.log('WebSocket disconnected');
-          setIsConnected(false);
-        });
-
-        socket.on('connect_error', (error) => {
-          console.warn('WebSocket connection error:', error);
-          setIsConnected(false);
-        });
-
-        socketRef.current = socket;
-
-        return () => {
-          if (socket) {
-            socket.disconnect();
-          }
-        };
-      } catch (error) {
-        console.warn('Failed to initialize WebSocket:', error);
-        setIsConnected(false);
-      }
-    };
-
-    // Инициализируем WebSocket только после полной инициализации данных
-    if (isInitialized) {
-      const timer = setTimeout(initializeWebSocket, 200);
-      return () => clearTimeout(timer);
-    }
-  }, [isInitialized]);
 
   // Инициализация состояния с данными из localStorage или начальными данными
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>(() => {
@@ -198,48 +146,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     return loadFromStorage('tutoring_posts', []);
   });
 
-  // Безопасное получение пользователя из AuthContext
-  let user: User | null = null;
-  let updateProfile: ((profile: StudentProfile | TeacherProfile) => void) = () => {};
-  
-  try {
-    const authContext = useAuth();
-    user = authContext.user;
-    updateProfile = authContext.updateProfile;
-  } catch (error) {
-    console.warn('AuthContext not available yet, using default values');
-    // Используем значения по умолчанию, если AuthContext еще не готов
-  }
-
-  // Вспомогательная функция для безопасной отправки WebSocket сообщений
-  const safeEmit = (event: string, data: any) => {
-    if (socketRef.current && isConnected && !import.meta.env.PROD) {
-      try {
-        socketRef.current.emit(event, data);
-      } catch (error) {
-        console.warn(`Failed to emit ${event} via WebSocket:`, error);
-      }
-    }
-  };
-
-  // Инициализация данных при монтировании
-  useEffect(() => {
-    const initializeData = () => {
-      try {
-        loadInitialData();
-        setIsInitialized(true);
-        console.log('DataContext initialized successfully');
-      } catch (error) {
-        console.error('Failed to initialize DataContext:', error);
-        // Даже при ошибке помечаем как инициализированный, чтобы приложение не зависло
-        setIsInitialized(true);
-      }
-    };
-
-    // Небольшая задержка для правильной последовательности инициализации
-    const timer = setTimeout(initializeData, 100);
-    return () => clearTimeout(timer);
-  }, []);
+  const { user, updateProfile } = useAuth();
 
   // Функция для загрузки начальных данных
   const loadInitialData = () => {
@@ -293,7 +200,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       if (localSlots.length > 0) {
         console.log('Syncing local slots with server:', localSlots.length, 'slots');
         localSlots.forEach((slot: TimeSlot) => {
-          safeEmit('createSlot', slot);
+          if (socketRef.current) {
+            socketRef.current.emit('createSlot', slot);
+          }
         });
       }
     });
@@ -589,8 +498,13 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         return updated;
       });
       
-      // Отправляем слот на сервер для других клиентов
-      safeEmit('createSlot', newSlot);
+      // Отправляем слот на сервер, если есть соединение
+      if (socketRef.current && isConnected) {
+        socketRef.current.emit('createSlot', newSlot);
+      } else {
+        // Если нет соединения, сохраняем слот локально для последующей синхронизации
+        console.log('No connection, slot saved locally for later sync');
+      }
       // Если слот сразу бронируется на ученика, создаём Lesson
       if (isBooked && studentId && studentName) {
         const newLesson: Lesson = {
@@ -610,12 +524,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           lessonType: newSlot.lessonType,
         };
         setLessons(prev => [...prev, newLesson]);
-        
-        // Обновляем слот, добавляя lessonId
-        setTimeSlots(prev => 
-          prev.map(s => s.id === newSlot.id ? { ...s, lessonId: newLesson.id } : s)
-        );
-        
         getOrCreateChat(studentId, newSlot.teacherId, studentName, newSlot.teacherName);
         // --- СТАТИСТИКА ---
         if (user && user.role === 'teacher') {
@@ -625,7 +533,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           updateProfile(profile);
         }
         // --- КОНЕЦ СТАТИСТИКИ ---
-        safeEmit('bookSlot', { slotId: newSlot.id, lesson: newLesson, bookedStudentId: studentId });
+        if (socketRef.current && isConnected) {
+          socketRef.current.emit('bookSlot', { slotId: newSlot.id, lesson: newLesson, bookedStudentId: studentId });
+        }
       }
       resolve(newSlot);
     });
@@ -650,6 +560,11 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
     console.log('Booking lesson for slot:', slot);
 
+    // Отмечаем слот как забронированный и сохраняем bookedStudentId
+    setTimeSlots(prev => 
+      prev.map(s => s.id === slotId ? { ...s, isBooked: true, bookedStudentId: studentId } : s)
+    );
+
     // Создаем урок
     const newLesson: Lesson = {
       id: `lesson_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -669,16 +584,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       comment: comment || '',
     };
 
-    // Отмечаем слот как забронированный и сохраняем bookedStudentId и lessonId
-    setTimeSlots(prev => 
-      prev.map(s => s.id === slotId ? { 
-        ...s, 
-        isBooked: true, 
-        bookedStudentId: studentId,
-        lessonId: newLesson.id 
-      } : s)
-    );
-
     setLessons(prev => [...prev, newLesson]);
 
     // Создаем чат между учеником и преподавателем
@@ -687,8 +592,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     console.log('Lesson booked successfully:', newLesson);
 
     // Отправляем информацию о бронировании на сервер
-    safeEmit('bookSlot', { slotId, lesson: newLesson, bookedStudentId: studentId });
-    console.log('Sent booking info to server for real-time updates');
+    if (socketRef.current && isConnected) {
+      socketRef.current.emit('bookSlot', { slotId, lesson: newLesson, bookedStudentId: studentId });
+      console.log('Sent booking info to server for real-time updates');
+    }
   };
 
   const cancelLesson = (lessonId: string) => {
@@ -697,14 +604,11 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
     console.log('Cancelling lesson:', lesson);
 
-    // Находим соответствующий слот по lessonId или по совпадению параметров
+    // Находим соответствующий слот
     const slot = timeSlots.find(s => 
-      s.lessonId === lessonId || (
       s.teacherId === lesson.teacherId && 
       s.date === lesson.date && 
-        s.startTime === lesson.startTime &&
-        s.isBooked
-      )
+      s.startTime === lesson.startTime
     );
 
     // Удаляем урок
@@ -713,17 +617,14 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     // Освобождаем слот
     if (slot) {
       setTimeSlots(prev => 
-        prev.map(s => s.id === slot.id ? { 
-          ...s, 
-          isBooked: false, 
-          bookedStudentId: undefined,
-          lessonId: undefined 
-        } : s)
+        prev.map(s => s.id === slot.id ? { ...s, isBooked: false } : s)
       );
 
       // Отправляем информацию об отмене на сервер
-      safeEmit('cancelSlot', { slotId: slot.id, lessonId });
-      console.log('Sent cancellation info to server for real-time updates');
+      if (socketRef.current && isConnected) {
+        socketRef.current.emit('cancelSlot', { slotId: slot.id, lessonId });
+        console.log('Sent cancellation info to server for real-time updates');
+      }
     }
   };
 
@@ -757,12 +658,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         s.teacherId === lesson.teacherId && 
         s.date === lesson.date && 
         s.startTime === lesson.startTime 
-          ? { 
-              ...s, 
-              isBooked: false, 
-              bookedStudentId: undefined,
-              lessonId: undefined 
-            } 
+          ? { ...s, isBooked: false } 
           : s
       )
     );
@@ -826,8 +722,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     });
 
     // Отправляем новый чат на сервер для других клиентов
-    safeEmit('createChat', newChat);
-    console.log('Sent new chat to server for real-time updates');
+    if (socketRef.current && isConnected) {
+      socketRef.current.emit('createChat', newChat);
+      console.log('Sent new chat to server for real-time updates');
+    }
 
     return newChat.id;
   };
@@ -846,41 +744,24 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     // Не добавляем сообщение локально, ждем receiveMessage от сервера
 
     // Отправляем сообщение на сервер для других клиентов
-    safeEmit('sendMessage', { chatId, message: newMessage });
-    console.log('Sent message to server for real-time updates');
+    if (socketRef.current && isConnected) {
+      socketRef.current.emit('sendMessage', { chatId, message: newMessage });
+      console.log('Sent message to server for real-time updates');
+    }
   };
 
   const completeLesson = (lessonId: string) => {
     console.log('Вызвана completeLesson для урока', lessonId, 'isConnected:', isConnected, 'socketRef:', !!socketRef.current);
-    
-    // Находим урок
-    const lesson = lessons.find(l => l.id === lessonId);
-    if (!lesson) return;
-
-    // Обновляем статус урока на 'completed'
-    setLessons(prev => 
-      prev.map(l => l.id === lessonId ? { ...l, status: 'completed' } : l)
-    );
-
-    // Находим соответствующий слот и освобождаем его
-    const slot = timeSlots.find(s => s.lessonId === lessonId);
-    if (slot) {
-      setTimeSlots(prev => 
-        prev.map(s => s.id === slot.id ? { 
-          ...s, 
-          isBooked: false, 
-          bookedStudentId: undefined,
-          lessonId: undefined 
-        } : s)
-      );
+    if (socketRef.current && isConnected) {
+      socketRef.current.emit('lessonCompleted', { lessonId });
+      console.log('Sent lessonCompleted to server', lessonId);
     }
-
-    safeEmit('lessonCompleted', { lessonId });
-    console.log('Sent lessonCompleted to server', lessonId);
   };
 
   const updateStudentProfile = (studentId: string, profile: StudentProfile) => {
-    safeEmit('updateStudentProfile', { studentId, profile });
+    if (socketRef.current) {
+      socketRef.current.emit('updateStudentProfile', { studentId, profile });
+    }
     setStudentProfiles(prev => ({ ...prev, [studentId]: profile }));
   };
 
@@ -893,8 +774,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       saveToStorage('tutoring_timeSlots', updated);
       return updated;
     });
-    safeEmit('deleteSlot', { slotId });
-    console.log('Sent deleteSlot to server for real-time updates');
+    if (socketRef.current && isConnected) {
+      socketRef.current.emit('deleteSlot', { slotId });
+      console.log('Sent deleteSlot to server for real-time updates');
+    }
   };
 
   const clearAllData = () => {
@@ -918,7 +801,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   // Функция для обновления профиля преподавателя на сервере
   const updateTeacherProfile = (teacherId: string, profile: TeacherProfile) => {
     console.log('[updateTeacherProfile] called:', { teacherId, profile, isConnected, socket: !!socketRef.current });
-    safeEmit('updateTeacherProfile', { teacherId, profile });
+    if (socketRef.current && isConnected) {
+      socketRef.current.emit('updateTeacherProfile', { teacherId, profile });
+    }
     // --- Синхронизация профиля в общем списке пользователей ---
     try {
       const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
@@ -968,7 +853,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       return updated;
     });
 
-    safeEmit('createPost', newPost);
+    if (socketRef.current && isConnected) {
+      socketRef.current.emit('createPost', newPost);
+    }
   };
 
   const addReaction = (postId: string, reactionType: string) => {
@@ -1016,7 +903,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       return updated;
     });
 
-    safeEmit('addReaction', { postId, reactionType, userId: user.id });
+    if (socketRef.current && isConnected) {
+      socketRef.current.emit('addReaction', { postId, reactionType, userId: user.id });
+    }
   };
 
   const addComment = (postId: string, commentText: string) => {
@@ -1041,7 +930,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       return updated;
     });
 
-    safeEmit('addComment', { postId, comment: newComment });
+    if (socketRef.current && isConnected) {
+      socketRef.current.emit('addComment', { postId, comment: newComment });
+    }
   };
 
   const sharePost = (postId: string) => {
@@ -1074,7 +965,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       return updated;
     });
 
-    safeEmit('editPost', { postId, newText });
+    if (socketRef.current && isConnected) {
+      socketRef.current.emit('editPost', { postId, newText });
+    }
   };
 
   const deletePost = (postId: string) => {
@@ -1084,7 +977,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       return updated;
     });
 
-    safeEmit('deletePost', { postId });
+    if (socketRef.current && isConnected) {
+      socketRef.current.emit('deletePost', { postId });
+    }
   };
 
   // Функции для управления чатами
@@ -1096,7 +991,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       return updated;
     });
 
-    safeEmit('deleteChat', { chatId });
+    if (socketRef.current && isConnected) {
+      socketRef.current.emit('deleteChat', { chatId });
+    }
   };
 
   const markChatAsRead = (chatId: string) => {
@@ -1112,7 +1009,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       return updated;
     });
 
-    safeEmit('markChatAsRead', { chatId });
+    if (socketRef.current && isConnected) {
+      socketRef.current.emit('markChatAsRead', { chatId });
+    }
   };
 
   const clearChatMessages = (chatId: string) => {
@@ -1128,7 +1027,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       return updated;
     });
 
-    safeEmit('clearChatMessages', { chatId });
+    if (socketRef.current && isConnected) {
+      socketRef.current.emit('clearChatMessages', { chatId });
+    }
   };
 
   const archiveChat = (chatId: string) => {
@@ -1144,20 +1045,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       return updated;
     });
 
-    safeEmit('archiveChat', { chatId });
+    if (socketRef.current && isConnected) {
+      socketRef.current.emit('archiveChat', { chatId });
+    }
   };
-
-  // Показываем загрузочный экран, пока контекст не инициализирован
-  if (!isInitialized) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Инициализация данных...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <DataContext.Provider
