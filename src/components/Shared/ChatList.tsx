@@ -35,7 +35,7 @@ const ChatList: React.FC = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
 
   // Новый способ получения профиля по id — из allUsers, если нет — ищем в teacherProfiles/studentProfiles и добавляем
-  const getUserProfileById = (userId: string) => {
+  const getUserProfileById = (userId: string): any => {
     // Логирование для отладки
     console.log('[ChatList] getUserProfileById:', userId);
     // @ts-ignore
@@ -237,8 +237,21 @@ const ChatList: React.FC = () => {
                           {(() => {
                             const otherId = getOtherParticipantId(chat);
                             const profile = getUserProfileById(otherId);
-                            if (profile?.avatar) {
-                              return <img src={profile.avatar} alt="avatar" className="h-10 w-10 rounded-full object-cover" />;
+                            const avatar = profile?.avatar;
+                            if (avatar && typeof avatar === 'string' && avatar.trim() !== '') {
+                              return (
+                                <img 
+                                  src={avatar} 
+                                  alt="avatar" 
+                                  className="h-10 w-10 rounded-full object-cover"
+                                  onError={(e) => {
+                                    // Если изображение не загрузилось, показываем заглушку
+                                    const target = e.target as HTMLImageElement;
+                                    target.style.display = 'none';
+                                    target.nextElementSibling?.classList.remove('hidden');
+                                  }}
+                                />
+                              );
                             }
                             return (
                               <div className="h-10 w-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
@@ -361,8 +374,21 @@ const ChatList: React.FC = () => {
                       {(() => {
                         const otherId = getOtherParticipantId(selectedChat);
                         const profile = getUserProfileById(otherId);
-                        if (profile?.avatar) {
-                          return <img src={profile.avatar} alt="avatar" className="h-10 w-10 rounded-full object-cover" />;
+                        const avatar = profile?.avatar;
+                        if (avatar && typeof avatar === 'string' && avatar.trim() !== '') {
+                          return (
+                            <img 
+                              src={avatar} 
+                              alt="avatar" 
+                              className="h-10 w-10 rounded-full object-cover"
+                              onError={(e) => {
+                                // Если изображение не загрузилось, показываем заглушку
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                                target.nextElementSibling?.classList.remove('hidden');
+                              }}
+                            />
+                          );
                         }
                         return (
                           <span className="text-white text-sm font-medium">

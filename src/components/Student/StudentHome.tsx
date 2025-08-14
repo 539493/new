@@ -604,24 +604,29 @@ const StudentHome: React.FC = () => {
                 onClick={() => handleTeacherClick(teacher)}
               >
                 {/* Изображение */}
-                <div className="aspect-square bg-gradient-to-br from-blue-400 to-indigo-500 rounded-t-lg flex items-center justify-center relative overflow-hidden">
-                  {teacher.avatar || profile?.avatar ? (
+                <div className="aspect-square bg-gradient-to-br from-blue-400 to-indigo-500 rounded-t-lg flex items-center justify-center overflow-hidden">
+                  {profile?.avatar && profile.avatar.trim() !== '' ? (
                     <img 
-                      src={teacher.avatar || profile?.avatar} 
+                      src={profile.avatar} 
                       alt={teacher.name} 
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover rounded-t-lg"
+                      onError={(e) => {
+                        // Если изображение не загрузилось, показываем заглушку
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        target.nextElementSibling?.classList.remove('hidden');
+                      }}
                     />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center">
-                      <UserIcon className="h-12 w-12 text-white" />
-                    </div>
-                  )}
+                  ) : null}
+                  <div className={`w-full h-full bg-gradient-to-br from-blue-400 to-indigo-500 rounded-t-lg flex items-center justify-center ${profile?.avatar && profile.avatar.trim() !== '' ? 'hidden' : ''}`}>
+                    <UserIcon className="h-12 w-12 text-white" />
+                  </div>
                 </div>
                 
                 {/* Информация */}
                 <div className="p-3">
                   <div className="flex items-start justify-between mb-2">
-                    <h3 className="font-semibold text-gray-900 text-sm leading-tight">
+                    <h3 className="font-semibold text-gray-900 text-xs leading-tight">
                       {profile?.name || teacher.name || 'Репетитор'}
                     </h3>
                     <div className="flex items-center space-x-1">
@@ -665,14 +670,17 @@ const StudentHome: React.FC = () => {
                   
                   <button
                     onClick={(e) => {
-                      e.stopPropagation();
+                      e.stopPropagation(); // Предотвращаем всплытие события
                       if (hasAvailableSlots) {
+                        // Находим первый доступный слот для этого преподавателя
                         const availableSlot = availableTeacherSlots[0];
                         if (availableSlot && user) {
+                          console.log('Opening booking modal for slot:', availableSlot.id, 'for teacher:', teacher.id);
                           setSelectedBookingSlot(availableSlot);
                           setShowBookingModal(true);
                         }
                       } else {
+                        // Если нет доступных слотов, открываем профиль преподавателя
                         handleTeacherClick(teacher);
                       }
                     }}

@@ -210,13 +210,22 @@ const TeacherStudents: React.FC = () => {
               </svg>
             </button>
             <div className="flex flex-col items-center mb-6">
-              {selectedProfile?.avatar ? (
-                <img src={selectedProfile.avatar} alt="avatar" className="w-20 h-20 rounded-full object-cover mb-2" />
-              ) : (
-                <div className="w-20 h-20 rounded-full bg-gradient-to-r from-blue-400 to-indigo-500 flex items-center justify-center mb-2">
-                  <UserIcon className="h-10 w-10 text-white" />
-                </div>
-              )}
+              {selectedProfile?.avatar && selectedProfile.avatar.trim() !== '' ? (
+                <img 
+                  src={selectedProfile.avatar} 
+                  alt="avatar" 
+                  className="w-20 h-20 rounded-full object-cover mb-2"
+                  onError={(e) => {
+                    // Если изображение не загрузилось, показываем заглушку
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    target.nextElementSibling?.classList.remove('hidden');
+                  }}
+                />
+              ) : null}
+              <div className={`w-20 h-20 rounded-full bg-gradient-to-r from-blue-400 to-indigo-500 flex items-center justify-center mb-2 ${selectedProfile?.avatar && selectedProfile.avatar.trim() !== '' ? 'hidden' : ''}`}>
+                <UserIcon className="h-10 w-10 text-white" />
+              </div>
               <h2 className="text-xl font-bold text-gray-900">{selectedStudent.studentName}</h2>
             </div>
             <div className="space-y-2">
