@@ -139,7 +139,7 @@ const ProfileForm: React.FC = () => {
     <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Верхний блок профиля */}
       <div className="flex items-center gap-4 mb-6 relative">
-        <div className="h-20 w-20 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center overflow-hidden">
+        <div className="h-20 w-20 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center overflow-hidden shadow-lg">
           {user.profile?.avatar ? (
             <img src={user.profile.avatar} alt="Avatar" className="h-20 w-20 rounded-full object-cover" />
                 ) : (
@@ -187,7 +187,7 @@ const ProfileForm: React.FC = () => {
             </div>
       </div>
       {/* Блок информации */}
-      <div className="bg-white rounded-xl shadow p-4 mb-6 text-sm flex flex-col gap-2">
+      <div className="bg-white rounded-2xl shadow p-4 mb-6 text-sm flex flex-col gap-2 card-gradient">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 space-y-1">
             {/* Переносим в блок 'О себе' */}
@@ -196,7 +196,7 @@ const ProfileForm: React.FC = () => {
         </div>
       </div>
       {/* Блок 'О себе' */}
-      <div className="bg-white rounded-xl shadow p-4 mb-6 text-sm flex flex-col gap-2">
+      <div className="bg-white rounded-2xl shadow p-4 mb-6 text-sm flex flex-col gap-2 card-gradient">
         <h3 className="text-base font-bold text-gray-900 mb-2">О себе</h3>
         <div className="text-gray-700 whitespace-pre-line leading-relaxed mb-2">
           {user.role === 'student' ? studentProfile.bio || '—' : user.profile?.bio || '—'}

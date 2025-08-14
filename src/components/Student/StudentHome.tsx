@@ -12,6 +12,7 @@ import { SERVER_URL, WEBSOCKET_URL } from '../../config';
 import TeacherProfilePage from './TeacherProfilePage';
 import StudentCalendar from './StudentCalendar';
 import BookingModal from '../Shared/BookingModal';
+import EmptyState from '../Shared/EmptyState';
 import { User as UserIcon } from 'lucide-react';
 
 const StudentHome: React.FC = () => {
@@ -571,18 +572,23 @@ const StudentHome: React.FC = () => {
       {/* Преподаватели в виде карточек */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {filteredTeachers.length === 0 ? (
-          <div className="col-span-full text-center py-12">
-            <div className="text-gray-400 text-lg mb-2">
-              {Object.keys(filters).length > 0 || selectedDate || selectedTimeRange 
-                ? "Нет преподавателей подходящих под фильтры" 
-                : "Нет зарегистрированных преподавателей"}
-            </div>
-            <p className="text-gray-500">
-              {Object.keys(filters).length > 0 || selectedDate || selectedTimeRange 
-                ? "Попробуйте изменить фильтры или воспользуйтесь овербукингом"
-                : "Попробуйте воспользоваться овербукингом или обратитесь к администратору"}
-            </p>
-          </div>
+          <EmptyState
+            title={Object.keys(filters).length > 0 || selectedDate || selectedTimeRange 
+              ? 'Нет преподавателей подходящих под фильтры'
+              : 'Нет зарегистрированных преподавателей'}
+            description={Object.keys(filters).length > 0 || selectedDate || selectedTimeRange 
+              ? 'Попробуйте изменить фильтры или воспользуйтесь овербукингом'
+              : 'Попробуйте воспользоваться овербукингом или обратитесь к администратору'}
+            actionPrimary={{
+              label: 'Овербукинг',
+              onClick: () => setShowOverbookingModal(true),
+            }}
+            actionSecondary={{
+              label: 'Сбросить фильтры',
+              onClick: clearFilters,
+              variant: 'secondary',
+            }}
+          />
         ) : (
           filteredTeachers.map(teacher => {
             const profile = teacher.profile;
@@ -600,11 +606,11 @@ const StudentHome: React.FC = () => {
             return (
               <div 
                 key={teacher.id} 
-                className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer max-w-sm"
+                className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-lg transition-all cursor-pointer max-w-sm card-gradient"
                 onClick={() => handleTeacherClick(teacher)}
               >
                 {/* Изображение */}
-                <div className="aspect-square bg-gradient-to-br from-blue-400 to-indigo-500 rounded-t-lg flex items-center justify-center overflow-hidden">
+                <div className="aspect-square bg-gradient-to-br from-blue-400 to-indigo-500 rounded-t-2xl flex items-center justify-center overflow-hidden">
                   {profile?.avatar && profile.avatar.trim() !== '' ? (
                     <img 
                       src={profile.avatar} 
@@ -624,7 +630,7 @@ const StudentHome: React.FC = () => {
                 </div>
                 
                 {/* Информация */}
-                <div className="p-3">
+                <div className="p-4">
                   <div className="flex items-start justify-between mb-2">
                     <h3 className="font-semibold text-gray-900 text-xs leading-tight">
                       {profile?.name || teacher.name || 'Репетитор'}
@@ -684,7 +690,7 @@ const StudentHome: React.FC = () => {
                         handleTeacherClick(teacher);
                       }
                     }}
-                    className={`w-full py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    className={`w-full py-2 rounded-lg text-xs font-medium transition-colors ${
                       hasAvailableSlots 
                         ? 'bg-blue-600 text-white hover:bg-blue-700' 
                         : 'bg-green-600 text-white hover:bg-green-700'
