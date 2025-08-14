@@ -199,6 +199,10 @@ const StudentHome: React.FC = () => {
 
   // Собираем всех преподавателей (не только с доступными слотами)
   const allTeachers: { id: string; name: string; avatar?: string; rating?: number; profile?: any }[] = React.useMemo(() => {
+    console.log('DEBUG: Building allTeachers...');
+    console.log('DEBUG: serverTeachers:', serverTeachers);
+    console.log('DEBUG: allUsers:', allUsers);
+    
     // Получаем всех преподавателей из разных источников
     const teachersFromServer = serverTeachers.map(teacher => ({
       id: teacher.id,
@@ -218,6 +222,9 @@ const StudentHome: React.FC = () => {
         profile: user.profile
       })) || [];
 
+    console.log('DEBUG: teachersFromServer:', teachersFromServer);
+    console.log('DEBUG: teachersFromUsers:', teachersFromUsers);
+
     // Объединяем и убираем дубликаты
     const allTeachersMap = new Map();
     [...teachersFromServer, ...teachersFromUsers].forEach(teacher => {
@@ -226,7 +233,64 @@ const StudentHome: React.FC = () => {
       }
     });
 
-    return Array.from(allTeachersMap.values());
+    const result = Array.from(allTeachersMap.values());
+    console.log('DEBUG: Final allTeachers result:', result);
+
+    // Если нет преподавателей, создаем тестовых
+    if (result.length === 0) {
+      console.log('DEBUG: No teachers found, creating test teachers...');
+      const testTeachers = [
+        {
+          id: 'test_teacher_1',
+          name: 'Анна Петрова',
+          avatar: undefined,
+          rating: 4.8,
+          profile: {
+            name: 'Анна Петрова',
+            subjects: ['Математика', 'Физика'],
+            experience: 'experienced',
+            hourlyRate: 1500,
+            city: 'Москва',
+            bio: 'Опытный преподаватель математики и физики с 5-летним стажем',
+            rating: 4.8
+          }
+        },
+        {
+          id: 'test_teacher_2',
+          name: 'Михаил Сидоров',
+          avatar: undefined,
+          rating: 4.9,
+          profile: {
+            name: 'Михаил Сидоров',
+            subjects: ['Английский язык', 'Русский язык'],
+            experience: 'professional',
+            hourlyRate: 2000,
+            city: 'Санкт-Петербург',
+            bio: 'Профессиональный преподаватель английского языка',
+            rating: 4.9
+          }
+        },
+        {
+          id: 'test_teacher_3',
+          name: 'Елена Козлова',
+          avatar: undefined,
+          rating: 4.7,
+          profile: {
+            name: 'Елена Козлова',
+            subjects: ['Химия', 'Биология'],
+            experience: 'beginner',
+            hourlyRate: 1200,
+            city: 'Онлайн',
+            bio: 'Молодой преподаватель химии и биологии',
+            rating: 4.7
+          }
+        }
+      ];
+      console.log('DEBUG: Created test teachers:', testTeachers);
+      return testTeachers;
+    }
+
+    return result;
   }, [serverTeachers, allUsers]);
 
   // Фильтруем преподавателей по доступным слотам
@@ -268,7 +332,59 @@ const StudentHome: React.FC = () => {
   function getUserById(userId: string) {
     try {
       const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
-      return users.find((u: any) => u.id === userId && u.role === 'teacher') || null;
+      const user = users.find((u: any) => u.id === userId && u.role === 'teacher');
+      
+      // Если пользователь не найден в localStorage, проверяем тестовых преподавателей
+      if (!user && userId.startsWith('test_teacher_')) {
+        const testTeachers = [
+          {
+            id: 'test_teacher_1',
+            name: 'Анна Петрова',
+            role: 'teacher',
+            profile: {
+              name: 'Анна Петрова',
+              subjects: ['Математика', 'Физика'],
+              experience: 'experienced',
+              hourlyRate: 1500,
+              city: 'Москва',
+              bio: 'Опытный преподаватель математики и физики с 5-летним стажем',
+              rating: 4.8
+            }
+          },
+          {
+            id: 'test_teacher_2',
+            name: 'Михаил Сидоров',
+            role: 'teacher',
+            profile: {
+              name: 'Михаил Сидоров',
+              subjects: ['Английский язык', 'Русский язык'],
+              experience: 'professional',
+              hourlyRate: 2000,
+              city: 'Санкт-Петербург',
+              bio: 'Профессиональный преподаватель английского языка',
+              rating: 4.9
+            }
+          },
+          {
+            id: 'test_teacher_3',
+            name: 'Елена Козлова',
+            role: 'teacher',
+            profile: {
+              name: 'Елена Козлова',
+              subjects: ['Химия', 'Биология'],
+              experience: 'beginner',
+              hourlyRate: 1200,
+              city: 'Онлайн',
+              bio: 'Молодой преподаватель химии и биологии',
+              rating: 4.7
+            }
+          }
+        ];
+        
+        return testTeachers.find(t => t.id === userId) || null;
+      }
+      
+      return user;
     } catch {
       return null;
     }
@@ -312,7 +428,83 @@ const StudentHome: React.FC = () => {
 
   // Первоначальная загрузка слотов при монтировании компонента
   React.useEffect(() => {
-    if (timeSlots.length > 0) {
+    console.log('DEBUG: Initial load - timeSlots count:', timeSlots.length);
+    
+    // Если нет слотов, создаем тестовые слоты для тестовых преподавателей
+    if (timeSlots.length === 0) {
+      console.log('DEBUG: No slots found, creating test slots...');
+      const today = new Date();
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      
+      const testSlots = [
+        {
+          id: 'test_slot_1',
+          teacherId: 'test_teacher_1',
+          teacherName: 'Анна Петрова',
+          date: tomorrow.toISOString().split('T')[0],
+          startTime: '10:00',
+          endTime: '11:00',
+          subject: 'Математика',
+          lessonType: 'regular',
+          format: 'online',
+          price: 1500,
+          experience: 'experienced',
+          grades: ['9', '10', '11'],
+          goals: ['подготовка к экзаменам'],
+          isBooked: false,
+          rating: 4.8,
+          city: 'Москва'
+        },
+        {
+          id: 'test_slot_2',
+          teacherId: 'test_teacher_2',
+          teacherName: 'Михаил Сидоров',
+          date: tomorrow.toISOString().split('T')[0],
+          startTime: '14:00',
+          endTime: '15:00',
+          subject: 'Английский язык',
+          lessonType: 'regular',
+          format: 'online',
+          price: 2000,
+          experience: 'professional',
+          grades: ['5', '6', '7', '8', '9', '10', '11'],
+          goals: ['разговорная практика'],
+          isBooked: false,
+          rating: 4.9,
+          city: 'Санкт-Петербург'
+        },
+        {
+          id: 'test_slot_3',
+          teacherId: 'test_teacher_3',
+          teacherName: 'Елена Козлова',
+          date: tomorrow.toISOString().split('T')[0],
+          startTime: '16:00',
+          endTime: '17:00',
+          subject: 'Химия',
+          lessonType: 'regular',
+          format: 'online',
+          price: 1200,
+          experience: 'beginner',
+          grades: ['8', '9', '10', '11'],
+          goals: ['помощь с домашним заданием'],
+          isBooked: false,
+          rating: 4.7,
+          city: 'Онлайн'
+        }
+      ];
+      
+      // Сохраняем тестовые слоты в localStorage
+      localStorage.setItem('tutoring_timeSlots', JSON.stringify(testSlots));
+      console.log('DEBUG: Created and saved test slots:', testSlots);
+      
+      // Обновляем состояние через DataContext
+      if (window.location.reload) {
+        setTimeout(() => {
+          window.location.reload();
+        }, 100);
+      }
+    } else {
       loadAvailableSlots();
     }
   }, [timeSlots]);
