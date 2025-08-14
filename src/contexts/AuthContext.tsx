@@ -8,6 +8,7 @@ interface AuthContextType {
   register: (email: string, password: string, name: string, nickname: string, role: 'student' | 'teacher', phone: string) => Promise<boolean>;
   logout: () => void;
   updateProfile: (profile: StudentProfile | TeacherProfile) => void;
+  updateUser: (user: User) => void;
   clearAllUsers: () => void;
 }
 
@@ -215,6 +216,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const updateUser = (user: User) => {
+    setUser(user);
+    saveUserToStorage(user);
+  };
+
   const clearAllUsers = () => {
     console.log('Clearing all users from system...');
     
@@ -229,7 +235,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, updateProfile, clearAllUsers }}>
+    <AuthContext.Provider value={{ user, login, register, logout, updateProfile, updateUser, clearAllUsers }}>
       {children}
     </AuthContext.Provider>
   );
