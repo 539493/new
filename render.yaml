@@ -13,4 +13,10 @@ services:
         value: 0.0.0.0
     healthCheckPath: /api/health
     autoDeploy: true
-    plan: starter 
+    plan: starter
+    branch: main
+    numInstances: 1
+    disk:
+      name: data
+      mountPath: /opt/render/project/src/backend
+      sizeGB: 1 

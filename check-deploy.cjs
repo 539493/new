@@ -1,132 +1,65 @@
 #!/usr/bin/env node
 
-const fs = require('fs');
-const path = require('path');
+const https = require('https');
 
-console.log('🔍 Проверка готовности к деплою на Render...\n');
+// URL вашего приложения на Render (замените на ваш)
+const APP_URL = 'https://tutoring-platform.onrender.com';
 
-// Проверка необходимых файлов
-const requiredFiles = [
-  'package.json',
-  'render.yaml',
-  'backend/production-server-simple.cjs',
-  'dist/index.html',
-  'dist/assets/'
-];
+function checkDeployStatus() {
+  console.log('🔍 Проверка статуса деплоя на Render...');
+  console.log(`📡 URL: ${APP_URL}`);
+  
+  const options = {
+    hostname: 'tutoring-platform.onrender.com',
+    port: 443,
+    path: '/api/health',
+    method: 'GET',
+    timeout: 10000
+  };
 
-let allFilesExist = true;
+  const req = https.request(options, (res) => {
+    console.log(`✅ Статус ответа: ${res.statusCode}`);
+    
+    let data = '';
+    res.on('data', (chunk) => {
+      data += chunk;
+    });
+    
+    res.on('end', () => {
+      try {
+        const response = JSON.parse(data);
+        console.log('📊 Ответ сервера:');
+        console.log(JSON.stringify(response, null, 2));
+        
+        if (res.statusCode === 200) {
+          console.log('🎉 Деплой успешен! Приложение работает.');
+        } else {
+          console.log('⚠️  Приложение отвечает, но есть проблемы.');
+        }
+      } catch (e) {
+        console.log('📄 Ответ сервера (не JSON):', data);
+      }
+    });
+  });
 
-console.log('📁 Проверка файлов:');
-requiredFiles.forEach(file => {
-  const exists = fs.existsSync(file);
-  console.log(`  ${exists ? '✅' : '❌'} ${file}`);
-  if (!exists) allFilesExist = false;
-});
+  req.on('error', (e) => {
+    console.log('❌ Ошибка подключения:', e.message);
+    console.log('💡 Возможные причины:');
+    console.log('   - Приложение еще деплоится');
+    console.log('   - Проблемы с сетью');
+    console.log('   - Неправильный URL');
+  });
 
-// Проверка package.json
-console.log('\n📦 Проверка package.json:');
-try {
-  const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-  
-  const hasStartScript = packageJson.scripts && packageJson.scripts.start;
-  console.log(`  ${hasStartScript ? '✅' : '❌'} start script`);
-  
-  const hasBuildScript = packageJson.scripts && packageJson.scripts.build;
-  console.log(`  ${hasBuildScript ? '✅' : '❌'} build script`);
-  
-  const hasDependencies = packageJson.dependencies && Object.keys(packageJson.dependencies).length > 0;
-  console.log(`  ${hasDependencies ? '✅' : '❌'} dependencies`);
-  
-  const hasEngines = packageJson.engines && packageJson.engines.node;
-  console.log(`  ${hasEngines ? '✅' : '❌'} engines.node`);
-  
-} catch (error) {
-  console.log('  ❌ Ошибка чтения package.json');
-  allFilesExist = false;
+  req.on('timeout', () => {
+    console.log('⏰ Таймаут подключения');
+    req.destroy();
+  });
+
+  req.end();
 }
 
-// Проверка render.yaml
-console.log('\n⚙️  Проверка render.yaml:');
-try {
-  const renderYaml = fs.readFileSync('render.yaml', 'utf8');
-  
-  const hasWebService = renderYaml.includes('type: web');
-  console.log(`  ${hasWebService ? '✅' : '❌'} web service type`);
-  
-  const hasBuildCommand = renderYaml.includes('buildCommand');
-  console.log(`  ${hasBuildCommand ? '✅' : '❌'} build command`);
-  
-  const hasStartCommand = renderYaml.includes('startCommand');
-  console.log(`  ${hasStartCommand ? '✅' : '❌'} start command`);
-  
-  const hasHealthCheck = renderYaml.includes('healthCheckPath');
-  console.log(`  ${hasHealthCheck ? '✅' : '❌'} health check path`);
-  
-} catch (error) {
-  console.log('  ❌ Ошибка чтения render.yaml');
-  allFilesExist = false;
-}
+// Проверяем статус
+checkDeployStatus();
 
-// Проверка dist папки
-console.log('\n📂 Проверка dist папки:');
-try {
-  const distFiles = fs.readdirSync('dist');
-  const hasIndexHtml = distFiles.includes('index.html');
-  console.log(`  ${hasIndexHtml ? '✅' : '❌'} index.html`);
-  
-  const assetsDir = fs.readdirSync('dist/assets');
-  const hasJsFiles = assetsDir.some(file => file.endsWith('.js'));
-  console.log(`  ${hasJsFiles ? '✅' : '❌'} JavaScript files`);
-  
-  const hasCssFiles = assetsDir.some(file => file.endsWith('.css'));
-  console.log(`  ${hasCssFiles ? '✅' : '❌'} CSS files`);
-  
-} catch (error) {
-  console.log('  ❌ Ошибка чтения dist папки');
-  allFilesExist = false;
-}
-
-// Проверка сервера
-console.log('\n🖥️  Проверка сервера:');
-try {
-  const serverFile = fs.readFileSync('backend/production-server-simple.cjs', 'utf8');
-  
-  const hasExpress = serverFile.includes('express');
-  console.log(`  ${hasExpress ? '✅' : '❌'} Express.js`);
-  
-  const hasSocketIO = serverFile.includes('socket.io');
-  console.log(`  ${hasSocketIO ? '✅' : '❌'} Socket.IO`);
-  
-  const hasHealthEndpoint = serverFile.includes('/api/health');
-  console.log(`  ${hasHealthEndpoint ? '✅' : '❌'} Health endpoint`);
-  
-  const hasStaticFiles = serverFile.includes('express.static');
-  console.log(`  ${hasStaticFiles ? '✅' : '❌'} Static files serving`);
-  
-  const hasPortConfig = serverFile.includes('process.env.PORT');
-  console.log(`  ${hasPortConfig ? '✅' : '❌'} PORT environment variable`);
-  
-} catch (error) {
-  console.log('  ❌ Ошибка чтения сервера');
-  allFilesExist = false;
-}
-
-// Итоговая оценка
-console.log('\n📊 Итоговая оценка:');
-
-if (allFilesExist) {
-  console.log('🎉 ПРОЕКТ ГОТОВ К ДЕПЛОЮ НА RENDER!');
-  console.log('\n📋 Следующие шаги:');
-  console.log('1. Закоммитьте изменения: git add . && git commit -m "Ready for deployment"');
-  console.log('2. Отправьте в репозиторий: git push origin main');
-  console.log('3. Создайте сервис на Render.com');
-  console.log('4. Подключите GitHub репозиторий');
-  console.log('5. Настройте переменные окружения');
-  console.log('6. Дождитесь автоматического деплоя');
-} else {
-  console.log('❌ ПРОЕКТ НЕ ГОТОВ К ДЕПЛОЮ');
-  console.log('\n🔧 Необходимо исправить ошибки выше');
-}
-
-console.log('\n📖 Подробные инструкции: QUICK_DEPLOY.md');
-console.log('📋 Полный отчет: DEPLOYMENT_READY.md'); 
+// Проверяем каждые 30 секунд
+setInterval(checkDeployStatus, 30000); 
