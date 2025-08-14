@@ -240,8 +240,8 @@ const StudentHome: React.FC = () => {
     });
 
     if (Object.keys(filters).length === 0 && !selectedDate && !selectedTimeRange) {
-      // Если фильтры не применены, показываем всех преподавателей
-      console.log('DEBUG: No filters applied, showing all teachers');
+      // Если фильтры не применены, показываем ВСЕХ преподавателей
+      console.log('DEBUG: No filters applied, showing ALL teachers');
       return allTeachers;
     }
 
@@ -563,22 +563,27 @@ const StudentHome: React.FC = () => {
             <div className="text-gray-400 text-lg mb-2">
               {Object.keys(filters).length > 0 || selectedDate || selectedTimeRange 
                 ? "Нет преподавателей подходящих под фильтры" 
-                : "Нет доступных преподавателей"}
+                : "Нет зарегистрированных преподавателей"}
             </div>
             <p className="text-gray-500">
               {Object.keys(filters).length > 0 || selectedDate || selectedTimeRange 
                 ? "Попробуйте изменить фильтры или воспользуйтесь овербукингом"
-                : "Попробуйте воспользоваться овербукингом"}
+                : "Попробуйте воспользоваться овербукингом или обратитесь к администратору"}
             </p>
           </div>
         ) : (
           filteredTeachers.map(teacher => {
             const profile = teacher.profile;
-            const teacherSlots = filteredSlots.filter(slot => slot.teacherId === teacher.id);
-            const availableSlots = teacherSlots.filter(slot => !slot.isBooked);
-            const hasAvailableSlots = availableSlots.length > 0;
-            const minPrice = teacherSlots.length > 0 ? Math.min(...teacherSlots.map(slot => slot.price)) : profile?.hourlyRate || 0;
-            const maxPrice = teacherSlots.length > 0 ? Math.max(...teacherSlots.map(slot => slot.price)) : profile?.hourlyRate || 0;
+            // Получаем слоты этого преподавателя из всех слотов (не только отфильтрованных)
+            const allTeacherSlots = timeSlots.filter(slot => slot.teacherId === teacher.id);
+            const availableTeacherSlots = allTeacherSlots.filter(slot => !slot.isBooked);
+            
+            // Для отображения цены используем все слоты преподавателя
+            const minPrice = allTeacherSlots.length > 0 ? Math.min(...allTeacherSlots.map(slot => slot.price)) : profile?.hourlyRate || 0;
+            const maxPrice = allTeacherSlots.length > 0 ? Math.max(...allTeacherSlots.map(slot => slot.price)) : profile?.hourlyRate || 0;
+            
+            // Определяем, есть ли доступные слоты у этого преподавателя
+            const hasAvailableSlots = availableTeacherSlots.length > 0;
             
             return (
               <div 
@@ -640,9 +645,9 @@ const StudentHome: React.FC = () => {
                   
                   {/* Индикатор статуса преподавателя */}
                   <div className="flex items-center text-xs text-gray-500 mb-2">
-                    <div className={`w-2 h-2 rounded-full mr-1 ${isConnected ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                    <div className={`w-2 h-2 rounded-full mr-1 ${hasAvailableSlots ? 'bg-green-500' : 'bg-gray-400'}`}></div>
                     <span className="text-xs text-gray-500">
-                      {isConnected ? 'Онлайн' : 'Слоты доступны'}
+                      {hasAvailableSlots ? `${availableTeacherSlots.length} свободных слотов` : 'Нет свободных слотов'}
                     </span>
                   </div>
                   
@@ -651,7 +656,7 @@ const StudentHome: React.FC = () => {
                       e.stopPropagation(); // Предотвращаем всплытие события
                       if (hasAvailableSlots) {
                         // Находим первый доступный слот для этого преподавателя
-                        const availableSlot = availableSlots[0];
+                        const availableSlot = availableTeacherSlots[0];
                         if (availableSlot && user) {
                           console.log('Opening booking modal for slot:', availableSlot.id, 'for teacher:', teacher.id);
                           setSelectedBookingSlot(availableSlot);
