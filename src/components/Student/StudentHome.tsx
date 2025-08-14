@@ -569,7 +569,7 @@ const StudentHome: React.FC = () => {
       </div>
 
       {/* Преподаватели в виде карточек */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {filteredTeachers.length === 0 ? (
           <div className="col-span-full text-center py-12">
             <div className="text-gray-400 text-lg mb-2">
@@ -600,57 +600,69 @@ const StudentHome: React.FC = () => {
             return (
               <div 
                 key={teacher.id} 
-                className="bg-white rounded-xl border border-gray-100 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden"
+                className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer max-w-sm"
                 onClick={() => handleTeacherClick(teacher)}
               >
-                {/* Изображение с градиентной рамкой */}
-                <div className="relative">
-                  <div className="w-full h-48 bg-gradient-to-br from-blue-400 to-indigo-500 relative">
-                    {profile?.avatar ? (
-                      <img 
-                        src={profile.avatar} 
-                        alt={teacher.name} 
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center">
-                        <UserIcon className="h-16 w-16 text-white" />
-                      </div>
-                    )}
-                    
-                    {/* Зеленая галочка верификации */}
-                    <div className="absolute bottom-2 right-2 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                      <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
+                {/* Изображение */}
+                <div className="aspect-square bg-gradient-to-br from-blue-400 to-indigo-500 rounded-t-lg flex items-center justify-center relative overflow-hidden">
+                  {teacher.avatar || profile?.avatar ? (
+                    <img 
+                      src={teacher.avatar || profile?.avatar} 
+                      alt={teacher.name} 
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center">
+                      <UserIcon className="h-12 w-12 text-white" />
                     </div>
-                  </div>
+                  )}
                 </div>
                 
                 {/* Информация */}
-                <div className="p-4">
-                  {/* Имя и тег опыта */}
-                  <div className="mb-3">
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">
+                <div className="p-3">
+                  <div className="flex items-start justify-between mb-2">
+                    <h3 className="font-semibold text-gray-900 text-sm leading-tight">
                       {profile?.name || teacher.name || 'Репетитор'}
                     </h3>
-                    <div className="flex items-center space-x-2">
-                      <div className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-medium flex items-center space-x-1">
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                          <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
-                        </svg>
-                        <span>
-                          {profile?.experience === 'beginner' ? 'Начинающий' : 
-                           profile?.experience === 'experienced' ? 'Опытный' : 
-                           profile?.experience === 'professional' ? 'Профессионал' : 'Опытный'}
-                        </span>
-                      </div>
-                      <span className="text-sm text-gray-500">0 лет</span>
+                    <div className="flex items-center space-x-1">
+                      <button className="text-gray-400 hover:text-red-500 transition-colors">
+                        <Heart className="h-3 w-3" />
+                      </button>
+                      <button className="text-gray-400 hover:text-gray-600 transition-colors">
+                        <MoreHorizontal className="h-3 w-3" />
+                      </button>
                     </div>
                   </div>
                   
-                  {/* Кнопка записи */}
+                  <div className="text-xs text-gray-600 mb-2">
+                    {profile?.subjects?.slice(0, 2).join(', ')}...
+                  </div>
+                  
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-medium text-gray-900">
+                      от {minPrice} ₽
+                    </span>
+                    {profile?.rating && (
+                      <div className="flex items-center space-x-1">
+                        <Star className="h-2 w-2 text-yellow-400 fill-current" />
+                        <span className="text-xs text-gray-600">{profile.rating}</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center text-xs text-gray-500 mb-2">
+                    <MapPin className="h-2 w-2 mr-1" />
+                    {profile?.city || 'Онлайн'}
+                  </div>
+                  
+                  {/* Индикатор статуса преподавателя */}
+                  <div className="flex items-center text-xs text-gray-500 mb-2">
+                    <div className={`w-2 h-2 rounded-full mr-1 ${hasAvailableSlots ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                    <span className="text-xs text-gray-500">
+                      {hasAvailableSlots ? `${availableTeacherSlots.length} свободных слотов` : 'Нет свободных слотов'}
+                    </span>
+                  </div>
+                  
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -664,82 +676,14 @@ const StudentHome: React.FC = () => {
                         handleTeacherClick(teacher);
                       }
                     }}
-                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-4 rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 transition-all duration-200 flex items-center justify-center space-x-2 mb-4"
+                    className={`w-full py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      hasAvailableSlots 
+                        ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                        : 'bg-green-600 text-white hover:bg-green-700'
+                    }`}
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                    </svg>
-                    <span>Записаться на урок</span>
+                    {hasAvailableSlots ? 'Забронировать' : 'Календарь'}
                   </button>
-                  
-                  {/* Статистические карточки */}
-                  <div className="grid grid-cols-4 gap-2 mb-4">
-                    <div className="bg-blue-50 rounded-lg p-2 text-center">
-                      <div className="text-lg font-bold text-blue-600">0</div>
-                      <div className="text-xs text-blue-600">Проведено уроков</div>
-                    </div>
-                    <div className="bg-green-50 rounded-lg p-2 text-center">
-                      <div className="text-lg font-bold text-green-600">0</div>
-                      <div className="text-xs text-green-600">Учеников</div>
-                    </div>
-                    <div className="bg-purple-50 rounded-lg p-2 text-center">
-                      <div className="text-lg font-bold text-purple-600">{profile?.rating || 0}</div>
-                      <div className="text-xs text-purple-600">Рейтинг</div>
-                    </div>
-                    <div className="bg-orange-50 rounded-lg p-2 text-center">
-                      <div className="text-lg font-bold text-orange-600">{minPrice}</div>
-                      <div className="text-xs text-orange-600">₽/час</div>
-                    </div>
-                  </div>
-                  
-                  {/* Предметы и классы */}
-                  <div className="space-y-3">
-                    {profile?.subjects && profile.subjects.length > 0 && (
-                      <div>
-                        <div className="flex items-center space-x-2 mb-2">
-                          <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          <span className="font-semibold text-gray-900">Предметы</span>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {profile.subjects.slice(0, 3).map((subject: string, index: number) => (
-                            <span key={index} className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm">
-                              {subject}
-                            </span>
-                          ))}
-                          {profile.subjects.length > 3 && (
-                            <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm">
-                              +{profile.subjects.length - 3}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {profile?.grades && profile.grades.length > 0 && (
-                      <div>
-                        <div className="flex items-center space-x-2 mb-2">
-                          <svg className="w-4 h-4 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z" />
-                          </svg>
-                          <span className="font-semibold text-gray-900">Классы</span>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {profile.grades.slice(0, 3).map((grade: string, index: number) => (
-                            <span key={index} className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm">
-                              {grade}
-                            </span>
-                          ))}
-                          {profile.grades.length > 3 && (
-                            <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm">
-                              +{profile.grades.length - 3}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
                 </div>
               </div>
             );
