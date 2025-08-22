@@ -346,14 +346,14 @@ const StudentHome: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-8">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+              <div className="mb-6">
+        <div className="text-center mb-6">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-3">
             Найди своего идеального репетитора
           </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Изучай профили преподавателей, читай их записи и записывайся на уроки в удобное время
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Изучай профили преподавателей, читай их записи и записывайся на уроки
           </p>
         </div>
         
@@ -381,72 +381,72 @@ const StudentHome: React.FC = () => {
       </div>
 
       {/* Action Buttons */}
-      <div className="mb-8 flex flex-wrap justify-center gap-6">
+      <div className="mb-6 flex flex-wrap justify-center gap-4">
         <button
           onClick={() => setShowOverbookingModal(true)}
-          className="group bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white px-8 py-4 rounded-2xl font-semibold text-lg hover:from-green-600 hover:via-emerald-600 hover:to-teal-600 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 flex items-center space-x-3"
+          className="group bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white px-6 py-3 rounded-xl font-semibold text-base hover:from-green-600 hover:via-emerald-600 hover:to-teal-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center space-x-2"
         >
-          <div className="p-2 bg-white/20 rounded-xl group-hover:bg-white/30 transition-colors">
-            <BookOpen className="h-6 w-6" />
+          <div className="p-1.5 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
+            <BookOpen className="h-5 w-5" />
           </div>
           <div className="text-left">
             <div className="font-bold">Овербукинг</div>
-            <div className="text-sm opacity-90">Автоподбор преподавателя</div>
+            <div className="text-xs opacity-90">Автоподбор</div>
           </div>
         </button>
         
         <button
           onClick={() => setShowCalendar(true)}
-          className="group bg-gradient-to-r from-purple-500 via-pink-500 to-rose-500 text-white px-8 py-4 rounded-2xl font-semibold text-lg hover:from-purple-600 hover:via-pink-600 hover:to-rose-600 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 flex items-center space-x-3"
+          className="group bg-gradient-to-r from-purple-500 via-pink-500 to-rose-500 text-white px-6 py-3 rounded-xl font-semibold text-base hover:from-purple-600 hover:via-pink-600 hover:to-rose-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center space-x-2"
         >
-          <div className="p-2 bg-white/20 rounded-xl group-hover:bg-white/30 transition-colors">
-            <CalendarIcon className="h-6 w-6" />
+          <div className="p-1.5 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
+            <CalendarIcon className="h-5 w-5" />
           </div>
           <div className="text-left">
             <div className="font-bold">Календарь</div>
-            <div className="text-sm opacity-90">Свободные слоты</div>
+            <div className="text-xs opacity-90">Слоты</div>
           </div>
         </button>
         
         <button
           onClick={refreshSlots}
           disabled={loading}
-          className="group bg-gradient-to-r from-blue-500 to-indigo-500 text-white px-6 py-4 rounded-2xl font-semibold text-lg hover:from-blue-600 hover:to-indigo-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center space-x-3 disabled:opacity-50 disabled:transform-none"
+          className="group bg-gradient-to-r from-blue-500 to-indigo-500 text-white px-5 py-3 rounded-xl font-semibold text-base hover:from-blue-600 hover:to-indigo-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center space-x-2 disabled:opacity-50 disabled:transform-none"
         >
-          <div className="p-2 bg-white/20 rounded-xl group-hover:bg-white/30 transition-colors">
-            <RefreshCw className={`h-6 w-6 ${loading ? 'animate-spin' : ''}`} />
+          <div className="p-1.5 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
+            <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
           </div>
           <div className="text-left">
             <div className="font-bold">Обновить</div>
-            <div className="text-sm opacity-90">Актуальные данные</div>
+            <div className="text-xs opacity-90">Данные</div>
           </div>
         </button>
       </div>
 
       {/* Search and Filter */}
-      <div className="mb-8 space-y-6">
-        <div className="flex flex-col lg:flex-row gap-4">
+      <div className="mb-6 space-y-4">
+        <div className="flex flex-col lg:flex-row gap-3">
           <div className="flex-1 relative group">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
             <input
               type="text"
               placeholder="🔍 Поиск по предмету, преподавателю или городу..."
-              className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-200 text-lg placeholder-gray-400"
+              className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-200 text-base placeholder-gray-400"
             />
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-2">
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center space-x-3 px-6 py-4 rounded-2xl font-medium transition-all duration-200 ${
+              className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl font-medium transition-all duration-200 text-sm ${
                 showFilters 
-                  ? 'bg-blue-600 text-white shadow-lg' 
+                  ? 'bg-blue-600 text-white shadow-md' 
                   : 'bg-white border-2 border-gray-200 text-gray-700 hover:border-blue-300 hover:bg-blue-50'
               }`}
             >
-              <Filter className="h-5 w-5" />
+              <Filter className="h-4 w-4" />
               <span>Фильтры</span>
               {(Object.keys(filters).length > 0 || selectedDate || selectedTimeRange) && (
-                <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-bold">
+                <span className="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full text-xs font-bold">
                   {Object.keys(filters).length + (selectedDate ? 1 : 0) + (selectedTimeRange ? 1 : 0)}
                 </span>
               )}
@@ -454,11 +454,11 @@ const StudentHome: React.FC = () => {
             <button
               onClick={applyFilters}
               disabled={loading}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-2xl font-medium hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 flex items-center space-x-2"
+              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2.5 rounded-xl font-medium hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 flex items-center space-x-2 text-sm"
             >
               {loading ? (
                 <>
-                  <RefreshCw className="h-5 w-5 animate-spin" />
+                  <RefreshCw className="h-4 w-4 animate-spin" />
                   <span>Применение...</span>
                 </>
               ) : (
@@ -470,7 +470,7 @@ const StudentHome: React.FC = () => {
             {(Object.keys(filters).length > 0 || selectedDate || selectedTimeRange) && (
               <button
                 onClick={clearFilters}
-                className="bg-white border-2 border-gray-300 text-gray-700 px-6 py-4 rounded-2xl font-medium hover:bg-gray-50 hover:border-gray-400 transition-all duration-200"
+                className="bg-white border-2 border-gray-300 text-gray-700 px-4 py-2.5 rounded-xl font-medium hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 text-sm"
               >
                 Сбросить
               </button>
@@ -480,15 +480,15 @@ const StudentHome: React.FC = () => {
 
         {/* Filter Panel */}
         {showFilters && (
-          <div className="bg-white p-8 rounded-3xl border-2 border-gray-100 shadow-xl">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white p-6 rounded-2xl border-2 border-gray-100 shadow-lg">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-gray-700">Класс</label>
-                <select
-                  value={filters.grade || ''}
-                  onChange={(e) => setFilters({ ...filters, grade: e.target.value })}
-                  className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-200"
-                >
+                                  <select
+                    value={filters.grade || ''}
+                    onChange={(e) => setFilters({ ...filters, grade: e.target.value })}
+                    className="w-full p-2.5 border-2 border-gray-200 rounded-lg focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-200"
+                  >
                   <option value="">Любой класс</option>
                   {grades.map(grade => (
                     <option key={grade} value={grade}>{grade}</option>
@@ -498,11 +498,11 @@ const StudentHome: React.FC = () => {
 
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-gray-700">Предмет</label>
-                <select
-                  value={filters.subject || ''}
-                  onChange={(e) => setFilters({ ...filters, subject: e.target.value })}
-                  className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-200"
-                >
+                                  <select
+                    value={filters.subject || ''}
+                    onChange={(e) => setFilters({ ...filters, subject: e.target.value })}
+                    className="w-full p-2.5 border-2 border-gray-200 rounded-lg focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-200"
+                  >
                   <option value="">Любой предмет</option>
                   {subjects.map(subject => (
                     <option key={subject} value={subject}>{subject}</option>
@@ -512,11 +512,11 @@ const StudentHome: React.FC = () => {
 
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-gray-700">Опыт</label>
-                <select
-                  value={filters.experience || ''}
-                  onChange={(e) => setFilters({ ...filters, experience: e.target.value })}
-                  className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-200"
-                >
+                                  <select
+                    value={filters.experience || ''}
+                    onChange={(e) => setFilters({ ...filters, experience: e.target.value })}
+                    className="w-full p-2.5 border-2 border-gray-200 rounded-lg focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-200"
+                  >
                   <option value="">Любой опыт</option>
                   {experiences.map(exp => (
                     <option key={exp} value={exp}>{getExperienceLabel(exp)}</option>
@@ -526,11 +526,11 @@ const StudentHome: React.FC = () => {
 
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-gray-700">Формат</label>
-                <select
-                  value={filters.format || ''}
-                  onChange={(e) => setFilters({ ...filters, format: e.target.value })}
-                  className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-200"
-                >
+                                  <select
+                    value={filters.format || ''}
+                    onChange={(e) => setFilters({ ...filters, format: e.target.value })}
+                    className="w-full p-2.5 border-2 border-gray-200 rounded-lg focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-200"
+                  >
                   <option value="">Любой формат</option>
                   {formats.map(format => (
                     <option key={format} value={format}>
@@ -542,9 +542,9 @@ const StudentHome: React.FC = () => {
             </div>
 
             {/* Календарь в фильтрах */}
-            <div className="border-t border-gray-200 pt-8">
-              <h3 className="text-xl font-bold text-gray-900 mb-6 text-center">Выберите дату и время</h3>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="border-t border-gray-200 pt-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-4 text-center">Выберите дату и время</h3>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Календарь */}
                 <div className="space-y-3">
                   <label className="block text-sm font-semibold text-gray-700">Дата</label>
@@ -554,7 +554,7 @@ const StudentHome: React.FC = () => {
                       events={[]}
                       startAccessor="start"
                       endAccessor="end"
-                      style={{ height: 320 }}
+                      style={{ height: 280 }}
                       views={['month']}
                       view="month"
                       selectable
@@ -580,7 +580,7 @@ const StudentHome: React.FC = () => {
                           start: e.target.value,
                           end: prev?.end || '23:00'
                         }))}
-                        className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-200 text-lg"
+                        className="w-full p-3 border-2 border-gray-200 rounded-lg focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-200 text-base"
                       />
                     </div>
                     <div>
@@ -592,18 +592,18 @@ const StudentHome: React.FC = () => {
                           start: prev?.start || '00:00',
                           end: e.target.value
                         }))}
-                        className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-200 text-lg"
+                        className="w-full p-3 border-2 border-gray-200 rounded-lg focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-200 text-base"
                       />
                     </div>
                   </div>
                   
                   {selectedDate && (
-                    <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border border-blue-200">
+                    <div className="mt-4 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
                       <div className="flex items-center space-x-2 mb-2">
-                        <Calendar className="h-5 w-5 text-blue-600" />
+                        <Calendar className="h-4 w-4 text-blue-600" />
                         <span className="text-sm font-semibold text-blue-800">Выбрана дата:</span>
                       </div>
-                      <p className="text-lg font-medium text-blue-900">
+                      <p className="text-base font-medium text-blue-900">
                         {format(selectedDate, 'dd MMMM yyyy', { locale: ru })}
                       </p>
                     </div>
@@ -616,23 +616,23 @@ const StudentHome: React.FC = () => {
       </div>
 
       {/* Преподаватели в виде карточек */}
-      <div className="mb-8">
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">
+      <div className="mb-6">
+        <div className="text-center mb-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
             {filteredTeachers.length > 0 
               ? `Найдено ${filteredTeachers.length} преподавателей` 
               : 'Преподаватели'
             }
           </h2>
-          <p className="text-gray-600 max-w-2xl mx-auto">
+          <p className="text-gray-500 text-sm">
             {filteredTeachers.length > 0 
-              ? 'Выберите подходящего преподавателя и забронируйте урок в удобное время'
+              ? 'Выберите подходящего преподавателя и забронируйте урок'
               : 'Попробуйте изменить фильтры или воспользоваться овербукингом'
             }
           </p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {filteredTeachers.length === 0 ? (
           <EmptyState
             title={Object.keys(filters).length > 0 || selectedDate || selectedTimeRange 
@@ -668,42 +668,42 @@ const StudentHome: React.FC = () => {
             return (
               <div 
                 key={teacher.id} 
-                className="bg-white rounded-3xl border border-gray-200 shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer group overflow-hidden transform hover:-translate-y-1"
+                className="bg-white rounded-2xl border border-gray-200 shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer group overflow-hidden transform hover:-translate-y-1"
                 onClick={() => handleTeacherClick(teacher)}
               >
                 {/* Cover Image */}
-                <div className="h-32 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 relative overflow-hidden">
+                <div className="h-20 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 relative overflow-hidden">
                   <div className="absolute inset-0 bg-black bg-opacity-20"></div>
-                  <div className="absolute top-3 right-3 flex items-center space-x-2">
+                  <div className="absolute top-2 right-2 flex items-center space-x-1">
                     <button 
-                      className="p-2 bg-white/20 backdrop-blur-sm rounded-full text-white hover:bg-white/30 transition-colors"
+                      className="p-1.5 bg-white/20 backdrop-blur-sm rounded-full text-white hover:bg-white/30 transition-colors"
                       onClick={(e) => {
                         e.stopPropagation();
                         // Здесь можно добавить логику для добавления в избранное
                       }}
                     >
-                      <Heart className="h-4 w-4" />
+                      <Heart className="h-3 w-3" />
                     </button>
                     <button 
-                      className="p-2 bg-white/20 backdrop-blur-sm rounded-full text-white hover:bg-white/30 transition-colors"
+                      className="p-1.5 bg-white/20 backdrop-blur-sm rounded-full text-white hover:bg-white/30 transition-colors"
                       onClick={(e) => {
                         e.stopPropagation();
                         // Здесь можно добавить логику для шаринга
                       }}
                     >
-                      <Share2 className="h-4 w-4" />
+                      <Share2 className="h-3 w-3" />
                     </button>
                   </div>
                 </div>
                 
                 {/* Avatar */}
-                <div className="relative -mt-16 mx-6 mb-4">
-                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center overflow-hidden border-4 border-white shadow-lg">
+                <div className="relative -mt-12 mx-4 mb-3">
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center overflow-hidden border-3 border-white shadow-md">
                     {profile?.avatar && profile.avatar.trim() !== '' ? (
                       <img 
                         src={profile.avatar} 
                         alt={teacher.name} 
-                        className="w-24 h-24 object-cover rounded-full"
+                        className="w-16 h-16 object-cover rounded-full"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
                           target.style.display = 'none';
@@ -711,46 +711,46 @@ const StudentHome: React.FC = () => {
                         }}
                       />
                     ) : null}
-                    <div className={`w-24 h-24 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center ${profile?.avatar && profile.avatar.trim() !== '' ? 'hidden' : ''}`}>
-                      <UserIcon className="h-12 w-12 text-white" />
+                    <div className={`w-16 h-16 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center ${profile?.avatar && profile.avatar.trim() !== '' ? 'hidden' : ''}`}>
+                      <UserIcon className="h-8 w-8 text-white" />
                     </div>
                   </div>
                   
                   {/* Online Status */}
-                  <div className="absolute bottom-2 right-2 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
+                  <div className="absolute bottom-1 right-1 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
                 </div>
                 
                 {/* Content */}
-                <div className="px-6 pb-6">
-                  {/* Name and Rating */}
-                  <div className="text-center mb-4">
-                    <h3 className="text-lg font-bold text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">
+                <div className="px-4 pb-4">
+                                    {/* Name and Rating */}
+                  <div className="text-center mb-3">
+                    <h3 className="text-base font-bold text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">
                       {profile?.name || teacher.name || 'Репетитор'}
                     </h3>
                     {profile?.rating && (
                       <div className="flex items-center justify-center space-x-1">
-                        <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                        <span className="text-sm font-medium text-gray-700">{profile.rating}</span>
-                        <span className="text-xs text-gray-500">({profile?.lessonsCount || 0} уроков)</span>
+                        <Star className="h-3 w-3 text-yellow-400 fill-current" />
+                        <span className="text-xs font-medium text-gray-700">{profile.rating}</span>
+                        <span className="text-xs text-gray-500">({profile?.lessonsCount || 0})</span>
                       </div>
                     )}
                   </div>
                   
                   {/* Subjects */}
                   {profile?.subjects && profile.subjects.length > 0 && (
-                    <div className="mb-4">
+                    <div className="mb-3">
                       <div className="flex flex-wrap gap-1 justify-center">
-                                                 {profile.subjects.slice(0, 3).map((subject: string, index: number) => (
-                           <span
-                             key={index}
-                             className="bg-blue-50 text-blue-700 px-2 py-1 rounded-full text-xs font-medium"
-                           >
-                             {subject}
-                           </span>
-                         ))}
-                        {profile.subjects.length > 3 && (
-                          <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs">
-                            +{profile.subjects.length - 3}
+                        {profile.subjects.slice(0, 2).map((subject: string, index: number) => (
+                          <span
+                            key={index}
+                            className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full text-xs font-medium"
+                          >
+                            {subject}
+                          </span>
+                        ))}
+                        {profile.subjects.length > 2 && (
+                          <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs">
+                            +{profile.subjects.length - 2}
                           </span>
                         )}
                       </div>
@@ -758,7 +758,7 @@ const StudentHome: React.FC = () => {
                   )}
                   
                   {/* Location and Experience */}
-                  <div className="flex items-center justify-center space-x-4 text-sm text-gray-600 mb-4">
+                  <div className="flex items-center justify-center space-x-3 text-xs text-gray-600 mb-3">
                     {profile?.city && (
                       <div className="flex items-center space-x-1">
                         <MapPin className="h-3 w-3" />
@@ -774,30 +774,30 @@ const StudentHome: React.FC = () => {
                   </div>
                   
                   {/* Price Range */}
-                  <div className="text-center mb-4">
-                    <div className="text-2xl font-bold text-blue-600">
+                  <div className="text-center mb-3">
+                    <div className="text-lg font-bold text-blue-600">
                       от {minPrice} ₽
                     </div>
                     <div className="text-xs text-gray-500">за урок</div>
                   </div>
                   
                   {/* Status and Slots */}
-                  <div className="bg-gray-50 rounded-xl p-3 mb-4">
+                  <div className="bg-gray-50 rounded-lg p-2 mb-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
                         <div className={`w-2 h-2 rounded-full ${hasAvailableSlots ? 'bg-green-500' : 'bg-gray-400'}`}></div>
-                        <span className="text-sm text-gray-600">
+                        <span className="text-xs text-gray-600">
                           {hasAvailableSlots ? 'Доступен' : 'Занят'}
                         </span>
                       </div>
-                      <span className="text-sm font-medium text-gray-900">
+                      <span className="text-xs font-medium text-gray-900">
                         {hasAvailableSlots ? `${availableTeacherSlots.length} слотов` : 'Нет слотов'}
                       </span>
                     </div>
                   </div>
                   
                   {/* Action Buttons */}
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -811,13 +811,13 @@ const StudentHome: React.FC = () => {
                           handleTeacherClick(teacher);
                         }
                       }}
-                      className={`w-full py-3 rounded-xl font-medium transition-all duration-200 ${
+                      className={`w-full py-2 rounded-lg font-medium transition-all duration-200 text-sm ${
                         hasAvailableSlots 
-                          ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl' 
-                          : 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700 shadow-lg hover:shadow-xl'
+                          ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 shadow-md hover:shadow-lg' 
+                          : 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700 shadow-md hover:shadow-lg'
                       }`}
                     >
-                      {hasAvailableSlots ? 'Забронировать сейчас' : 'Посмотреть профиль'}
+                      {hasAvailableSlots ? 'Забронировать' : 'Профиль'}
                     </button>
                     
                     <button
@@ -825,7 +825,7 @@ const StudentHome: React.FC = () => {
                         e.stopPropagation();
                         handleTeacherClick(teacher);
                       }}
-                      className="w-full py-2 text-gray-600 hover:text-blue-600 transition-colors text-sm font-medium"
+                      className="w-full py-1.5 text-gray-500 hover:text-blue-600 transition-colors text-xs font-medium"
                     >
                       Подробнее →
                     </button>
