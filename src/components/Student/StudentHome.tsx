@@ -674,6 +674,28 @@ const StudentHome: React.FC = () => {
                 {/* Cover Image */}
                 <div className="h-24 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 relative overflow-hidden">
                   <div className="absolute inset-0 bg-black bg-opacity-20"></div>
+                  
+                  {/* Name and info on gradient background */}
+                  <div className="absolute bottom-3 left-3 text-white">
+                    <h3 className="text-lg font-bold mb-1">
+                      {profile?.name || teacher.name || 'Репетитор'}
+                    </h3>
+                    <div className="flex items-center space-x-3 text-white/90">
+                      {profile?.experience && (
+                        <div className="flex items-center space-x-1">
+                          <Award className="h-3 w-3" />
+                          <span className="text-sm">{getExperienceLabel(profile.experience)}</span>
+                        </div>
+                      )}
+                      {profile?.rating && (
+                        <div className="flex items-center space-x-1">
+                          <Star className="h-3 w-3 text-yellow-300 fill-current" />
+                          <span className="text-sm">{profile.rating}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
                   <div className="absolute top-3 right-3 flex items-center space-x-2">
                     <button 
                       className="p-2 bg-white/20 backdrop-blur-sm rounded-full text-white hover:bg-white/30 transition-colors border border-white/30"
@@ -697,7 +719,7 @@ const StudentHome: React.FC = () => {
                 </div>
                 
                 {/* Avatar */}
-                <div className="relative -mt-12 mx-4 mb-3">
+                <div className="relative -mt-8 mx-4 mb-3">
                   <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center overflow-hidden border-4 border-white shadow-xl">
                     {profile?.avatar && profile.avatar.trim() !== '' ? (
                       <img 
@@ -722,19 +744,14 @@ const StudentHome: React.FC = () => {
                 
                 {/* Content */}
                 <div className="px-4 pb-4">
-                                    {/* Name and Rating */}
-                  <div className="text-center mb-3">
-                    <h3 className="text-base font-bold text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">
-                      {profile?.name || teacher.name || 'Репетитор'}
-                    </h3>
-                    {profile?.rating && (
-                      <div className="flex items-center justify-center space-x-1">
-                        <Star className="h-3 w-3 text-yellow-400 fill-current" />
-                        <span className="text-xs font-medium text-gray-700">{profile.rating}</span>
-                        <span className="text-xs text-gray-500">({profile?.lessonsCount || 0})</span>
+                                    {/* Lessons count */}
+                  {profile?.lessonsCount && (
+                    <div className="text-center mb-3">
+                      <div className="text-xs text-gray-500">
+                        Проведено уроков: {profile.lessonsCount}
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
                   
                   {/* Subjects */}
                   {profile?.subjects && profile.subjects.length > 0 && (
