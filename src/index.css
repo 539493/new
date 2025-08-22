@@ -141,6 +141,42 @@
     background: rgba(255, 255, 255, 0.3);
     border-color: rgba(255, 255, 255, 0.5);
   }
+  
+  /* New styles for teacher profile page */
+  .profile-cover-gradient {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 0%, #f093fb 100%);
+  }
+  
+  .profile-avatar-float {
+    transform: translateY(-4rem);
+    z-index: 10;
+  }
+  
+  .profile-info-badge {
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    transition: all 0.3s ease;
+  }
+  
+  .profile-info-badge:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+  }
+  
+  .floating-action-button {
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+  
+  .floating-action-button:hover {
+    transform: scale(1.1);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  }
+  
+  .profile-cover-decoration {
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+  }
 }
 
 /* Smooth scrolling and animations */

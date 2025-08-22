@@ -180,46 +180,67 @@ const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClos
         <div className="p-6">
           {/* Profile Header - Hero Section */}
           <div className="relative mb-8">
-            {/* Cover Image */}
-            <div className="h-48 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-2xl mb-6 relative overflow-hidden">
-              <div className="absolute inset-0 bg-black bg-opacity-20"></div>
-              <div className="absolute bottom-4 left-6 text-white">
-                <h1 className="text-3xl font-bold mb-2">
-                  {profile?.name || teacher.name || 'Репетитор'}
-                </h1>
-                <div className="flex items-center space-x-4 text-white/90">
-                  {profile?.rating && (
-                    <div className="flex items-center space-x-1">
-                      <Star className="h-5 w-5 text-yellow-300 fill-current" />
-                      <span className="font-medium">{profile.rating}</span>
+            {/* Cover Image with Gradient Overlay */}
+            <div className="h-56 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-3xl relative overflow-hidden">
+              {/* Gradient Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/20 to-transparent"></div>
+              
+              {/* Decorative Elements */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
+              <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-12 -mb-12"></div>
+              
+              {/* Profile Info on Cover */}
+              <div className="absolute bottom-6 left-8 right-8">
+                <div className="flex items-end justify-between">
+                  {/* Left Side - Name and Experience */}
+                  <div className="text-white">
+                    <h1 className="text-4xl font-bold mb-3 leading-tight">
+                      {profile?.name || teacher.name || 'Репетитор'}
+                    </h1>
+                    <div className="flex items-center space-x-6">
+                      {profile?.experience && (
+                        <div className="flex items-center space-x-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30">
+                          <Award className="h-5 w-5 text-yellow-300" />
+                          <span className="font-semibold text-sm">{getExperienceLabel(profile.experience)}</span>
+                        </div>
+                      )}
+                      {profile?.rating && (
+                        <div className="flex items-center space-x-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30">
+                          <Star className="h-5 w-5 text-yellow-300 fill-current" />
+                          <span className="font-semibold text-sm">{profile.rating}</span>
+                        </div>
+                      )}
+                      {profile?.city && (
+                        <div className="flex items-center space-x-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30">
+                          <MapPin className="h-5 w-5" />
+                          <span className="font-semibold text-sm">{profile.city}</span>
+                        </div>
+                      )}
                     </div>
-                  )}
-                  {profile?.city && (
-                    <div className="flex items-center space-x-1">
-                      <MapPin className="h-5 w-5" />
-                      <span>{profile.city}</span>
-                    </div>
-                  )}
-                  {profile?.experience && (
-                    <div className="flex items-center space-x-1">
-                      <Award className="h-5 w-5" />
-                      <span>{getExperienceLabel(profile.experience)}</span>
-                    </div>
-                  )}
+                  </div>
+                  
+                  {/* Right Side - Quick Stats */}
+                  <div className="text-right text-white/90">
+                    <div className="text-2xl font-bold mb-1">{profile?.lessonsCount || 0}</div>
+                    <div className="text-sm opacity-80">уроков</div>
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Avatar and Quick Actions */}
-            <div className="flex flex-col md:flex-row gap-6 items-start">
-              {/* Avatar */}
-              <div className="flex-shrink-0 -mt-20 ml-6">
-                <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center overflow-hidden border-4 border-white shadow-lg">
+            <div className="flex flex-col lg:flex-row gap-8 items-start">
+              {/* Avatar - Floating above cover */}
+              <div className="flex-shrink-0 -mt-16 ml-8 relative">
+                <div className="w-36 h-36 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center overflow-hidden border-6 border-white shadow-2xl relative">
+                  {/* Online Status */}
+                  <div className="absolute top-2 right-2 w-5 h-5 bg-green-500 border-3 border-white rounded-full shadow-lg"></div>
+                  
                   {profile?.avatar && profile.avatar.trim() !== '' ? (
                     <img 
                       src={profile.avatar} 
                       alt={teacher.name} 
-                      className="w-32 h-32 object-cover rounded-full"
+                      className="w-36 h-36 object-cover rounded-full"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
                         target.style.display = 'none';
@@ -227,34 +248,51 @@ const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClos
                       }}
                     />
                   ) : null}
-                  <div className={`w-32 h-32 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center ${profile?.avatar && profile.avatar.trim() !== '' ? 'hidden' : ''}`}>
-                    <UserIcon className="h-16 w-16 text-white" />
+                  <div className={`w-36 h-36 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center ${profile?.avatar && profile.avatar.trim() !== '' ? 'hidden' : ''}`}>
+                    <UserIcon className="h-20 w-20 text-white" />
                   </div>
+                </div>
+                
+                {/* Floating Action Buttons */}
+                <div className="absolute -bottom-2 -right-2 flex space-x-2">
+                  <button
+                    onClick={() => setIsLiked(!isLiked)}
+                    className={`w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-all duration-200 ${
+                      isLiked 
+                        ? 'bg-red-500 text-white scale-110' 
+                        : 'bg-white text-gray-600 hover:bg-red-50 hover:text-red-500'
+                    }`}
+                  >
+                    <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
+                  </button>
+                  <button className="w-10 h-10 rounded-full bg-white text-gray-600 hover:bg-gray-50 shadow-lg transition-all duration-200 flex items-center justify-center">
+                    <Share2 className="w-5 h-5" />
+                  </button>
                 </div>
               </div>
 
               {/* Quick Actions */}
-              <div className="flex-1 flex flex-wrap gap-3 mt-4">
+              <div className="flex-1 flex flex-wrap gap-4 mt-8 lg:mt-0">
                 <button
                   onClick={() => onBookLesson(teacher.id)}
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-medium hover:from-blue-700 hover:to-purple-700 transition-all duration-200 flex items-center space-x-2 shadow-lg hover:shadow-xl"
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-2xl font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-200 flex items-center space-x-3 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
                 >
-                  <BookOpen className="h-5 w-5" />
-                  <span>Записаться на урок</span>
+                  <BookOpen className="h-6 w-6" />
+                  <span className="text-lg">Записаться на урок</span>
                 </button>
                 <button
                   onClick={() => setShowSlots(!showSlots)}
-                  className="bg-green-600 text-white px-6 py-3 rounded-xl font-medium hover:bg-green-700 transition-all duration-200 flex items-center space-x-2 shadow-lg hover:shadow-xl"
+                  className="bg-gradient-to-r from-green-600 to-green-700 text-white px-8 py-4 rounded-2xl font-semibold hover:from-green-700 hover:to-green-800 transition-all duration-200 flex items-center space-x-2 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
                 >
-                  <Calendar className="h-5 w-5" />
-                  <span>Слоты ({availableSlots.length})</span>
+                  <Calendar className="h-6 w-6" />
+                  <span className="text-lg">Слоты ({availableSlots.length})</span>
                 </button>
                 <button
                   onClick={() => setShowContactInfo(!showContactInfo)}
-                  className="border-2 border-gray-300 text-gray-700 px-6 py-3 rounded-xl font-medium hover:bg-gray-50 transition-all duration-200 flex items-center space-x-2"
+                  className="border-2 border-gray-300 text-gray-700 px-8 py-4 rounded-2xl font-semibold hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 flex items-center space-x-2 transform hover:-translate-y-1"
                 >
-                  <MessageCircle className="h-5 w-5" />
-                  <span>Связаться</span>
+                  <MessageCircle className="h-6 w-6" />
+                  <span className="text-lg">Связаться</span>
                 </button>
               </div>
             </div>
