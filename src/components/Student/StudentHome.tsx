@@ -672,33 +672,33 @@ const StudentHome: React.FC = () => {
                 onClick={() => handleTeacherClick(teacher)}
               >
                 {/* Cover Image */}
-                <div className="h-20 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 relative overflow-hidden">
+                <div className="h-24 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 relative overflow-hidden">
                   <div className="absolute inset-0 bg-black bg-opacity-20"></div>
-                  <div className="absolute top-2 right-2 flex items-center space-x-1">
+                  <div className="absolute top-3 right-3 flex items-center space-x-2">
                     <button 
-                      className="p-1.5 bg-white/20 backdrop-blur-sm rounded-full text-white hover:bg-white/30 transition-colors"
+                      className="p-2 bg-white/20 backdrop-blur-sm rounded-full text-white hover:bg-white/30 transition-colors border border-white/30"
                       onClick={(e) => {
                         e.stopPropagation();
                         // Здесь можно добавить логику для добавления в избранное
                       }}
                     >
-                      <Heart className="h-3 w-3" />
+                      <Heart className="h-4 w-4" />
                     </button>
                     <button 
-                      className="p-1.5 bg-white/20 backdrop-blur-sm rounded-full text-white hover:bg-white/30 transition-colors"
+                      className="p-2 bg-white/20 backdrop-blur-sm rounded-full text-white hover:bg-white/30 transition-colors border border-white/30"
                       onClick={(e) => {
                         e.stopPropagation();
                         // Здесь можно добавить логику для шаринга
                       }}
                     >
-                      <Share2 className="h-3 w-3" />
+                      <Share2 className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
                 
                 {/* Avatar */}
                 <div className="relative -mt-12 mx-4 mb-3">
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center overflow-hidden border-3 border-white shadow-md">
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center overflow-hidden border-4 border-white shadow-xl">
                     {profile?.avatar && profile.avatar.trim() !== '' ? (
                       <img 
                         src={profile.avatar} 
