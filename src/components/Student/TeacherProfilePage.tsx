@@ -193,34 +193,34 @@ const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClos
               <div className="absolute bottom-6 left-8 right-8">
                 <div className="flex items-end justify-between">
                   {/* Left Side - Name and Experience */}
-                  <div className="text-white">
+                  <div className="text-white flex-1 mr-8">
                     <h1 className="text-4xl font-bold mb-3 leading-tight">
                       {profile?.name || teacher.name || 'Репетитор'}
                     </h1>
-                    <div className="flex items-center space-x-6">
+                    <div className="flex items-center space-x-4 flex-wrap">
                       {profile?.experience && (
-                        <div className="flex items-center space-x-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30">
-                          <Award className="h-5 w-5 text-yellow-300" />
-                          <span className="font-semibold text-sm">{getExperienceLabel(profile.experience)}</span>
+                        <div className="flex items-center space-x-2 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/30">
+                          <Award className="h-4 w-4 text-yellow-300" />
+                          <span className="font-semibold text-xs">{getExperienceLabel(profile.experience)}</span>
                         </div>
                       )}
                       {profile?.rating && (
-                        <div className="flex items-center space-x-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30">
-                          <Star className="h-5 w-5 text-yellow-300 fill-current" />
-                          <span className="font-semibold text-sm">{profile.rating}</span>
+                        <div className="flex items-center space-x-2 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/30">
+                          <Star className="h-4 w-4 text-yellow-300 fill-current" />
+                          <span className="font-semibold text-xs">{profile.rating}</span>
                         </div>
                       )}
                       {profile?.city && (
-                        <div className="flex items-center space-x-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30">
-                          <MapPin className="h-5 w-5" />
-                          <span className="font-semibold text-sm">{profile.city}</span>
+                        <div className="flex items-center space-x-2 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/30">
+                          <MapPin className="h-4 w-4" />
+                          <span className="font-semibold text-xs">{profile.city}</span>
                         </div>
                       )}
                     </div>
                   </div>
                   
                   {/* Right Side - Quick Stats */}
-                  <div className="text-right text-white/90">
+                  <div className="text-right text-white/90 flex-shrink-0">
                     <div className="text-2xl font-bold mb-1">{profile?.lessonsCount || 0}</div>
                     <div className="text-sm opacity-80">уроков</div>
                   </div>
@@ -229,25 +229,25 @@ const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClos
             </div>
 
             {/* Avatar and Quick Actions */}
-            <div className="flex flex-col lg:flex-row gap-8 items-start">
+            <div className="flex flex-col lg:flex-row gap-8 items-start mt-8">
               {/* Avatar - Floating above cover */}
-              <div className="flex-shrink-0 -mt-16 ml-8 relative">
+              <div className="flex-shrink-0 -mt-12 ml-8 relative">
                 <div className="w-36 h-36 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center overflow-hidden border-6 border-white shadow-2xl relative">
                   {/* Online Status */}
                   <div className="absolute top-2 right-2 w-5 h-5 bg-green-500 border-3 border-white rounded-full shadow-lg"></div>
                   
-                  {profile?.avatar && profile.avatar.trim() !== '' ? (
-                    <img 
-                      src={profile.avatar} 
-                      alt={teacher.name} 
+                {profile?.avatar && profile.avatar.trim() !== '' ? (
+                  <img 
+                    src={profile.avatar} 
+                    alt={teacher.name} 
                       className="w-36 h-36 object-cover rounded-full"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                        target.nextElementSibling?.classList.remove('hidden');
-                      }}
-                    />
-                  ) : null}
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      target.nextElementSibling?.classList.remove('hidden');
+                    }}
+                  />
+                ) : null}
                   <div className={`w-36 h-36 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center ${profile?.avatar && profile.avatar.trim() !== '' ? 'hidden' : ''}`}>
                     <UserIcon className="h-20 w-20 text-white" />
                   </div>
@@ -272,7 +272,7 @@ const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClos
               </div>
 
               {/* Quick Actions */}
-              <div className="flex-1 flex flex-wrap gap-4 mt-8 lg:mt-0">
+              <div className="flex-1 flex flex-wrap gap-4 mt-12 lg:mt-0">
                 <button
                   onClick={() => onBookLesson(teacher.id)}
                   className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-2xl font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-200 flex items-center space-x-3 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
@@ -300,7 +300,7 @@ const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClos
 
           {/* Contact Info Banner */}
           {showContactInfo && (
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 mb-8 border border-blue-200">
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 mb-8 mt-8 border border-blue-200">
               <h3 className="font-semibold text-gray-900 mb-4 text-lg">Контактная информация</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {teacher.phone && (
@@ -320,7 +320,7 @@ const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClos
           )}
 
           {/* Statistics Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 mt-12">
             <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-2xl p-6 text-center shadow-lg">
               <div className="text-3xl font-bold mb-2">{profile?.lessonsCount || 0}</div>
               <div className="text-blue-100">Проведено уроков</div>
@@ -340,7 +340,7 @@ const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClos
           </div>
 
           {/* Navigation Tabs */}
-          <div className="border-b border-gray-200 mb-8">
+          <div className="border-b border-gray-200 mb-8 mt-8">
             <nav className="flex space-x-8">
               {[
                 { id: 'posts', label: 'Записи', count: teacherPosts.length },
@@ -554,132 +554,132 @@ const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClos
             {activeTab === 'about' && (
               <div className="space-y-8">
                 {/* Bio */}
-                {profile?.bio && (
+          {profile?.bio && (
                   <div className="bg-white border border-gray-200 rounded-2xl p-6">
                     <h3 className="text-xl font-bold text-gray-900 mb-4">О преподавателе</h3>
-                    <p className="text-gray-700 leading-relaxed whitespace-pre-line">
-                      {profile.bio}
-                    </p>
-                  </div>
-                )}
+                <p className="text-gray-700 leading-relaxed whitespace-pre-line">
+                  {profile.bio}
+                </p>
+            </div>
+          )}
 
-                {/* Subjects and Grades */}
+          {/* Subjects and Grades */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {profile?.subjects && profile.subjects.length > 0 && (
+            {profile?.subjects && profile.subjects.length > 0 && (
                     <div className="bg-white border border-gray-200 rounded-2xl p-6">
                       <h3 className="text-xl font-bold text-gray-900 mb-4">Предметы</h3>
-                      <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2">
                         {profile.subjects.map((subject: string, index: number) => (
-                          <span
-                            key={index}
-                            className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium"
-                          >
-                            {subject}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                    <span
+                      key={index}
+                      className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium"
+                    >
+                      {subject}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
 
-                  {profile?.grades && profile.grades.length > 0 && (
+            {profile?.grades && profile.grades.length > 0 && (
                     <div className="bg-white border border-gray-200 rounded-2xl p-6">
                       <h3 className="text-xl font-bold text-gray-900 mb-4">Классы</h3>
-                      <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2">
                         {profile.grades.map((grade: string, index: number) => (
-                          <span
-                            key={index}
-                            className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium"
-                          >
-                            {grade}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                    <span
+                      key={index}
+                      className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium"
+                    >
+                      {grade}
+                    </span>
+                  ))}
                 </div>
+              </div>
+            )}
+          </div>
 
-                {/* Teaching Details */}
+          {/* Teaching Details */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {profile?.hourlyRate && (
+            {profile?.hourlyRate && (
                     <div className="bg-white border border-gray-200 rounded-2xl p-6 text-center">
-                      <h3 className="font-semibold text-gray-900 mb-2">Стоимость</h3>
+                <h3 className="font-semibold text-gray-900 mb-2">Стоимость</h3>
                       <div className="text-3xl font-bold text-blue-600">
-                        {profile.hourlyRate} ₽/час
-                      </div>
-                    </div>
-                  )}
+                  {profile.hourlyRate} ₽/час
+                </div>
+              </div>
+            )}
 
-                  {profile?.formats && profile.formats.length > 0 && (
+            {profile?.formats && profile.formats.length > 0 && (
                     <div className="bg-white border border-gray-200 rounded-2xl p-6">
                       <h3 className="font-semibold text-gray-900 mb-4">Форматы</h3>
                       <div className="space-y-2">
                         {profile.formats.map((format: string, index: number) => (
-                          <div key={index} className="flex items-center space-x-2">
-                            <Clock className="h-4 w-4 text-gray-500" />
-                            <span className="text-gray-700">{getFormatLabel(format)}</span>
-                          </div>
-                        ))}
-                      </div>
+                    <div key={index} className="flex items-center space-x-2">
+                      <Clock className="h-4 w-4 text-gray-500" />
+                      <span className="text-gray-700">{getFormatLabel(format)}</span>
                     </div>
-                  )}
+                  ))}
+                </div>
+              </div>
+            )}
 
-                  {profile?.durations && profile.durations.length > 0 && (
+            {profile?.durations && profile.durations.length > 0 && (
                     <div className="bg-white border border-gray-200 rounded-2xl p-6">
                       <h3 className="font-semibold text-gray-900 mb-4">Длительность</h3>
                       <div className="space-y-2">
                         {profile.durations.map((duration: number, index: number) => (
-                          <div key={index} className="flex items-center space-x-2">
-                            <Clock className="h-4 w-4 text-gray-500" />
-                            <span className="text-gray-700">{duration} минут</span>
-                          </div>
-                        ))}
-                      </div>
+                    <div key={index} className="flex items-center space-x-2">
+                      <Clock className="h-4 w-4 text-gray-500" />
+                      <span className="text-gray-700">{duration} минут</span>
                     </div>
-                  )}
+                  ))}
                 </div>
+              </div>
+            )}
+          </div>
 
-                {/* Goals */}
-                {profile?.goals && profile.goals.length > 0 && (
+          {/* Goals */}
+          {profile?.goals && profile.goals.length > 0 && (
                   <div className="bg-white border border-gray-200 rounded-2xl p-6">
                     <h3 className="text-xl font-bold text-gray-900 mb-4">Цели занятий</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {profile.goals.map((goal: string, index: number) => (
-                        <div key={index} className="flex items-center space-x-2">
-                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                          <span className="text-gray-700">{goal}</span>
-                        </div>
-                      ))}
-                    </div>
+                  <div key={index} className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span className="text-gray-700">{goal}</span>
                   </div>
-                )}
+                ))}
+              </div>
+            </div>
+          )}
 
-                {/* Additional Info */}
+          {/* Additional Info */}
                 <div className="bg-gray-50 rounded-2xl p-6">
                   <h3 className="text-xl font-bold text-gray-900 mb-4">Дополнительная информация</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {profile?.country && (
-                      <div>
-                        <span className="text-sm font-medium text-gray-500">Страна:</span>
-                        <div className="text-gray-900">{profile.country}</div>
-                      </div>
-                    )}
-                    {profile?.offlineAvailable !== undefined && (
-                      <div>
-                        <span className="text-sm font-medium text-gray-500">Оффлайн занятия:</span>
-                        <div className="text-gray-900">
-                          {profile.offlineAvailable ? 'Доступны' : 'Недоступны'}
-                        </div>
-                      </div>
-                    )}
-                    {profile?.overbookingEnabled !== undefined && (
-                      <div>
-                        <span className="text-sm font-medium text-gray-500">Овербукинг:</span>
-                        <div className="text-gray-900">
-                          {profile.overbookingEnabled ? 'Участвует' : 'Не участвует'}
-                        </div>
-                      </div>
-                    )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {profile?.country && (
+                <div>
+                  <span className="text-sm font-medium text-gray-500">Страна:</span>
+                  <div className="text-gray-900">{profile.country}</div>
+                </div>
+              )}
+              {profile?.offlineAvailable !== undefined && (
+                <div>
+                  <span className="text-sm font-medium text-gray-500">Оффлайн занятия:</span>
+                  <div className="text-gray-900">
+                    {profile.offlineAvailable ? 'Доступны' : 'Недоступны'}
                   </div>
+                </div>
+              )}
+              {profile?.overbookingEnabled !== undefined && (
+                <div>
+                  <span className="text-sm font-medium text-gray-500">Овербукинг:</span>
+                  <div className="text-gray-900">
+                    {profile.overbookingEnabled ? 'Участвует' : 'Не участвует'}
+                  </div>
+                </div>
+              )}
+            </div>
                 </div>
               </div>
             )}
