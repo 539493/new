@@ -1120,10 +1120,10 @@ const StudentHome: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
                   <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center overflow-hidden border-4 border-white shadow-lg">
-                    {selectedTeacherForCalendar.avatar ? (
+                    {selectedTeacherForCalendar?.avatar ? (
                       <img 
                         src={selectedTeacherForCalendar.avatar} 
-                        alt={selectedTeacherForCalendar.name} 
+                        alt={selectedTeacherForCalendar?.name || 'Преподаватель'} 
                         className="w-16 h-16 object-cover rounded-full"
                       />
                     ) : (
@@ -1132,7 +1132,7 @@ const StudentHome: React.FC = () => {
                   </div>
                   <div>
                     <h2 className="text-2xl font-bold text-gray-900">
-                      Расписание {selectedTeacherForCalendar.name}
+                      Расписание {selectedTeacherForCalendar?.name || 'Преподавателя'}
                     </h2>
                     <p className="text-gray-600">Выберите удобное время для занятия</p>
                   </div>
@@ -1156,7 +1156,7 @@ const StudentHome: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                      {selectedTeacherForCalendar.name}
+                      {selectedTeacherForCalendar?.name || 'Преподаватель'}
                     </h3>
                     <div className="flex items-center space-x-4 text-sm text-gray-600">
                       <span>Частный преподаватель</span>
@@ -1171,7 +1171,7 @@ const StudentHome: React.FC = () => {
                   <div className="text-right">
                     <div className="text-2xl font-bold text-blue-600">
                       {timeSlots
-                        .filter(slot => slot.teacherId === selectedTeacherForCalendar.id && !slot.isBooked)
+                        .filter(slot => slot.teacherId === selectedTeacherForCalendar?.id && !slot.isBooked)
                         .length
                       } слотов
                     </div>
@@ -1190,7 +1190,7 @@ const StudentHome: React.FC = () => {
                 {/* Teacher's Slots */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   {timeSlots
-                    .filter(slot => slot.teacherId === selectedTeacherForCalendar.id && !slot.isBooked)
+                    .filter(slot => slot.teacherId === selectedTeacherForCalendar?.id && !slot.isBooked)
                     .sort((a, b) => new Date(`${a.date}T${a.startTime}`).getTime() - new Date(`${b.date}T${b.startTime}`).getTime())
                     .map(slot => (
                       <div 
@@ -1260,7 +1260,7 @@ const StudentHome: React.FC = () => {
                 </div>
                 
                 {/* No Slots State */}
-                {timeSlots.filter(slot => slot.teacherId === selectedTeacherForCalendar.id && !slot.isBooked).length === 0 && (
+                {timeSlots.filter(slot => slot.teacherId === selectedTeacherForCalendar?.id && !slot.isBooked).length === 0 && (
                   <div className="text-center py-16">
                     <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
                       <Calendar className="h-12 w-12 text-gray-400" />
