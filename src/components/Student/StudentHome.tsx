@@ -782,7 +782,10 @@ const StudentHome: React.FC = () => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
+                        console.log('Button clicked, teacher:', teacher);
+                        console.log('hasAvailableSlots:', hasAvailableSlots);
                         if (hasAvailableSlots) {
+                          console.log('Setting teacher for calendar:', teacher);
                           setSelectedTeacherForCalendar(teacher);
                           setShowTeacherCalendarModal(true);
                         } else {
@@ -1112,7 +1115,7 @@ const StudentHome: React.FC = () => {
       )}
 
       {/* Модальное окно с календарем слотов преподавателя */}
-      {showTeacherCalendarModal && selectedTeacherForCalendar && (
+      {showTeacherCalendarModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-3xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto">
             {/* Header */}
@@ -1151,6 +1154,17 @@ const StudentHome: React.FC = () => {
 
             {/* Calendar Content */}
             <div className="p-6">
+              {/* Debug Info */}
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                <h3 className="text-lg font-semibold text-yellow-800 mb-2">Отладочная информация:</h3>
+                <p className="text-sm text-yellow-700">showTeacherCalendarModal: {String(showTeacherCalendarModal)}</p>
+                <p className="text-sm text-yellow-700">selectedTeacherForCalendar: {selectedTeacherForCalendar ? 'Установлен' : 'Не установлен'}</p>
+                <p className="text-sm text-yellow-700">Teacher ID: {selectedTeacherForCalendar?.id || 'Нет ID'}</p>
+                <p className="text-sm text-yellow-700">Teacher Name: {selectedTeacherForCalendar?.name || 'Нет имени'}</p>
+                <p className="text-sm text-yellow-700">Total timeSlots: {timeSlots.length}</p>
+                <p className="text-sm text-yellow-700">Available slots for this teacher: {timeSlots.filter(slot => slot.teacherId === selectedTeacherForCalendar?.id && !slot.isBooked).length}</p>
+              </div>
+
               {/* Teacher Info */}
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 mb-6">
                 <div className="flex items-center justify-between">
