@@ -83,7 +83,23 @@ const ProfileForm: React.FC = () => {
       if (user.role === 'student') {
         setStudentProfile(user.profile as StudentProfile);
       } else {
-        setTeacherProfile(user.profile as TeacherProfile);
+        const profile = user.profile as TeacherProfile;
+        setTeacherProfile({
+          ...teacherProfile,
+          ...profile,
+          formats: profile.formats || [],
+          subjects: profile.subjects || [],
+          grades: profile.grades || [],
+          goals: profile.goals || [],
+          lessonTypes: profile.lessonTypes || [],
+          durations: profile.durations || [],
+          education: profile.education || {
+            university: '',
+            degree: '',
+            graduationYear: undefined,
+            courses: []
+          }
+        });
       }
     }
   }, [user]);
@@ -715,17 +731,17 @@ const ProfileForm: React.FC = () => {
                 <label key={format} className="flex items-center space-x-2">
                   <input
                     type="checkbox"
-                    checked={teacherProfile.formats.includes(format)}
+                    checked={teacherProfile.formats?.includes(format) || false}
                     onChange={(e) => {
                       if (e.target.checked) {
                         setTeacherProfile({
                           ...teacherProfile,
-                          formats: [...teacherProfile.formats, format]
+                          formats: [...(teacherProfile.formats || []), format]
                         });
                       } else {
                         setTeacherProfile({
                           ...teacherProfile,
-                          formats: teacherProfile.formats.filter(f => f !== format)
+                          formats: (teacherProfile.formats || []).filter(f => f !== format)
                         });
                       }
                     }}
