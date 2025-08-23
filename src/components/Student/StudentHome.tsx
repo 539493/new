@@ -41,6 +41,12 @@ const StudentHome: React.FC = () => {
   const [showCalendar, setShowCalendar] = useState(false);
   const [showTeacherCalendarModal, setShowTeacherCalendarModal] = useState(false);
   const [selectedTeacherForCalendar, setSelectedTeacherForCalendar] = useState<any>(null);
+  const [currentWeekStart, setCurrentWeekStart] = useState(() => {
+    const now = new Date();
+    const dayOfWeek = now.getDay();
+    const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+    return new Date(now.setDate(diff));
+  });
 
   // Новые состояния для календаря в фильтрах
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -1146,25 +1152,87 @@ const StudentHome: React.FC = () => {
 
             {/* Calendar Content */}
             <div className="p-6">
-              {/* Week Calendar */}
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  Недельное расписание
-                </h3>
+              {/* Week Navigation */}
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center space-x-4">
+                  <button
+                    onClick={() => {
+                      const newWeekStart = new Date(currentWeekStart);
+                      newWeekStart.setDate(newWeekStart.getDate() - 7);
+                      setCurrentWeekStart(newWeekStart);
+                    }}
+                    className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                  >
+                    <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                  
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    {currentWeekStart.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })} — {new Date(currentWeekStart.getTime() + 6 * 24 * 60 * 60 * 1000).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}
+                  </h3>
+                  
+                  <button
+                    onClick={() => {
+                      const newWeekStart = new Date(currentWeekStart);
+                      newWeekStart.setDate(newWeekStart.getDate() + 7);
+                      setCurrentWeekStart(newWeekStart);
+                    }}
+                    className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                  >
+                    <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
                 
-                {/* Calendar Grid */}
-                <div className="border border-gray-200 rounded-lg overflow-hidden">
-                  {/* Time slots from 8:00 to 20:00 */}
-                  {Array.from({ length: 13 }, (_, i) => i + 8).map(hour => (
+                <button
+                  onClick={() => {
+                    const now = new Date();
+                    const dayOfWeek = now.getDay();
+                    const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+                    setCurrentWeekStart(new Date(now.setDate(diff)));
+                  }}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                >
+                  Сегодня
+                </button>
+              </div>
+              
+              {/* Calendar Grid */}
+              <div className="border border-gray-200 rounded-lg overflow-hidden">
+                {/* Day headers */}
+                <div className="flex border-b border-gray-200 bg-gray-50">
+                  <div className="w-20 p-3 border-r border-gray-200"></div>
+                  {Array.from({ length: 7 }, (_, dayIndex) => {
+                    const currentDate = new Date(currentWeekStart);
+                    currentDate.setDate(currentDate.getDate() + dayIndex);
+                    return (
+                      <div key={dayIndex} className="flex-1 p-3 border-r border-gray-200 last:border-r-0 text-center">
+                        <div className="text-sm font-medium text-gray-900">
+                          {currentDate.toLocaleDateString('ru-RU', { weekday: 'short' })}
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          {currentDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                {/* Time slots with scroll */}
+                <div className="max-h-[500px] overflow-y-auto">
+                  {/* Time slots from 0:00 to 23:00 */}
+                  {Array.from({ length: 24 }, (_, i) => i).map(hour => (
                     <div key={hour} className="flex border-b border-gray-200 last:border-b-0">
                       {/* Time column */}
-                      <div className="w-20 bg-gray-50 p-3 border-r border-gray-200 flex items-center justify-center text-sm font-medium text-gray-600">
+                      <div className="w-20 bg-gray-50 p-3 border-r border-gray-200 flex items-center justify-center text-sm font-medium text-gray-600 sticky left-0">
                         {hour.toString().padStart(2, '0')}:00
                       </div>
                       
                       {/* Days columns */}
                       {Array.from({ length: 7 }, (_, dayIndex) => {
-                        const currentDate = new Date();
+                        const currentDate = new Date(currentWeekStart);
                         currentDate.setDate(currentDate.getDate() + dayIndex);
                         const dateString = currentDate.toISOString().split('T')[0];
                         
@@ -1208,29 +1276,10 @@ const StudentHome: React.FC = () => {
                     </div>
                   ))}
                 </div>
-                
-                {/* Day headers */}
-                <div className="flex border-b border-gray-200">
-                  <div className="w-20 bg-gray-50 p-3 border-r border-gray-200"></div>
-                  {Array.from({ length: 7 }, (_, dayIndex) => {
-                    const currentDate = new Date();
-                    currentDate.setDate(currentDate.getDate() + dayIndex);
-                    return (
-                      <div key={dayIndex} className="flex-1 p-3 border-r border-gray-200 last:border-r-0 text-center">
-                        <div className="text-sm font-medium text-gray-900">
-                          {currentDate.toLocaleDateString('ru-RU', { weekday: 'short' })}
-                        </div>
-                        <div className="text-xs text-gray-600">
-                          {currentDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
               </div>
               
               {/* Available Slots Summary */}
-              <div className="bg-gray-50 rounded-lg p-4">
+              <div className="bg-gray-50 rounded-lg p-4 mt-4">
                 <h4 className="font-medium text-gray-900 mb-2">Доступные слоты: {timeSlots.filter(slot => slot.teacherId === selectedTeacherForCalendar?.id && !slot.isBooked).length}</h4>
                 <p className="text-sm text-gray-600">Нажмите на любой слот в календаре для бронирования</p>
               </div>
