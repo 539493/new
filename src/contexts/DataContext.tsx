@@ -614,10 +614,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     // Удаляем урок
     setLessons(prev => prev.filter(l => l.id !== lessonId));
 
-    // Освобождаем слот
+    // Освобождаем слот и очищаем bookedStudentId
     if (slot) {
       setTimeSlots(prev => 
-        prev.map(s => s.id === slot.id ? { ...s, isBooked: false } : s)
+        prev.map(s => s.id === slot.id ? { ...s, isBooked: false, bookedStudentId: undefined } : s)
       );
 
       // Отправляем информацию об отмене на сервер
@@ -652,13 +652,13 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       )
     );
 
-    // Освобождаем старый слот
+    // Освобождаем старый слот и очищаем bookedStudentId
     setTimeSlots(prev => 
       prev.map(s => 
         s.teacherId === lesson.teacherId && 
         s.date === lesson.date && 
         s.startTime === lesson.startTime 
-          ? { ...s, isBooked: false } 
+          ? { ...s, isBooked: false, bookedStudentId: undefined } 
           : s
       )
     );

@@ -239,12 +239,13 @@ io.on('connection', (socket) => {
   // Обработка бронирования слота
   socket.on('bookSlot', (data) => {
     console.log('Slot booked:', data);
-    const { slotId, lesson } = data;
+    const { slotId, lesson, bookedStudentId } = data;
     
-    // Обновляем статус слота
+    // Обновляем статус слота и устанавливаем bookedStudentId
     const slotIndex = timeSlots.findIndex(slot => slot.id === slotId);
     if (slotIndex !== -1) {
       timeSlots[slotIndex].isBooked = true;
+      timeSlots[slotIndex].bookedStudentId = bookedStudentId || lesson.studentId;
     }
     
     // Добавляем урок
@@ -262,10 +263,11 @@ io.on('connection', (socket) => {
     console.log('Slot cancelled:', data);
     const { slotId, lessonId } = data;
     
-    // Обновляем статус слота
+    // Обновляем статус слота и очищаем bookedStudentId
     const slotIndex = timeSlots.findIndex(slot => slot.id === slotId);
     if (slotIndex !== -1) {
       timeSlots[slotIndex].isBooked = false;
+      timeSlots[slotIndex].bookedStudentId = undefined;
     }
     
     // Удаляем урок
