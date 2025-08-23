@@ -552,18 +552,18 @@ const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClos
 
             {/* About Tab */}
             {activeTab === 'about' && (
-              <div className="space-y-6">
+              <div className="space-y-4">
                 {/* Bio */}
                 {profile?.bio && (
-                  <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-200 rounded-2xl p-5 shadow-sm">
-                    <h3 className="text-lg font-bold text-indigo-900 mb-3 flex items-center">
-                      <div className="w-6 h-6 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
-                        <div className="w-3 h-3 bg-white rounded-sm"></div>
+                  <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-200 rounded-xl p-4 shadow-sm">
+                    <h3 className="text-base font-bold text-indigo-900 mb-2 flex items-center">
+                      <div className="w-5 h-5 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-md flex items-center justify-center mr-2">
+                        <div className="w-2.5 h-2.5 bg-white rounded-sm"></div>
                       </div>
                       О преподавателе
                     </h3>
-                    <div className="bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-indigo-200/50">
-                      <p className="text-indigo-800 leading-relaxed whitespace-pre-line font-medium">
+                    <div className="bg-white/60 backdrop-blur-sm rounded-lg p-3 border border-indigo-200/50">
+                      <p className="text-indigo-800 leading-relaxed whitespace-pre-line text-sm">
                         {profile.bio}
                       </p>
                     </div>
@@ -571,20 +571,20 @@ const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClos
                 )}
 
           {/* Subjects and Grades */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {profile?.subjects && profile.subjects.length > 0 && (
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-4 shadow-sm">
-                <h3 className="text-lg font-bold text-blue-900 mb-3 flex items-center">
-                  <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center mr-3">
-                    <div className="w-3 h-3 bg-white rounded-sm"></div>
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-3 shadow-sm">
+                <h3 className="text-base font-bold text-blue-900 mb-2 flex items-center">
+                  <div className="w-5 h-5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-md flex items-center justify-center mr-2">
+                    <div className="w-2.5 h-2.5 bg-white rounded-sm"></div>
                   </div>
                   Предметы
                 </h3>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5">
                   {profile.subjects.map((subject: string, index: number) => (
                     <span
                       key={index}
-                      className="bg-white/80 backdrop-blur-sm text-blue-800 px-3 py-1.5 rounded-xl text-sm font-medium border border-blue-200/50 shadow-sm"
+                      className="bg-white/80 backdrop-blur-sm text-blue-800 px-2.5 py-1 rounded-lg text-xs font-medium border border-blue-200/50 shadow-sm"
                     >
                       {subject}
                     </span>
@@ -594,18 +594,18 @@ const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClos
             )}
 
             {profile?.grades && profile.grades.length > 0 && (
-              <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 rounded-2xl p-4 shadow-sm">
-                <h3 className="text-lg font-bold text-emerald-900 mb-3 flex items-center">
-                  <div className="w-6 h-6 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center mr-3">
-                    <div className="w-3 h-3 bg-white rounded-sm"></div>
+              <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-3 shadow-sm">
+                <h3 className="text-base font-bold text-emerald-900 mb-2 flex items-center">
+                  <div className="w-5 h-5 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-md flex items-center justify-center mr-2">
+                    <div className="w-2.5 h-2.5 bg-white rounded-sm"></div>
                   </div>
                   Классы
                 </h3>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5">
                   {profile.grades.map((grade: string, index: number) => (
                     <span
                       key={index}
-                      className="bg-white/80 backdrop-blur-sm text-emerald-800 px-3 py-1.5 rounded-xl text-sm font-medium border border-emerald-200/50 shadow-sm"
+                      className="bg-white/80 backdrop-blur-sm text-emerald-800 px-2.5 py-1 rounded-lg text-xs font-medium border border-emerald-200/50 shadow-sm"
                     >
                       {grade}
                     </span>
@@ -616,34 +616,34 @@ const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClos
           </div>
 
           {/* Teaching Details */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {profile?.hourlyRate && (
-              <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-2xl p-4 text-center shadow-sm">
-                <h3 className="text-lg font-bold text-purple-900 mb-2 flex items-center justify-center">
-                  <div className="w-5 h-5 bg-gradient-to-br from-purple-500 to-violet-600 rounded-lg flex items-center justify-center mr-2">
+              <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-xl p-3 text-center shadow-sm">
+                <h3 className="text-base font-bold text-purple-900 mb-2 flex items-center justify-center">
+                  <div className="w-5 h-5 bg-gradient-to-br from-purple-500 to-violet-600 rounded-md flex items-center justify-center mr-2">
                     <div className="w-2.5 h-2.5 bg-white rounded-sm"></div>
                   </div>
                   Стоимость
                 </h3>
-                <div className="text-2xl font-bold text-purple-700 bg-white/60 backdrop-blur-sm rounded-xl py-2 px-3 border border-purple-200/50">
+                <div className="text-lg font-bold text-purple-700 bg-white/60 backdrop-blur-sm rounded-lg py-1.5 px-2 border border-purple-200/50">
                   {profile.hourlyRate} ₽/час
                 </div>
               </div>
             )}
 
             {profile?.formats && profile.formats.length > 0 && (
-              <div className="bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200 rounded-2xl p-4 shadow-sm">
-                <h3 className="text-lg font-bold text-orange-900 mb-3 flex items-center">
-                  <div className="w-6 h-6 bg-gradient-to-br from-orange-500 to-amber-600 rounded-lg flex items-center justify-center mr-3">
-                    <div className="w-3 h-3 bg-white rounded-sm"></div>
+              <div className="bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200 rounded-xl p-3 shadow-sm">
+                <h3 className="text-base font-bold text-orange-900 mb-2 flex items-center">
+                  <div className="w-5 h-5 bg-gradient-to-br from-orange-500 to-amber-600 rounded-md flex items-center justify-center mr-2">
+                    <div className="w-2.5 h-2.5 bg-white rounded-sm"></div>
                   </div>
                   Форматы
                 </h3>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   {profile.formats.map((format: string, index: number) => (
-                    <div key={index} className="flex items-center space-x-3 p-2 bg-white/60 backdrop-blur-sm rounded-lg border border-orange-200/50">
-                      <Clock className="h-4 w-4 text-orange-600" />
-                      <span className="text-orange-800 font-medium">{getFormatLabel(format)}</span>
+                    <div key={index} className="flex items-center space-x-2 p-1.5 bg-white/60 backdrop-blur-sm rounded-md border border-orange-200/50">
+                      <Clock className="h-3.5 w-3.5 text-orange-600" />
+                      <span className="text-orange-800 text-sm font-medium">{getFormatLabel(format)}</span>
                     </div>
                   ))}
                 </div>
@@ -651,18 +651,18 @@ const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClos
             )}
 
             {profile?.durations && profile.durations.length > 0 && (
-              <div className="bg-gradient-to-br from-cyan-50 to-blue-50 border border-cyan-200 rounded-2xl p-4 shadow-sm">
-                <h3 className="text-lg font-bold text-cyan-900 mb-3 flex items-center">
-                  <div className="w-6 h-6 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg flex items-center justify-center mr-3">
-                    <div className="w-3 h-3 bg-white rounded-sm"></div>
+              <div className="bg-gradient-to-br from-cyan-50 to-blue-50 border border-cyan-200 rounded-xl p-3 shadow-sm">
+                <h3 className="text-base font-bold text-cyan-900 mb-2 flex items-center">
+                  <div className="w-5 h-5 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-md flex items-center justify-center mr-2">
+                    <div className="w-2.5 h-2.5 bg-white rounded-sm"></div>
                   </div>
                   Длительность
                 </h3>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   {profile.durations.map((duration: number, index: number) => (
-                    <div key={index} className="flex items-center space-x-3 p-2 bg-white/60 backdrop-blur-sm rounded-lg border border-cyan-200/50">
-                      <Clock className="h-4 w-4 text-cyan-600" />
-                      <span className="text-cyan-800 font-medium">{duration} минут</span>
+                    <div key={index} className="flex items-center space-x-2 p-1.5 bg-white/60 backdrop-blur-sm rounded-md border border-cyan-200/50">
+                      <Clock className="h-3.5 w-3.5 text-cyan-600" />
+                      <span className="text-cyan-800 text-sm font-medium">{duration} минут</span>
                     </div>
                   ))}
                 </div>
@@ -672,18 +672,18 @@ const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClos
 
           {/* Goals */}
           {profile?.goals && profile.goals.length > 0 && (
-            <div className="bg-gradient-to-br from-pink-50 to-rose-50 border border-pink-200 rounded-2xl p-4 shadow-sm">
-              <h3 className="text-lg font-bold text-pink-900 mb-3 flex items-center">
-                <div className="w-6 h-6 bg-gradient-to-br from-pink-500 to-rose-600 rounded-lg flex items-center justify-center mr-3">
-                  <div className="w-3 h-3 bg-white rounded-sm"></div>
+            <div className="bg-gradient-to-br from-pink-50 to-rose-50 border border-pink-200 rounded-xl p-3 shadow-sm">
+              <h3 className="text-base font-bold text-pink-900 mb-2 flex items-center">
+                <div className="w-5 h-5 bg-gradient-to-br from-pink-500 to-rose-600 rounded-md flex items-center justify-center mr-2">
+                  <div className="w-2.5 h-2.5 bg-white rounded-sm"></div>
                 </div>
                 Цели занятий
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {profile.goals.map((goal: string, index: number) => (
-                  <div key={index} className="flex items-center space-x-3 p-2 bg-white/60 backdrop-blur-sm rounded-lg border border-pink-200/50">
-                    <div className="w-2 h-2 bg-gradient-to-r from-pink-500 to-rose-500 rounded-full shadow-sm"></div>
-                    <span className="text-pink-800 font-medium">{goal}</span>
+                  <div key={index} className="flex items-center space-x-2 p-1.5 bg-white/60 backdrop-blur-sm rounded-md border border-pink-200/50">
+                    <div className="w-1.5 h-1.5 bg-gradient-to-r from-pink-500 to-rose-500 rounded-full shadow-sm"></div>
+                    <span className="text-pink-800 text-sm font-medium">{goal}</span>
                   </div>
                 ))}
               </div>
@@ -755,46 +755,46 @@ const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClos
 
           {/* Additional Info */}
           {(profile?.country || profile?.offlineAvailable !== undefined || profile?.overbookingEnabled !== undefined) && (
-            <div className="bg-gradient-to-br from-slate-50 to-blue-50 border border-slate-200 rounded-2xl p-5 shadow-sm">
-              <h3 className="text-lg font-bold text-slate-800 mb-3 flex items-center">
-                <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center mr-3">
-                  <div className="w-3 h-3 bg-white rounded-sm"></div>
+            <div className="bg-gradient-to-br from-slate-50 to-blue-50 border border-slate-200 rounded-xl p-3 shadow-sm">
+              <h3 className="text-base font-bold text-slate-800 mb-2 flex items-center">
+                <div className="w-5 h-5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-md flex items-center justify-center mr-2">
+                  <div className="w-2.5 h-2.5 bg-white rounded-sm"></div>
                 </div>
                 Дополнительная информация
               </h3>
               
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {profile?.country && (
-                  <div className="flex items-center justify-between p-3 bg-white/60 backdrop-blur-sm rounded-xl border border-white/20">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-lg flex items-center justify-center">
-                        <span className="text-emerald-600 text-sm">🌍</span>
+                  <div className="flex items-center justify-between p-2 bg-white/60 backdrop-blur-sm rounded-lg border border-white/20">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-6 h-6 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-md flex items-center justify-center">
+                        <span className="text-emerald-600 text-xs">🌍</span>
                       </div>
-                      <span className="text-sm font-medium text-slate-600">Страна</span>
+                      <span className="text-xs font-medium text-slate-600">Страна</span>
                     </div>
-                    <span className="text-sm font-semibold text-slate-800 bg-white/80 px-3 py-1 rounded-lg">
+                    <span className="text-xs font-semibold text-slate-800 bg-white/80 px-2 py-0.5 rounded-md">
                       {profile.country}
                     </span>
                   </div>
                 )}
                 
                 {profile?.offlineAvailable !== undefined && (
-                  <div className="flex items-center justify-between p-3 bg-white/60 backdrop-blur-sm rounded-xl border border-white/20">
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                  <div className="flex items-center justify-between p-2 bg-white/60 backdrop-blur-sm rounded-lg border border-white/20">
+                    <div className="flex items-center space-x-2">
+                      <div className={`w-6 h-6 rounded-md flex items-center justify-center ${
                         profile.offlineAvailable 
                           ? 'bg-gradient-to-br from-green-100 to-emerald-100' 
                           : 'bg-gradient-to-br from-red-100 to-pink-100'
                       }`}>
-                        <span className={`text-sm ${
+                        <span className={`text-xs ${
                           profile.offlineAvailable ? 'text-green-600' : 'text-red-600'
                         }`}>
                           {profile.offlineAvailable ? '🏠' : '💻'}
                         </span>
                       </div>
-                      <span className="text-sm font-medium text-slate-600">Оффлайн занятия</span>
+                      <span className="text-xs font-medium text-slate-600">Оффлайн занятия</span>
                     </div>
-                    <span className={`text-sm font-semibold px-3 py-1 rounded-lg ${
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-md ${
                       profile.offlineAvailable 
                         ? 'text-green-700 bg-green-100/80' 
                         : 'text-red-700 bg-red-100/80'
@@ -805,22 +805,22 @@ const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClos
                 )}
                 
                 {profile?.overbookingEnabled !== undefined && (
-                  <div className="flex items-center justify-between p-3 bg-white/60 backdrop-blur-sm rounded-xl border border-white/20">
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                  <div className="flex items-center justify-between p-2 bg-white/60 backdrop-blur-sm rounded-lg border border-white/20">
+                    <div className="flex items-center space-x-2">
+                      <div className={`w-6 h-6 rounded-md flex items-center justify-center ${
                         profile.overbookingEnabled 
                           ? 'bg-gradient-to-br from-purple-100 to-violet-100' 
                           : 'bg-gradient-to-br from-gray-100 to-slate-100'
                       }`}>
-                        <span className={`text-sm ${
+                        <span className={`text-xs ${
                           profile.overbookingEnabled ? 'text-purple-600' : 'text-gray-600'
                         }`}>
                           {profile.overbookingEnabled ? '⚡' : '📅'}
                         </span>
                       </div>
-                      <span className="text-sm font-medium text-slate-600">Овербукинг</span>
+                      <span className="text-xs font-medium text-slate-600">Овербукинг</span>
                     </div>
-                    <span className={`text-sm font-semibold px-3 py-1 rounded-lg ${
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-md ${
                       profile.overbookingEnabled 
                         ? 'text-purple-700 bg-purple-100/80' 
                         : 'text-gray-700 bg-gray-100/80'
