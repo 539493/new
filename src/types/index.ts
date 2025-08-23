@@ -41,6 +41,8 @@ export interface TeacherProfile {
   // Новые поля для возраста и опыта:
   age?: number; // возраст преподавателя
   experienceYears?: number; // количество лет опыта
+  // Поле для отзывов:
+  reviewsCount?: number; // количество отзывов
   // Поле для образования и курсов:
   education?: {
     university?: string; // университет

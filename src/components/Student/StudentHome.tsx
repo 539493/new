@@ -748,17 +748,13 @@ const StudentHome: React.FC = () => {
                     <span>стаж {profile?.experienceYears || (profile?.experience === 'beginner' ? '1-3' : profile?.experience === 'experienced' ? '4-7' : '8+')} лет</span>
                   </div>
                   
-                  {/* Reviews and Verification */}
-                  <div className="flex items-center justify-center space-x-4 mb-4">
+                  {/* Reviews */}
+                  <div className="flex items-center justify-center mb-4">
                     <div className="flex items-center space-x-1 bg-green-50 px-3 py-1.5 rounded-full">
                       <MessageCircle className="h-4 w-4 text-green-600" />
-                      <span className="text-sm font-medium text-green-700">78 отзывов</span>
-                    </div>
-                    <div className="flex items-center space-x-1 bg-green-50 px-3 py-1.5 rounded-full">
-                      <div className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
-                        <div className="w-2 h-2 bg-white rounded-full"></div>
-                      </div>
-                      <span className="text-sm font-medium text-green-700">Паспорт проверен</span>
+                      <span className="text-sm font-medium text-green-700">
+                        {profile?.reviewsCount && profile.reviewsCount > 0 ? `${profile.reviewsCount} отзывов` : 'отзывов нет'}
+                      </span>
                     </div>
                   </div>
                   
@@ -766,7 +762,7 @@ const StudentHome: React.FC = () => {
                   <div className="text-center mb-4">
                     <div className="flex items-center justify-center space-x-1 text-sm text-gray-600">
                       <MapPin className="h-4 w-4" />
-                      <span>{profile?.city || 'Москва и Московская область'}</span>
+                      <span>{profile?.city || 'Город не указан'}</span>
                     </div>
                   </div>
                   
