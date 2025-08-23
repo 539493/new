@@ -65,7 +65,7 @@
   .comment-input {
     background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
     border: 1px solid #e5e7eb;
-    transition: all 0.2s ease;
+  transition: all 0.2s ease;
   }
   
   .comment-input:focus {
@@ -76,9 +76,9 @@
   
   .tab-active {
     background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-    color: white;
-  }
-  
+  color: white;
+}
+
   .tab-inactive {
     background: transparent;
     color: #6b7280;

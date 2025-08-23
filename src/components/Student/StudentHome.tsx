@@ -355,28 +355,28 @@ const StudentHome: React.FC = () => {
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             Изучай профили преподавателей, читай их записи и записывайся на уроки
           </p>
-        </div>
+          </div>
         
         {/* Connection Status */}
         <div className="flex items-center justify-center mb-6">
-          {isConnected ? (
+            {isConnected ? (
             <div className="flex items-center space-x-2 bg-green-50 border border-green-200 rounded-full px-4 py-2">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
               <Wifi className="h-4 w-4 text-green-600" />
               <span className="text-sm font-medium text-green-700">Подключено в реальном времени</span>
-            </div>
-          ) : (
+              </div>
+            ) : (
             <div className="flex items-center space-x-2 bg-amber-50 border border-amber-200 rounded-full px-4 py-2">
               <WifiOff className="h-4 w-4 text-amber-600" />
               <span className="text-sm font-medium text-amber-700">Офлайн режим (кэшированные данные)</span>
-              <button 
-                onClick={() => window.location.reload()}
+                <button 
+                  onClick={() => window.location.reload()}
                 className="ml-2 text-xs bg-amber-100 text-amber-700 px-3 py-1 rounded-full hover:bg-amber-200 transition-colors"
-              >
-                Переподключиться
-              </button>
-            </div>
-          )}
+                >
+                  Переподключиться
+                </button>
+              </div>
+            )}
         </div>
       </div>
 
@@ -400,7 +400,7 @@ const StudentHome: React.FC = () => {
           className="group bg-gradient-to-r from-purple-500 via-pink-500 to-rose-500 text-white px-6 py-3 rounded-xl font-semibold text-base hover:from-purple-600 hover:via-pink-600 hover:to-rose-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center space-x-2"
         >
           <div className="p-1.5 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
-            <CalendarIcon className="h-5 w-5" />
+          <CalendarIcon className="h-5 w-5" />
           </div>
           <div className="text-left">
             <div className="font-bold">Календарь</div>
@@ -435,8 +435,8 @@ const StudentHome: React.FC = () => {
             />
           </div>
           <div className="flex gap-2">
-            <button
-              onClick={() => setShowFilters(!showFilters)}
+          <button
+            onClick={() => setShowFilters(!showFilters)}
               className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl font-medium transition-all duration-200 text-sm ${
                 showFilters 
                   ? 'bg-blue-600 text-white shadow-md' 
@@ -444,16 +444,16 @@ const StudentHome: React.FC = () => {
               }`}
             >
               <Filter className="h-4 w-4" />
-              <span>Фильтры</span>
+            <span>Фильтры</span>
               {(Object.keys(filters).length > 0 || selectedDate || selectedTimeRange) && (
                 <span className="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full text-xs font-bold">
                   {Object.keys(filters).length + (selectedDate ? 1 : 0) + (selectedTimeRange ? 1 : 0)}
                 </span>
               )}
-            </button>
-            <button
-              onClick={applyFilters}
-              disabled={loading}
+          </button>
+          <button
+            onClick={applyFilters}
+            disabled={loading}
               className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2.5 rounded-xl font-medium hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 flex items-center space-x-2 text-sm"
             >
               {loading ? (
@@ -466,15 +466,15 @@ const StudentHome: React.FC = () => {
                   <span>Применить</span>
                 </>
               )}
-            </button>
-            {(Object.keys(filters).length > 0 || selectedDate || selectedTimeRange) && (
-              <button
-                onClick={clearFilters}
+          </button>
+          {(Object.keys(filters).length > 0 || selectedDate || selectedTimeRange) && (
+            <button
+              onClick={clearFilters}
                 className="bg-white border-2 border-gray-300 text-gray-700 px-4 py-2.5 rounded-xl font-medium hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 text-sm"
-              >
-                Сбросить
-              </button>
-            )}
+            >
+              Сбросить
+            </button>
+          )}
           </div>
         </div>
 
@@ -484,11 +484,11 @@ const StudentHome: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-gray-700">Класс</label>
-                                  <select
-                    value={filters.grade || ''}
-                    onChange={(e) => setFilters({ ...filters, grade: e.target.value })}
+                <select
+                  value={filters.grade || ''}
+                  onChange={(e) => setFilters({ ...filters, grade: e.target.value })}
                     className="w-full p-2.5 border-2 border-gray-200 rounded-lg focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-200"
-                  >
+                >
                   <option value="">Любой класс</option>
                   {grades.map(grade => (
                     <option key={grade} value={grade}>{grade}</option>
@@ -498,11 +498,11 @@ const StudentHome: React.FC = () => {
 
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-gray-700">Предмет</label>
-                                  <select
-                    value={filters.subject || ''}
-                    onChange={(e) => setFilters({ ...filters, subject: e.target.value })}
+                <select
+                  value={filters.subject || ''}
+                  onChange={(e) => setFilters({ ...filters, subject: e.target.value })}
                     className="w-full p-2.5 border-2 border-gray-200 rounded-lg focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-200"
-                  >
+                >
                   <option value="">Любой предмет</option>
                   {subjects.map(subject => (
                     <option key={subject} value={subject}>{subject}</option>
@@ -512,11 +512,11 @@ const StudentHome: React.FC = () => {
 
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-gray-700">Опыт</label>
-                                  <select
-                    value={filters.experience || ''}
-                    onChange={(e) => setFilters({ ...filters, experience: e.target.value })}
+                <select
+                  value={filters.experience || ''}
+                  onChange={(e) => setFilters({ ...filters, experience: e.target.value })}
                     className="w-full p-2.5 border-2 border-gray-200 rounded-lg focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-200"
-                  >
+                >
                   <option value="">Любой опыт</option>
                   {experiences.map(exp => (
                     <option key={exp} value={exp}>{getExperienceLabel(exp)}</option>
@@ -526,11 +526,11 @@ const StudentHome: React.FC = () => {
 
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-gray-700">Формат</label>
-                                  <select
-                    value={filters.format || ''}
-                    onChange={(e) => setFilters({ ...filters, format: e.target.value })}
+                <select
+                  value={filters.format || ''}
+                  onChange={(e) => setFilters({ ...filters, format: e.target.value })}
                     className="w-full p-2.5 border-2 border-gray-200 rounded-lg focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-200"
-                  >
+                >
                   <option value="">Любой формат</option>
                   {formats.map(format => (
                     <option key={format} value={format}>
@@ -549,21 +549,21 @@ const StudentHome: React.FC = () => {
                 <div className="space-y-3">
                   <label className="block text-sm font-semibold text-gray-700">Дата</label>
                   <div className="border-2 border-gray-200 rounded-2xl overflow-hidden shadow-lg">
-                    <Calendar
-                      localizer={localizer}
-                      events={[]}
-                      startAccessor="start"
-                      endAccessor="end"
+                  <Calendar
+                    localizer={localizer}
+                    events={[]}
+                    startAccessor="start"
+                    endAccessor="end"
                       style={{ height: 280 }}
-                      views={['month']}
-                      view="month"
-                      selectable
-                      onSelectSlot={(slotInfo) => {
-                        setSelectedDate(slotInfo.start);
-                      }}
-                      onSelectEvent={() => {}}
+                    views={['month']}
+                    view="month"
+                    selectable
+                    onSelectSlot={(slotInfo) => {
+                      setSelectedDate(slotInfo.start);
+                    }}
+                    onSelectEvent={() => {}}
 
-                    />
+                  />
                   </div>
                 </div>
 
@@ -571,7 +571,7 @@ const StudentHome: React.FC = () => {
                 <div className="space-y-4">
                   <label className="block text-sm font-semibold text-gray-700">Время</label>
                   <div className="space-y-4">
-                    <div>
+                <div>
                       <label className="block text-sm font-medium text-gray-600 mb-2">Начало</label>
                       <input
                         type="time"
@@ -632,7 +632,7 @@ const StudentHome: React.FC = () => {
           </p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {filteredTeachers.length === 0 ? (
           <EmptyState
             title={Object.keys(filters).length > 0 || selectedDate || selectedTimeRange 
@@ -721,27 +721,27 @@ const StudentHome: React.FC = () => {
                 {/* Avatar */}
                 <div className="relative -mt-8 mx-4 mb-3">
                   <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center overflow-hidden border-4 border-white shadow-xl">
-                    {profile?.avatar && profile.avatar.trim() !== '' ? (
-                      <img 
-                        src={profile.avatar} 
-                        alt={teacher.name} 
+                  {profile?.avatar && profile.avatar.trim() !== '' ? (
+                    <img 
+                      src={profile.avatar} 
+                      alt={teacher.name} 
                         className="w-16 h-16 object-cover rounded-full"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
-                          target.nextElementSibling?.classList.remove('hidden');
-                        }}
-                      />
-                    ) : null}
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        target.nextElementSibling?.classList.remove('hidden');
+                      }}
+                    />
+                  ) : null}
                     <div className={`w-16 h-16 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center ${profile?.avatar && profile.avatar.trim() !== '' ? 'hidden' : ''}`}>
                       <UserIcon className="h-8 w-8 text-white" />
-                    </div>
                   </div>
-                  
-                  {/* Online Status */}
-                  <div className="absolute bottom-1 right-1 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
                 </div>
                 
+                  {/* Online Status */}
+                  <div className="absolute bottom-1 right-1 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+                  </div>
+                  
                 {/* Content */}
                 <div className="px-4 pb-4">
                                     {/* Lessons count */}
@@ -749,7 +749,7 @@ const StudentHome: React.FC = () => {
                     <div className="text-center mb-3">
                       <div className="text-xs text-gray-500">
                         Проведено уроков: {profile.lessonsCount}
-                      </div>
+                  </div>
                     </div>
                   )}
                   
@@ -763,7 +763,7 @@ const StudentHome: React.FC = () => {
                             className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full text-xs font-medium"
                           >
                             {subject}
-                          </span>
+                    </span>
                         ))}
                         {profile.subjects.length > 2 && (
                           <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs">
@@ -805,7 +805,7 @@ const StudentHome: React.FC = () => {
                         <div className={`w-2 h-2 rounded-full ${hasAvailableSlots ? 'bg-green-500' : 'bg-gray-400'}`}></div>
                         <span className="text-xs text-gray-600">
                           {hasAvailableSlots ? 'Доступен' : 'Занят'}
-                        </span>
+                    </span>
                       </div>
                       <span className="text-xs font-medium text-gray-900">
                         {hasAvailableSlots ? `${availableTeacherSlots.length} слотов` : 'Нет слотов'}
@@ -815,21 +815,21 @@ const StudentHome: React.FC = () => {
                   
                   {/* Action Buttons */}
                   <div className="space-y-1.5">
-                    <button
-                      onClick={(e) => {
+                  <button
+                    onClick={(e) => {
                         e.stopPropagation();
-                        if (hasAvailableSlots) {
-                          const availableSlot = availableTeacherSlots[0];
-                          if (availableSlot && user) {
-                            setSelectedBookingSlot(availableSlot);
-                            setShowBookingModal(true);
-                          }
-                        } else {
-                          handleTeacherClick(teacher);
+                      if (hasAvailableSlots) {
+                        const availableSlot = availableTeacherSlots[0];
+                        if (availableSlot && user) {
+                          setSelectedBookingSlot(availableSlot);
+                          setShowBookingModal(true);
                         }
-                      }}
+                      } else {
+                        handleTeacherClick(teacher);
+                      }
+                    }}
                       className={`w-full py-2 rounded-lg font-medium transition-all duration-200 text-sm ${
-                        hasAvailableSlots 
+                      hasAvailableSlots 
                           ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 shadow-md hover:shadow-lg' 
                           : 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700 shadow-md hover:shadow-lg'
                       }`}
@@ -845,7 +845,7 @@ const StudentHome: React.FC = () => {
                       className="w-full py-1.5 text-gray-500 hover:text-blue-600 transition-colors text-xs font-medium"
                     >
                       Подробнее →
-                    </button>
+                  </button>
                   </div>
                 </div>
               </div>
