@@ -1114,58 +1114,173 @@ const StudentHome: React.FC = () => {
         />
       )}
 
-      {/* Простое тестовое модальное окно */}
+      {/* Модальное окно с календарем слотов преподавателя */}
       {showTeacherCalendarModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900">
-                Тестовое модальное окно
-              </h2>
-              <button
-                onClick={() => {
-                  setShowTeacherCalendarModal(false);
-                  setSelectedTeacherForCalendar(null);
-                }}
-                className="p-2 rounded-full hover:bg-gray-100 transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-600" />
-              </button>
-            </div>
-            
-            <div className="space-y-4">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h3 className="font-semibold text-blue-800 mb-2">Информация:</h3>
-                <p className="text-sm text-blue-700">Модальное окно работает!</p>
-                <p className="text-sm text-blue-700">Преподаватель: {selectedTeacherForCalendar?.name || 'Не выбран'}</p>
-                <p className="text-sm text-blue-700">ID: {selectedTeacherForCalendar?.id || 'Нет ID'}</p>
-              </div>
-              
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <h3 className="font-semibold text-green-800 mb-2">Доступные слоты:</h3>
-                <p className="text-sm text-green-700">
-                  {timeSlots.filter(slot => slot.teacherId === selectedTeacherForCalendar?.id && !slot.isBooked).length} слотов
-                </p>
-              </div>
-              
-              <div className="flex space-x-3">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="sticky top-0 bg-white border-b border-gray-200 p-6 rounded-t-3xl z-10">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center overflow-hidden border-4 border-white shadow-lg">
+                    {selectedTeacherForCalendar?.avatar ? (
+                      <img 
+                        src={selectedTeacherForCalendar.avatar} 
+                        alt={selectedTeacherForCalendar?.name || 'Преподаватель'} 
+                        className="w-16 h-16 object-cover rounded-full"
+                      />
+                    ) : (
+                      <UserIcon className="h-8 w-8 text-white" />
+                    )}
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">
+                      Расписание {selectedTeacherForCalendar?.name || 'Преподавателя'}
+                    </h2>
+                    <p className="text-gray-600">Выберите удобное время для занятия</p>
+                  </div>
+                </div>
                 <button
                   onClick={() => {
                     setShowTeacherCalendarModal(false);
                     setSelectedTeacherForCalendar(null);
                   }}
-                  className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                  className="p-3 rounded-full hover:bg-gray-100 transition-colors"
                 >
-                  Закрыть
+                  <X className="w-6 h-6 text-gray-600" />
                 </button>
-                <button
-                  onClick={() => {
-                    console.log('Тестовое действие выполнено');
-                  }}
-                  className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors"
-                >
-                  Тест
-                </button>
+              </div>
+            </div>
+
+            {/* Calendar Content */}
+            <div className="p-6">
+              {/* Teacher Info */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 mb-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      {selectedTeacherForCalendar?.name || 'Преподаватель'}
+                    </h3>
+                    <div className="flex items-center space-x-4 text-sm text-gray-600">
+                      <span>Частный преподаватель</span>
+                      {selectedTeacherForCalendar?.profile?.city && (
+                        <span className="flex items-center">
+                          <MapPin className="h-4 w-4 mr-1" />
+                          {selectedTeacherForCalendar.profile.city}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-blue-600">
+                      {timeSlots
+                        .filter(slot => slot.teacherId === selectedTeacherForCalendar?.id && !slot.isBooked)
+                        .length
+                      } слотов
+                    </div>
+                    <div className="text-sm text-gray-600">доступно</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Available Slots */}
+              <div className="mb-6">
+                <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                  <Calendar className="h-6 w-6 mr-2 text-blue-600" />
+                  Доступное время
+                </h3>
+                
+                {/* Teacher's Slots */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {timeSlots
+                    .filter(slot => slot.teacherId === selectedTeacherForCalendar?.id && !slot.isBooked)
+                    .sort((a, b) => new Date(`${a.date}T${a.startTime}`).getTime() - new Date(`${b.date}T${b.startTime}`).getTime())
+                    .map(slot => (
+                      <div 
+                        key={slot.id} 
+                        className="bg-white border-2 border-blue-200 rounded-2xl p-5 hover:border-blue-400 hover:shadow-xl transition-all duration-300 cursor-pointer group"
+                        onClick={() => {
+                          if (user) {
+                            setSelectedBookingSlot(slot);
+                            setShowBookingModal(true);
+                            setShowTeacherCalendarModal(false);
+                            setSelectedTeacherForCalendar(null);
+                          }
+                        }}
+                      >
+                        {/* Date */}
+                        <div className="text-center mb-4">
+                          <div className="text-lg font-bold text-blue-900">
+                            {new Date(slot.date).toLocaleDateString('ru-RU', { 
+                              day: 'numeric',
+                              month: 'short'
+                            })}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            {new Date(slot.date).toLocaleDateString('ru-RU', { 
+                              weekday: 'long'
+                            })}
+                          </div>
+                        </div>
+                        
+                        {/* Time */}
+                        <div className="text-center mb-4">
+                          <div className="flex items-center justify-center space-x-2 mb-2">
+                            <Clock className="h-5 w-5 text-blue-600" />
+                            <span className="text-lg font-semibold text-gray-900">
+                              {slot.startTime}
+                            </span>
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            {slot.duration} минут
+                          </div>
+                        </div>
+                        
+                        {/* Subject and Format */}
+                        <div className="space-y-2 mb-4">
+                          <div className="flex items-center justify-center space-x-2">
+                            <BookOpen className="h-4 w-4 text-green-600" />
+                            <span className="text-sm font-medium text-gray-700">{slot.subject}</span>
+                          </div>
+                          
+                          <div className="flex items-center justify-center space-x-2">
+                            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                            <span className="text-sm text-gray-600">{getFormatLabel(slot.format)}</span>
+                          </div>
+                        </div>
+                        
+                        {/* Price and Book Button */}
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-blue-600 mb-3">
+                            {slot.price} ₽
+                          </div>
+                          <button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-200 transform group-hover:scale-105">
+                            Забронировать
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+                
+                {/* No Slots State */}
+                {timeSlots.filter(slot => slot.teacherId === selectedTeacherForCalendar?.id && !slot.isBooked).length === 0 && (
+                  <div className="text-center py-16">
+                    <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <Calendar className="h-12 w-12 text-gray-400" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-3">Нет доступных слотов</h3>
+                    <p className="text-gray-600 mb-6">У этого преподавателя пока нет свободного времени</p>
+                    <button
+                      onClick={() => {
+                        setShowTeacherCalendarModal(false);
+                        setSelectedTeacherForCalendar(null);
+                      }}
+                      className="bg-gray-100 text-gray-700 px-6 py-3 rounded-xl font-medium hover:bg-gray-200 transition-colors"
+                    >
+                      Закрыть
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
