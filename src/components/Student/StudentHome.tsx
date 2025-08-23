@@ -755,8 +755,8 @@ const StudentHome: React.FC = () => {
                   
                   {/* Age and Experience */}
                   <div className="flex items-center justify-center space-x-4 text-sm text-gray-600 mb-4">
-                    <span>возраст {profile?.age || 37} лет</span>
-                    <span>стаж {profile?.experienceYears || (profile?.experience === 'beginner' ? '1-3' : profile?.experience === 'experienced' ? '4-7' : '8+')} лет</span>
+                    {profile?.age && <span>возраст {profile.age} лет</span>}
+                    {profile?.experienceYears && <span>стаж {profile.experienceYears} лет</span>}
                   </div>
                   
                   {/* Reviews */}
