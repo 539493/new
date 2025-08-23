@@ -671,9 +671,9 @@ const StudentHome: React.FC = () => {
                 className="bg-white rounded-3xl border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group overflow-hidden transform hover:-translate-y-2"
                 onClick={() => handleTeacherClick(teacher)}
               >
-                {/* Custom Background */}
+                {/* Custom Background - Smaller */}
                 <div 
-                  className="h-48 relative overflow-hidden"
+                  className="h-32 relative overflow-hidden"
                   style={{
                     background: profile?.cardBackground 
                       ? (profile.cardBackground.startsWith('http') || profile.cardBackground.startsWith('data:'))
@@ -686,39 +686,39 @@ const StudentHome: React.FC = () => {
                   <div className="absolute inset-0 bg-black bg-opacity-30"></div>
                   
                   {/* Action buttons on top */}
-                  <div className="absolute top-4 right-4 flex items-center space-x-2">
+                  <div className="absolute top-3 right-3 flex items-center space-x-2">
                     <button 
-                      className="p-2 bg-white/20 backdrop-blur-sm rounded-full text-white hover:bg-white/30 transition-colors border border-white/30"
+                      className="p-1.5 bg-white/20 backdrop-blur-sm rounded-full text-white hover:bg-white/30 transition-colors border border-white/30"
                       onClick={(e) => {
                         e.stopPropagation();
                         // Здесь можно добавить логику для добавления в избранное
                       }}
                     >
-                      <Heart className="h-4 w-4" />
+                      <Heart className="h-3 w-3" />
                     </button>
                     <button 
-                      className="p-2 bg-white/20 backdrop-blur-sm rounded-full text-white hover:bg-white/30 transition-colors border border-white/30"
+                      className="p-1.5 bg-white/20 backdrop-blur-sm rounded-full text-white hover:bg-white/30 transition-colors border border-white/30"
                       onClick={(e) => {
                         e.stopPropagation();
                         // Здесь можно добавить логику для шаринга
                       }}
                     >
-                      <Share2 className="h-4 w-4" />
+                      <Share2 className="h-3 w-3" />
                     </button>
                   </div>
                 </div>
                 
-                {/* Avatar - Centered on background */}
-                <div className="relative -mt-16 flex justify-center">
-                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center overflow-hidden border-4 border-white shadow-2xl relative">
+                {/* Avatar - Centered on background, Bigger */}
+                <div className="relative -mt-12 flex justify-center">
+                  <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center overflow-hidden border-4 border-white shadow-2xl relative">
                     {/* Online Status */}
-                    <div className="absolute top-1 right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full shadow-lg"></div>
+                    <div className="absolute top-2 right-2 w-5 h-5 bg-green-500 border-2 border-white rounded-full shadow-lg"></div>
                     
-                    {profile?.avatar && profile.avatar.trim() !== '' ? (
+                    {(profile?.avatar && profile.avatar.trim() !== '') || (teacher.avatar && teacher.avatar.trim() !== '') ? (
                       <img 
-                        src={profile.avatar} 
+                        src={profile?.avatar || teacher.avatar} 
                         alt={teacher.name} 
-                        className="w-24 h-24 object-cover rounded-full"
+                        className="w-32 h-32 object-cover rounded-full"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
                           target.style.display = 'none';
@@ -726,8 +726,8 @@ const StudentHome: React.FC = () => {
                         }}
                       />
                     ) : null}
-                    <div className={`w-24 h-24 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center ${profile?.avatar && profile.avatar.trim() !== '' ? 'hidden' : ''}`}>
-                      <UserIcon className="h-12 w-12 text-white" />
+                    <div className={`w-32 h-32 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center ${(profile?.avatar && profile.avatar.trim() !== '') || (teacher.avatar && teacher.avatar.trim() !== '') ? 'hidden' : ''}`}>
+                      <UserIcon className="h-16 w-16 text-white" />
                     </div>
                   </div>
                 </div>
@@ -748,14 +748,8 @@ const StudentHome: React.FC = () => {
                     <span>стаж {profile?.experience === 'beginner' ? '1-3' : profile?.experience === 'experienced' ? '4-7' : '8+'} лет</span>
                   </div>
                   
-                  {/* Rating, Reviews, Verification */}
+                  {/* Reviews and Verification */}
                   <div className="flex items-center justify-center space-x-4 mb-4">
-                    {profile?.rating && (
-                      <div className="flex items-center space-x-1 bg-green-50 px-3 py-1.5 rounded-full">
-                        <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                        <span className="text-sm font-medium text-green-700">{profile.rating}</span>
-                      </div>
-                    )}
                     <div className="flex items-center space-x-1 bg-green-50 px-3 py-1.5 rounded-full">
                       <MessageCircle className="h-4 w-4 text-green-600" />
                       <span className="text-sm font-medium text-green-700">78 отзывов</span>
@@ -776,51 +770,7 @@ const StudentHome: React.FC = () => {
                     </div>
                   </div>
                   
-                  {/* Subjects */}
-                  {profile?.subjects && profile.subjects.length > 0 && (
-                    <div className="mb-4">
-                      <div className="flex flex-wrap gap-2 justify-center">
-                        {profile.subjects.slice(0, 3).map((subject: string, index: number) => (
-                          <span
-                            key={index}
-                            className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-medium"
-                          >
-                            {subject}
-                          </span>
-                        ))}
-                        {profile.subjects.length > 3 && (
-                          <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm">
-                            +{profile.subjects.length - 3}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Price Range */}
-                  <div className="text-center mb-4">
-                    <div className="text-2xl font-bold text-blue-600">
-                      от {minPrice} ₽
-                    </div>
-                    <div className="text-sm text-gray-500">за урок</div>
-                  </div>
-                  
-                  {/* Status and Slots */}
-                  <div className="bg-gray-50 rounded-xl p-3 mb-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <div className={`w-3 h-3 rounded-full ${hasAvailableSlots ? 'bg-green-500' : 'bg-gray-400'}`}></div>
-                        <span className="text-sm text-gray-600">
-                          {hasAvailableSlots ? 'Доступен' : 'Занят'}
-                        </span>
-                      </div>
-                      <span className="text-sm font-medium text-gray-900">
-                        {hasAvailableSlots ? `${availableTeacherSlots.length} слотов` : 'Нет слотов'}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  {/* Action Buttons */}
+                                    {/* Action Buttons */}
                   <div className="space-y-2">
                     <button
                       onClick={(e) => {
