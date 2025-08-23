@@ -653,6 +653,69 @@ const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClos
             </div>
           )}
 
+          {/* Education */}
+          {(profile?.education?.university || profile?.education?.courses?.length) && (
+            <div className="bg-white border border-gray-200 rounded-2xl p-6">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Образование и курсы</h3>
+              
+              {/* University */}
+              {profile?.education?.university && (
+                <div className="mb-6">
+                  <h4 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                      <div className="w-4 h-4 bg-blue-500 rounded-full"></div>
+                    </div>
+                    Высшее образование
+                  </h4>
+                  <div className="bg-blue-50 rounded-xl p-4">
+                    <div className="font-medium text-blue-900 mb-1">{profile.education.university}</div>
+                    {profile.education.degree && (
+                      <div className="text-sm text-blue-700 mb-1">{profile.education.degree}</div>
+                    )}
+                    {profile.education.graduationYear && (
+                      <div className="text-sm text-blue-600">Год окончания: {profile.education.graduationYear}</div>
+                    )}
+                  </div>
+                </div>
+              )}
+              
+              {/* Courses */}
+              {profile?.education?.courses && profile.education.courses.length > 0 && (
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                      <div className="w-4 h-4 bg-green-500 rounded-full"></div>
+                    </div>
+                    Курсы и сертификаты
+                  </h4>
+                  <div className="space-y-3">
+                    {profile.education.courses.map((course, index) => (
+                      <div key={index} className="bg-green-50 rounded-xl p-4 border border-green-100">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="font-medium text-green-900 mb-1">{course.name}</div>
+                            <div className="text-sm text-green-700 mb-1">{course.institution}</div>
+                            <div className="text-sm text-green-600">Год: {course.year}</div>
+                          </div>
+                          {course.certificate && (
+                            <a 
+                              href={course.certificate} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="ml-3 p-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm font-medium"
+                            >
+                              Сертификат
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Additional Info */}
                 <div className="bg-gray-50 rounded-2xl p-6">
                   <h3 className="text-xl font-bold text-gray-900 mb-4">Дополнительная информация</h3>

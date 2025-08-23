@@ -38,6 +38,21 @@ export interface TeacherProfile {
   country?: string;
   // Поле для кастомного фона карточки
   cardBackground?: string; // URL изображения или CSS градиент
+  // Новые поля для возраста и опыта:
+  age?: number; // возраст преподавателя
+  experienceYears?: number; // количество лет опыта
+  // Поле для образования и курсов:
+  education?: {
+    university?: string; // университет
+    degree?: string; // степень/специальность
+    graduationYear?: number; // год окончания
+    courses?: Array<{
+      name: string; // название курса
+      institution: string; // учреждение
+      year: number; // год прохождения
+      certificate?: string; // ссылка на сертификат
+    }>;
+  };
   [key: string]: unknown;
 }
 
