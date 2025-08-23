@@ -47,6 +47,14 @@ const ProfileForm: React.FC = () => {
     avatar: '',
     rating: 0,
     hourlyRate: 1500,
+    age: undefined,
+    experienceYears: undefined,
+    education: {
+      university: '',
+      degree: '',
+      graduationYear: undefined,
+      courses: []
+    }
   });
   const [contactModalOpen, setContactModalOpen] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
@@ -588,7 +596,7 @@ const ProfileForm: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Опыт преподавания</label>
               <select
@@ -602,6 +610,34 @@ const ProfileForm: React.FC = () => {
               </select>
             </div>
 
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Возраст</label>
+              <input
+                type="number"
+                value={teacherProfile.age || ''}
+                onChange={(e) => setTeacherProfile({ ...teacherProfile, age: e.target.value ? Number(e.target.value) : undefined })}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                min="18"
+                max="100"
+                placeholder="Укажите возраст"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Лет опыта</label>
+              <input
+                type="number"
+                value={teacherProfile.experienceYears || ''}
+                onChange={(e) => setTeacherProfile({ ...teacherProfile, experienceYears: e.target.value ? Number(e.target.value) : undefined })}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                min="0"
+                max="50"
+                placeholder="Количество лет"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Стоимость часа (₽)</label>
               <input
@@ -761,6 +797,208 @@ const ProfileForm: React.FC = () => {
               placeholder="Расскажите о себе..."
             />
           </div>
+
+          {/* Образование — только для преподавателей */}
+          {user.role === 'teacher' && (
+            <>
+              <div className="border-t border-gray-200 pt-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Образование</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Университет</label>
+                    <input
+                      type="text"
+                      value={teacherProfile.education?.university || ''}
+                      onChange={(e) => setTeacherProfile({
+                        ...teacherProfile,
+                        education: {
+                          ...teacherProfile.education,
+                          university: e.target.value
+                        }
+                      })}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="Название университета"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Специальность/Степень</label>
+                    <input
+                      type="text"
+                      value={teacherProfile.education?.degree || ''}
+                      onChange={(e) => setTeacherProfile({
+                        ...teacherProfile,
+                        education: {
+                          ...teacherProfile.education,
+                          degree: e.target.value
+                        }
+                      })}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="Ваша специальность"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Год окончания</label>
+                  <input
+                    type="number"
+                    value={teacherProfile.education?.graduationYear || ''}
+                    onChange={(e) => setTeacherProfile({
+                      ...teacherProfile,
+                      education: {
+                        ...teacherProfile.education,
+                        graduationYear: e.target.value ? Number(e.target.value) : undefined
+                      }
+                    })}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    min="1950"
+                    max={new Date().getFullYear()}
+                    placeholder="Год окончания"
+                  />
+                </div>
+              </div>
+
+              <div className="border-t border-gray-200 pt-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Курсы и сертификаты</h3>
+                
+                <div className="space-y-4">
+                  {teacherProfile.education?.courses?.map((course, index) => (
+                    <div key={index} className="border border-gray-200 rounded-lg p-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Название курса</label>
+                          <input
+                            type="text"
+                            value={course.name}
+                            onChange={(e) => {
+                              const newCourses = [...(teacherProfile.education?.courses || [])];
+                              newCourses[index] = { ...course, name: e.target.value };
+                              setTeacherProfile({
+                                ...teacherProfile,
+                                education: {
+                                  ...teacherProfile.education,
+                                  courses: newCourses
+                                }
+                              });
+                            }}
+                            className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                            placeholder="Название курса"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Учреждение</label>
+                          <input
+                            type="text"
+                            value={course.institution}
+                            onChange={(e) => {
+                              const newCourses = [...(teacherProfile.education?.courses || [])];
+                              newCourses[index] = { ...course, institution: e.target.value };
+                              setTeacherProfile({
+                                ...teacherProfile,
+                                education: {
+                                  ...teacherProfile.education,
+                                  courses: newCourses
+                                }
+                              });
+                            }}
+                            className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                            placeholder="Название учреждения"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Год прохождения</label>
+                          <input
+                            type="number"
+                            value={course.year}
+                            onChange={(e) => {
+                              const newCourses = [...(teacherProfile.education?.courses || [])];
+                              newCourses[index] = { ...course, year: Number(e.target.value) };
+                              setTeacherProfile({
+                                ...teacherProfile,
+                                education: {
+                                  ...teacherProfile.education,
+                                  courses: newCourses
+                                }
+                              });
+                            }}
+                            className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                            min="1950"
+                            max={new Date().getFullYear()}
+                            placeholder="Год"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Ссылка на сертификат</label>
+                          <input
+                            type="url"
+                            value={course.certificate || ''}
+                            onChange={(e) => {
+                              const newCourses = [...(teacherProfile.education?.courses || [])];
+                              newCourses[index] = { ...course, certificate: e.target.value };
+                              setTeacherProfile({
+                                ...teacherProfile,
+                                education: {
+                                  ...teacherProfile.education,
+                                  courses: newCourses
+                                }
+                              });
+                            }}
+                            className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                            placeholder="https://example.com/certificate.pdf"
+                          />
+                        </div>
+                      </div>
+                      
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newCourses = teacherProfile.education?.courses?.filter((_, i) => i !== index) || [];
+                          setTeacherProfile({
+                            ...teacherProfile,
+                            education: {
+                              ...teacherProfile.education,
+                              courses: newCourses
+                            }
+                          });
+                        }}
+                        className="text-red-600 hover:text-red-800 text-sm font-medium"
+                      >
+                        Удалить курс
+                      </button>
+                    </div>
+                  ))}
+                  
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newCourse = {
+                        name: '',
+                        institution: '',
+                        year: new Date().getFullYear(),
+                        certificate: ''
+                      };
+                      setTeacherProfile({
+                        ...teacherProfile,
+                        education: {
+                          ...teacherProfile.education,
+                          courses: [...(teacherProfile.education?.courses || []), newCourse]
+                        }
+                      });
+                    }}
+                    className="w-full p-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-gray-400 hover:text-gray-800 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Plus className="h-5 w-5" />
+                    Добавить курс
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
 
               <div className="flex justify-end gap-4">
             <button
