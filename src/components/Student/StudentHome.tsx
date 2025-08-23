@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, Star, Users, MapPin, BookOpen, RefreshCw, Wifi, WifiOff, Heart, MoreHorizontal, Calendar as CalendarIcon, Share2, Award, MessageCircle } from 'lucide-react';
+import { Search, Filter, Star, Users, MapPin, BookOpen, RefreshCw, Wifi, WifiOff, Heart, MoreHorizontal, Calendar as CalendarIcon, Share2, Award, MessageCircle, X, Clock } from 'lucide-react';
 import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
 import { ru } from 'date-fns/locale';
@@ -39,6 +39,8 @@ const StudentHome: React.FC = () => {
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [selectedBookingSlot, setSelectedBookingSlot] = useState<TimeSlot | null>(null);
   const [showCalendar, setShowCalendar] = useState(false);
+  const [showTeacherCalendarModal, setShowTeacherCalendarModal] = useState(false);
+  const [selectedTeacherForCalendar, setSelectedTeacherForCalendar] = useState<any>(null);
 
   // Новые состояния для календаря в фильтрах
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -186,6 +188,15 @@ const StudentHome: React.FC = () => {
       case 'experienced': return 'Опытный';
       case 'professional': return 'Профессионал';
       default: return exp;
+    }
+  };
+
+  const getFormatLabel = (format: string) => {
+    switch (format) {
+      case 'online': return 'Онлайн';
+      case 'offline': return 'Оффлайн';
+      case 'mini-group': return 'Мини-группа';
+      default: return format;
     }
   };
 
@@ -772,11 +783,8 @@ const StudentHome: React.FC = () => {
                       onClick={(e) => {
                         e.stopPropagation();
                         if (hasAvailableSlots) {
-                          const availableSlot = availableTeacherSlots[0];
-                          if (availableSlot && user) {
-                            setSelectedBookingSlot(availableSlot);
-                            setShowBookingModal(true);
-                          }
+                          setSelectedTeacherForCalendar(teacher);
+                          setShowTeacherCalendarModal(true);
                         } else {
                           handleTeacherClick(teacher);
                         }
@@ -1101,6 +1109,127 @@ const StudentHome: React.FC = () => {
         <StudentCalendar
           onClose={() => setShowCalendar(false)}
         />
+      )}
+
+      {/* Модальное окно с календарем слотов преподавателя */}
+      {showTeacherCalendarModal && selectedTeacherForCalendar && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="sticky top-0 bg-white border-b border-gray-200 p-6 rounded-t-3xl z-10">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center overflow-hidden">
+                    {selectedTeacherForCalendar.avatar ? (
+                      <img 
+                        src={selectedTeacherForCalendar.avatar} 
+                        alt={selectedTeacherForCalendar.name} 
+                        className="w-12 h-12 object-cover rounded-full"
+                      />
+                    ) : (
+                      <UserIcon className="h-6 w-6 text-white" />
+                    )}
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-900">
+                      Календарь {selectedTeacherForCalendar.name}
+                    </h2>
+                    <p className="text-sm text-gray-600">Выберите удобное время для занятия</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowTeacherCalendarModal(false);
+                    setSelectedTeacherForCalendar(null);
+                  }}
+                  className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+                >
+                  <X className="w-6 h-6 text-gray-600" />
+                </button>
+              </div>
+            </div>
+
+            {/* Calendar Content */}
+            <div className="p-6">
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Доступные слоты</h3>
+                
+                {/* Teacher's Slots */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {timeSlots
+                    .filter(slot => slot.teacherId === selectedTeacherForCalendar.id && !slot.isBooked)
+                    .sort((a, b) => new Date(`${a.date}T${a.startTime}`).getTime() - new Date(`${b.date}T${b.startTime}`).getTime())
+                    .map(slot => (
+                      <div 
+                        key={slot.id} 
+                        className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 hover:shadow-lg transition-all duration-200 cursor-pointer"
+                        onClick={() => {
+                          if (user) {
+                            setSelectedBookingSlot(slot);
+                            setShowBookingModal(true);
+                            setShowTeacherCalendarModal(false);
+                            setSelectedTeacherForCalendar(null);
+                          }
+                        }}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center space-x-2">
+                            <Calendar className="h-4 w-4 text-blue-600" />
+                            <span className="text-sm font-medium text-blue-900">
+                              {new Date(slot.date).toLocaleDateString('ru-RU', { 
+                                weekday: 'short', 
+                                day: 'numeric', 
+                                month: 'short' 
+                              })}
+                            </span>
+                          </div>
+                          <div className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
+                            {slot.duration} мин
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center space-x-2">
+                            <Clock className="h-4 w-4 text-gray-600" />
+                            <span className="text-sm font-semibold text-gray-900">
+                              {slot.startTime} - {slot.endTime}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <div className="flex items-center space-x-2">
+                            <BookOpen className="h-4 w-4 text-green-600" />
+                            <span className="text-sm text-gray-700">{slot.subject}</span>
+                          </div>
+                          
+                          <div className="flex items-center space-x-2">
+                            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                            <span className="text-sm text-gray-600">{getFormatLabel(slot.format)}</span>
+                          </div>
+                          
+                          <div className="flex items-center justify-between pt-2 border-t border-blue-200">
+                            <span className="text-lg font-bold text-blue-600">{slot.price} ₽</span>
+                            <button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:from-blue-700 hover:to-purple-700 transition-all duration-200">
+                              Забронировать
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+                
+                {timeSlots.filter(slot => slot.teacherId === selectedTeacherForCalendar.id && !slot.isBooked).length === 0 && (
+                  <div className="text-center py-12">
+                    <Calendar className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Нет доступных слотов</h3>
+                    <p className="text-gray-600">У этого преподавателя пока нет свободного времени</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
