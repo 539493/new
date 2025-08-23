@@ -728,15 +728,15 @@ const StudentHome: React.FC = () => {
                     {(profile?.avatar && profile.avatar.trim() !== '') || (teacher.avatar && teacher.avatar.trim() !== '') ? (
                       <img 
                         src={profile?.avatar || teacher.avatar} 
-                        alt={teacher.name} 
+                      alt={teacher.name} 
                         className="w-32 h-32 object-cover rounded-full"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
-                          target.nextElementSibling?.classList.remove('hidden');
-                        }}
-                      />
-                    ) : null}
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        target.nextElementSibling?.classList.remove('hidden');
+                      }}
+                    />
+                  ) : null}
                     <div className={`w-32 h-32 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center ${(profile?.avatar && profile.avatar.trim() !== '') || (teacher.avatar && teacher.avatar.trim() !== '') ? 'hidden' : ''}`}>
                       <UserIcon className="h-16 w-16 text-white" />
                     </div>
@@ -765,8 +765,8 @@ const StudentHome: React.FC = () => {
                       <MessageCircle className="h-4 w-4 text-green-600" />
                       <span className="text-sm font-medium text-green-700">
                         {profile?.reviewsCount && profile.reviewsCount > 0 ? `${profile.reviewsCount} отзывов` : 'отзывов нет'}
-                      </span>
-                    </div>
+                    </span>
+                      </div>
                   </div>
                   
                   {/* Location */}
@@ -774,26 +774,26 @@ const StudentHome: React.FC = () => {
                     <div className="flex items-center justify-center space-x-1 text-sm text-gray-600">
                       <MapPin className="h-4 w-4" />
                       <span>{profile?.city || 'Город не указан'}</span>
-                    </div>
+                  </div>
                   </div>
                   
                                     {/* Action Buttons */}
                   <div className="space-y-2">
-                    <button
-                      onClick={(e) => {
+                  <button
+                    onClick={(e) => {
                         e.stopPropagation();
                         console.log('Button clicked, teacher:', teacher);
                         console.log('hasAvailableSlots:', hasAvailableSlots);
-                        if (hasAvailableSlots) {
+                      if (hasAvailableSlots) {
                           console.log('Setting teacher for calendar:', teacher);
                           setSelectedTeacherForCalendar(teacher);
                           setShowTeacherCalendarModal(true);
-                        } else {
-                          handleTeacherClick(teacher);
-                        }
-                      }}
+                      } else {
+                        handleTeacherClick(teacher);
+                      }
+                    }}
                       className={`w-full py-3 rounded-xl font-semibold transition-all duration-200 text-base ${
-                        hasAvailableSlots 
+                      hasAvailableSlots 
                           ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transform hover:-translate-y-1' 
                           : 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700 shadow-lg hover:shadow-xl transform hover:-translate-y-1'
                       }`}
@@ -809,7 +809,7 @@ const StudentHome: React.FC = () => {
                       className="w-full py-2 text-gray-500 hover:text-blue-600 transition-colors text-sm font-medium"
                     >
                       Подробнее →
-                    </button>
+                  </button>
                   </div>
                 </div>
               </div>
@@ -1114,10 +1114,10 @@ const StudentHome: React.FC = () => {
         />
       )}
 
-      {/* Простое модальное окно со слотами */}
+      {/* Модальное окно с календарем */}
       {showTeacherCalendarModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
             {/* Header */}
             <div className="p-6 border-b border-gray-200">
               <div className="flex items-center justify-between">
@@ -1127,9 +1127,9 @@ const StudentHome: React.FC = () => {
                   </div>
                   <div>
                     <h2 className="text-xl font-bold text-gray-900">
-                      Расписание {selectedTeacherForCalendar?.name || 'Преподавателя'}
+                      Календарь {selectedTeacherForCalendar?.name || 'Преподавателя'}
                     </h2>
-                    <p className="text-gray-600">Выберите удобное время</p>
+                    <p className="text-gray-600">Выберите удобное время для занятия</p>
                   </div>
                 </div>
                 <button
@@ -1144,63 +1144,95 @@ const StudentHome: React.FC = () => {
               </div>
             </div>
 
-            {/* Content */}
+            {/* Calendar Content */}
             <div className="p-6">
-              {/* Available Slots */}
+              {/* Week Calendar */}
               <div className="mb-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  Доступные слоты ({timeSlots.filter(slot => slot.teacherId === selectedTeacherForCalendar?.id && !slot.isBooked).length})
+                  Недельное расписание
                 </h3>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {timeSlots
-                    .filter(slot => slot.teacherId === selectedTeacherForCalendar?.id && !slot.isBooked)
-                    .map(slot => (
-                      <div 
-                        key={slot.id} 
-                        className="bg-gray-50 border border-gray-200 rounded-lg p-4 hover:bg-gray-100 cursor-pointer"
-                        onClick={() => {
-                          if (user) {
-                            setSelectedBookingSlot(slot);
-                            setShowBookingModal(true);
-                            setShowTeacherCalendarModal(false);
-                            setSelectedTeacherForCalendar(null);
-                          }
-                        }}
-                      >
-                        <div className="text-center">
-                          <div className="font-semibold text-gray-900 mb-2">
-                            {new Date(slot.date).toLocaleDateString('ru-RU', { 
-                              day: 'numeric',
-                              month: 'short'
-                            })}
-                          </div>
-                          <div className="text-sm text-gray-600 mb-2">
-                            {slot.startTime} ({slot.duration} мин)
-                          </div>
-                          <div className="text-sm text-gray-600 mb-3">
-                            {slot.subject} • {slot.format === 'online' ? 'Онлайн' : 'Оффлайн'}
-                          </div>
-                          <div className="font-bold text-blue-600 mb-3">
-                            {slot.price} ₽
-                          </div>
-                          <button className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-blue-700">
-                            Забронировать
-                          </button>
-                        </div>
+                {/* Calendar Grid */}
+                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                  {/* Time slots from 8:00 to 20:00 */}
+                  {Array.from({ length: 13 }, (_, i) => i + 8).map(hour => (
+                    <div key={hour} className="flex border-b border-gray-200 last:border-b-0">
+                      {/* Time column */}
+                      <div className="w-20 bg-gray-50 p-3 border-r border-gray-200 flex items-center justify-center text-sm font-medium text-gray-600">
+                        {hour.toString().padStart(2, '0')}:00
                       </div>
-                    ))}
+                      
+                      {/* Days columns */}
+                      {Array.from({ length: 7 }, (_, dayIndex) => {
+                        const currentDate = new Date();
+                        currentDate.setDate(currentDate.getDate() + dayIndex);
+                        const dateString = currentDate.toISOString().split('T')[0];
+                        
+                        // Find slots for this time and date
+                        const slotsForThisTime = timeSlots.filter(slot => 
+                          slot.teacherId === selectedTeacherForCalendar?.id && 
+                          !slot.isBooked &&
+                          slot.date === dateString &&
+                          parseInt(slot.startTime.split(':')[0]) === hour
+                        );
+                        
+                        return (
+                          <div key={dayIndex} className="flex-1 p-3 border-r border-gray-200 last:border-r-0 min-h-[60px]">
+                            {slotsForThisTime.map(slot => (
+                              <div
+                                key={slot.id}
+                                className="bg-blue-100 border border-blue-300 rounded-lg p-2 mb-2 cursor-pointer hover:bg-blue-200 transition-colors"
+                                onClick={() => {
+                                  if (user) {
+                                    setSelectedBookingSlot(slot);
+                                    setShowBookingModal(true);
+                                    setShowTeacherCalendarModal(false);
+                                    setSelectedTeacherForCalendar(null);
+                                  }
+                                }}
+                              >
+                                <div className="text-xs font-medium text-blue-900">
+                                  {slot.startTime} - {slot.endTime}
+                                </div>
+                                <div className="text-xs text-blue-700">
+                                  {slot.subject}
+                                </div>
+                                <div className="text-xs text-blue-600">
+                                  {slot.price} ₽
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
                 </div>
                 
-                {timeSlots.filter(slot => slot.teacherId === selectedTeacherForCalendar?.id && !slot.isBooked).length === 0 && (
-                  <div className="text-center py-12">
-                    <div className="text-gray-400 mb-4">
-                      <Calendar className="h-12 w-12 mx-auto" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Нет доступных слотов</h3>
-                    <p className="text-gray-600">У этого преподавателя пока нет свободного времени</p>
-                  </div>
-                )}
+                {/* Day headers */}
+                <div className="flex border-b border-gray-200">
+                  <div className="w-20 bg-gray-50 p-3 border-r border-gray-200"></div>
+                  {Array.from({ length: 7 }, (_, dayIndex) => {
+                    const currentDate = new Date();
+                    currentDate.setDate(currentDate.getDate() + dayIndex);
+                    return (
+                      <div key={dayIndex} className="flex-1 p-3 border-r border-gray-200 last:border-r-0 text-center">
+                        <div className="text-sm font-medium text-gray-900">
+                          {currentDate.toLocaleDateString('ru-RU', { weekday: 'short' })}
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          {currentDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              
+              {/* Available Slots Summary */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h4 className="font-medium text-gray-900 mb-2">Доступные слоты: {timeSlots.filter(slot => slot.teacherId === selectedTeacherForCalendar?.id && !slot.isBooked).length}</h4>
+                <p className="text-sm text-gray-600">Нажмите на любой слот в календаре для бронирования</p>
               </div>
             </div>
           </div>
