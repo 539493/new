@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, Star, Users, MapPin, BookOpen, RefreshCw, Wifi, WifiOff, Heart, MoreHorizontal, Calendar as CalendarIcon, Share2, Award } from 'lucide-react';
+import { Search, Filter, Star, Users, MapPin, BookOpen, RefreshCw, Wifi, WifiOff, Heart, MoreHorizontal, Calendar as CalendarIcon, Share2, Award, MessageCircle } from 'lucide-react';
 import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
 import { ru } from 'date-fns/locale';
@@ -668,35 +668,25 @@ const StudentHome: React.FC = () => {
             return (
               <div 
                 key={teacher.id} 
-                className="bg-white rounded-2xl border border-gray-200 shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer group overflow-hidden transform hover:-translate-y-1"
+                className="bg-white rounded-3xl border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group overflow-hidden transform hover:-translate-y-2"
                 onClick={() => handleTeacherClick(teacher)}
               >
-                {/* Cover Image */}
-                <div className="h-24 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 relative overflow-hidden">
-                  <div className="absolute inset-0 bg-black bg-opacity-20"></div>
+                {/* Custom Background */}
+                <div 
+                  className="h-48 relative overflow-hidden"
+                  style={{
+                    background: profile?.cardBackground 
+                      ? (profile.cardBackground.startsWith('http') || profile.cardBackground.startsWith('data:'))
+                        ? `url(${profile.cardBackground}) center/cover`
+                        : profile.cardBackground
+                      : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                  }}
+                >
+                  {/* Overlay for better text readability */}
+                  <div className="absolute inset-0 bg-black bg-opacity-30"></div>
                   
-                  {/* Name and info on gradient background */}
-                  <div className="absolute bottom-3 left-3 text-white">
-                    <h3 className="text-lg font-bold mb-1">
-                      {profile?.name || teacher.name || 'Репетитор'}
-                    </h3>
-                    <div className="flex items-center space-x-3 text-white/90">
-                      {profile?.experience && (
-                        <div className="flex items-center space-x-1">
-                          <Award className="h-3 w-3" />
-                          <span className="text-sm">{getExperienceLabel(profile.experience)}</span>
-                        </div>
-                      )}
-                      {profile?.rating && (
-                        <div className="flex items-center space-x-1">
-                          <Star className="h-3 w-3 text-yellow-300 fill-current" />
-                          <span className="text-sm">{profile.rating}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="absolute top-3 right-3 flex items-center space-x-2">
+                  {/* Action buttons on top */}
+                  <div className="absolute top-4 right-4 flex items-center space-x-2">
                     <button 
                       className="p-2 bg-white/20 backdrop-blur-sm rounded-full text-white hover:bg-white/30 transition-colors border border-white/30"
                       onClick={(e) => {
@@ -718,120 +708,137 @@ const StudentHome: React.FC = () => {
                   </div>
                 </div>
                 
-                {/* Avatar */}
-                <div className="relative -mt-8 mx-4 mb-3">
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center overflow-hidden border-4 border-white shadow-xl">
-                  {profile?.avatar && profile.avatar.trim() !== '' ? (
-                    <img 
-                      src={profile.avatar} 
-                      alt={teacher.name} 
-                        className="w-16 h-16 object-cover rounded-full"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                        target.nextElementSibling?.classList.remove('hidden');
-                      }}
-                    />
-                  ) : null}
-                    <div className={`w-16 h-16 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center ${profile?.avatar && profile.avatar.trim() !== '' ? 'hidden' : ''}`}>
-                      <UserIcon className="h-8 w-8 text-white" />
+                {/* Avatar - Centered on background */}
+                <div className="relative -mt-16 flex justify-center">
+                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center overflow-hidden border-4 border-white shadow-2xl relative">
+                    {/* Online Status */}
+                    <div className="absolute top-1 right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full shadow-lg"></div>
+                    
+                    {profile?.avatar && profile.avatar.trim() !== '' ? (
+                      <img 
+                        src={profile.avatar} 
+                        alt={teacher.name} 
+                        className="w-24 h-24 object-cover rounded-full"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          target.nextElementSibling?.classList.remove('hidden');
+                        }}
+                      />
+                    ) : null}
+                    <div className={`w-24 h-24 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center ${profile?.avatar && profile.avatar.trim() !== '' ? 'hidden' : ''}`}>
+                      <UserIcon className="h-12 w-12 text-white" />
+                    </div>
                   </div>
                 </div>
                 
-                  {/* Online Status */}
-                  <div className="absolute bottom-1 right-1 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+                {/* Content - Below avatar */}
+                <div className="px-6 pb-6 pt-4">
+                  {/* Name and Profession */}
+                  <div className="text-center mb-4">
+                    <h3 className="text-xl font-bold text-gray-900 mb-1">
+                      {profile?.name || teacher.name || 'Репетитор'}
+                    </h3>
+                    <p className="text-sm text-gray-600">Частный преподаватель</p>
                   </div>
                   
-                {/* Content */}
-                <div className="px-4 pb-4">
-                                    {/* Lessons count */}
-                  {profile?.lessonsCount && (
-                    <div className="text-center mb-3">
-                      <div className="text-xs text-gray-500">
-                        Проведено уроков: {profile.lessonsCount}
+                  {/* Age and Experience */}
+                  <div className="flex items-center justify-center space-x-4 text-sm text-gray-600 mb-4">
+                    <span>возраст 37 лет</span>
+                    <span>стаж {profile?.experience === 'beginner' ? '1-3' : profile?.experience === 'experienced' ? '4-7' : '8+'} лет</span>
                   </div>
+                  
+                  {/* Rating, Reviews, Verification */}
+                  <div className="flex items-center justify-center space-x-4 mb-4">
+                    {profile?.rating && (
+                      <div className="flex items-center space-x-1 bg-green-50 px-3 py-1.5 rounded-full">
+                        <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                        <span className="text-sm font-medium text-green-700">{profile.rating}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center space-x-1 bg-green-50 px-3 py-1.5 rounded-full">
+                      <MessageCircle className="h-4 w-4 text-green-600" />
+                      <span className="text-sm font-medium text-green-700">78 отзывов</span>
                     </div>
-                  )}
+                    <div className="flex items-center space-x-1 bg-green-50 px-3 py-1.5 rounded-full">
+                      <div className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                        <div className="w-2 h-2 bg-white rounded-full"></div>
+                      </div>
+                      <span className="text-sm font-medium text-green-700">Паспорт проверен</span>
+                    </div>
+                  </div>
+                  
+                  {/* Location */}
+                  <div className="text-center mb-4">
+                    <div className="flex items-center justify-center space-x-1 text-sm text-gray-600">
+                      <MapPin className="h-4 w-4" />
+                      <span>{profile?.city || 'Москва и Московская область'}</span>
+                    </div>
+                  </div>
                   
                   {/* Subjects */}
                   {profile?.subjects && profile.subjects.length > 0 && (
-                    <div className="mb-3">
-                      <div className="flex flex-wrap gap-1 justify-center">
-                        {profile.subjects.slice(0, 2).map((subject: string, index: number) => (
+                    <div className="mb-4">
+                      <div className="flex flex-wrap gap-2 justify-center">
+                        {profile.subjects.slice(0, 3).map((subject: string, index: number) => (
                           <span
                             key={index}
-                            className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full text-xs font-medium"
+                            className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-medium"
                           >
                             {subject}
-                    </span>
+                          </span>
                         ))}
-                        {profile.subjects.length > 2 && (
-                          <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs">
-                            +{profile.subjects.length - 2}
+                        {profile.subjects.length > 3 && (
+                          <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm">
+                            +{profile.subjects.length - 3}
                           </span>
                         )}
                       </div>
                     </div>
                   )}
                   
-                  {/* Location and Experience */}
-                  <div className="flex items-center justify-center space-x-3 text-xs text-gray-600 mb-3">
-                    {profile?.city && (
-                      <div className="flex items-center space-x-1">
-                        <MapPin className="h-3 w-3" />
-                        <span>{profile.city}</span>
-                      </div>
-                    )}
-                    {profile?.experience && (
-                      <div className="flex items-center space-x-1">
-                        <Award className="h-3 w-3" />
-                        <span>{getExperienceLabel(profile.experience)}</span>
-                      </div>
-                    )}
-                  </div>
-                  
                   {/* Price Range */}
-                  <div className="text-center mb-3">
-                    <div className="text-lg font-bold text-blue-600">
+                  <div className="text-center mb-4">
+                    <div className="text-2xl font-bold text-blue-600">
                       от {minPrice} ₽
                     </div>
-                    <div className="text-xs text-gray-500">за урок</div>
+                    <div className="text-sm text-gray-500">за урок</div>
                   </div>
                   
                   {/* Status and Slots */}
-                  <div className="bg-gray-50 rounded-lg p-2 mb-3">
+                  <div className="bg-gray-50 rounded-xl p-3 mb-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
-                        <div className={`w-2 h-2 rounded-full ${hasAvailableSlots ? 'bg-green-500' : 'bg-gray-400'}`}></div>
-                        <span className="text-xs text-gray-600">
+                        <div className={`w-3 h-3 rounded-full ${hasAvailableSlots ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                        <span className="text-sm text-gray-600">
                           {hasAvailableSlots ? 'Доступен' : 'Занят'}
-                    </span>
+                        </span>
                       </div>
-                      <span className="text-xs font-medium text-gray-900">
+                      <span className="text-sm font-medium text-gray-900">
                         {hasAvailableSlots ? `${availableTeacherSlots.length} слотов` : 'Нет слотов'}
                       </span>
                     </div>
                   </div>
                   
                   {/* Action Buttons */}
-                  <div className="space-y-1.5">
-                  <button
-                    onClick={(e) => {
+                  <div className="space-y-2">
+                    <button
+                      onClick={(e) => {
                         e.stopPropagation();
-                      if (hasAvailableSlots) {
-                        const availableSlot = availableTeacherSlots[0];
-                        if (availableSlot && user) {
-                          setSelectedBookingSlot(availableSlot);
-                          setShowBookingModal(true);
+                        if (hasAvailableSlots) {
+                          const availableSlot = availableTeacherSlots[0];
+                          if (availableSlot && user) {
+                            setSelectedBookingSlot(availableSlot);
+                            setShowBookingModal(true);
+                          }
+                        } else {
+                          handleTeacherClick(teacher);
                         }
-                      } else {
-                        handleTeacherClick(teacher);
-                      }
-                    }}
-                      className={`w-full py-2 rounded-lg font-medium transition-all duration-200 text-sm ${
-                      hasAvailableSlots 
-                          ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 shadow-md hover:shadow-lg' 
-                          : 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700 shadow-md hover:shadow-lg'
+                      }}
+                      className={`w-full py-3 rounded-xl font-semibold transition-all duration-200 text-base ${
+                        hasAvailableSlots 
+                          ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transform hover:-translate-y-1' 
+                          : 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700 shadow-lg hover:shadow-xl transform hover:-translate-y-1'
                       }`}
                     >
                       {hasAvailableSlots ? 'Забронировать' : 'Профиль'}
@@ -842,10 +849,10 @@ const StudentHome: React.FC = () => {
                         e.stopPropagation();
                         handleTeacherClick(teacher);
                       }}
-                      className="w-full py-1.5 text-gray-500 hover:text-blue-600 transition-colors text-xs font-medium"
+                      className="w-full py-2 text-gray-500 hover:text-blue-600 transition-colors text-sm font-medium"
                     >
                       Подробнее →
-                  </button>
+                    </button>
                   </div>
                 </div>
               </div>

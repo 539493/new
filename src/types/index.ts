@@ -36,6 +36,8 @@ export interface TeacherProfile {
   students?: string[]; // id учеников
   lessonsCount?: number; // всего проведённых уроков
   country?: string;
+  // Поле для кастомного фона карточки
+  cardBackground?: string; // URL изображения или CSS градиент
   [key: string]: unknown;
 }
 
