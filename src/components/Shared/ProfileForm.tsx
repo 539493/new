@@ -31,6 +31,19 @@ const ProfileForm: React.FC = () => {
     bio: '',
     avatar: '',
     subjects: [],
+    age: undefined,
+    school: '',
+    city: '',
+    phone: '',
+    parentName: '',
+    parentPhone: '',
+    goals: [],
+    interests: [],
+    learningStyle: 'mixed',
+    experience: 'beginner',
+    preferredFormats: [],
+    preferredDurations: [],
+    timeZone: '',
   });
   const [teacherProfile, setTeacherProfile] = useState<TeacherProfile>({
     subjects: [],
@@ -81,7 +94,15 @@ const ProfileForm: React.FC = () => {
   useEffect(() => {
     if (user?.profile) {
       if (user.role === 'student') {
-        setStudentProfile(user.profile as StudentProfile);
+        const profile = user.profile as StudentProfile;
+        setStudentProfile({
+          ...studentProfile,
+          ...profile,
+          goals: profile.goals || [],
+          interests: profile.interests || [],
+          preferredFormats: profile.preferredFormats || [],
+          preferredDurations: profile.preferredDurations || [],
+        });
       } else {
         const profile = user.profile as TeacherProfile;
         setTeacherProfile({
@@ -813,6 +834,232 @@ const ProfileForm: React.FC = () => {
               placeholder="Расскажите о себе..."
             />
           </div>
+
+          {/* Дополнительная информация — только для учеников */}
+          {user.role === 'student' && (
+            <>
+              <div className="border-t border-gray-200 pt-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Дополнительная информация</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Возраст</label>
+                    <input
+                      type="number"
+                      value={studentProfile.age || ''}
+                      onChange={(e) => setStudentProfile({ ...studentProfile, age: e.target.value ? Number(e.target.value) : undefined })}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      min="5"
+                      max="25"
+                      placeholder="Укажите возраст"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Школа</label>
+                    <input
+                      type="text"
+                      value={studentProfile.school || ''}
+                      onChange={(e) => setStudentProfile({ ...studentProfile, school: e.target.value })}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="Название школы"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Город</label>
+                    <input
+                      type="text"
+                      value={studentProfile.city || ''}
+                      onChange={(e) => setStudentProfile({ ...studentProfile, city: e.target.value })}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="Ваш город"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Телефон</label>
+                    <input
+                      type="tel"
+                      value={studentProfile.phone || ''}
+                      onChange={(e) => setStudentProfile({ ...studentProfile, phone: e.target.value })}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="+7 (999) 123-45-67"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Имя родителя</label>
+                    <input
+                      type="text"
+                      value={studentProfile.parentName || ''}
+                      onChange={(e) => setStudentProfile({ ...studentProfile, parentName: e.target.value })}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="Имя родителя"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Телефон родителя</label>
+                    <input
+                      type="tel"
+                      value={studentProfile.parentPhone || ''}
+                      onChange={(e) => setStudentProfile({ ...studentProfile, parentPhone: e.target.value })}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="+7 (999) 123-45-67"
+                    />
+                  </div>
+                </div>
+
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Цели обучения</label>
+                  <div className="flex flex-wrap gap-2">
+                    {goals.map(goal => (
+                      <label key={goal} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={studentProfile.goals?.includes(goal) || false}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setStudentProfile({
+                                ...studentProfile,
+                                goals: [...(studentProfile.goals || []), goal]
+                              });
+                            } else {
+                              setStudentProfile({
+                                ...studentProfile,
+                                goals: (studentProfile.goals || []).filter(g => g !== goal)
+                              });
+                            }
+                          }}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="text-sm text-gray-700">{goal}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Интересы и хобби</label>
+                  <textarea
+                    value={studentProfile.interests?.join(', ') || ''}
+                    onChange={(e) => setStudentProfile({ 
+                      ...studentProfile, 
+                      interests: e.target.value.split(',').map(item => item.trim()).filter(item => item)
+                    })}
+                    rows={3}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="Напишите через запятую: спорт, музыка, рисование..."
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Стиль обучения</label>
+                    <select
+                      value={studentProfile.learningStyle || 'mixed'}
+                      onChange={(e) => setStudentProfile({ ...studentProfile, learningStyle: e.target.value as any })}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="visual">Визуальный</option>
+                      <option value="auditory">Аудиальный</option>
+                      <option value="kinesthetic">Кинестетический</option>
+                      <option value="mixed">Смешанный</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Уровень знаний</label>
+                    <select
+                      value={studentProfile.experience || 'beginner'}
+                      onChange={(e) => setStudentProfile({ ...studentProfile, experience: e.target.value as any })}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="beginner">Начинающий</option>
+                      <option value="intermediate">Средний</option>
+                      <option value="advanced">Продвинутый</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Предпочитаемые форматы занятий</label>
+                  <div className="flex space-x-4">
+                    {formats.map(format => (
+                      <label key={format} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={studentProfile.preferredFormats?.includes(format) || false}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setStudentProfile({
+                                ...studentProfile,
+                                preferredFormats: [...(studentProfile.preferredFormats || []), format]
+                              });
+                            } else {
+                              setStudentProfile({
+                                ...studentProfile,
+                                preferredFormats: (studentProfile.preferredFormats || []).filter(f => f !== format)
+                              });
+                            }
+                          }}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="text-sm text-gray-700">
+                          {format === 'online' ? 'Онлайн' : format === 'offline' ? 'Оффлайн' : 'Мини-группа'}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Предпочитаемая длительность занятий</label>
+                  <div className="flex space-x-4">
+                    {durations.map(duration => (
+                      <label key={duration} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={studentProfile.preferredDurations?.includes(duration) || false}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setStudentProfile({
+                                ...studentProfile,
+                                preferredDurations: [...(studentProfile.preferredDurations || []), duration]
+                              });
+                            } else {
+                              setStudentProfile({
+                                ...studentProfile,
+                                preferredDurations: (studentProfile.preferredDurations || []).filter(d => d !== duration)
+                              });
+                            }
+                          }}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="text-sm text-gray-700">{duration} мин</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Часовой пояс</label>
+                  <input
+                    type="text"
+                    value={studentProfile.timeZone || ''}
+                    onChange={(e) => setStudentProfile({ ...studentProfile, timeZone: e.target.value })}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="UTC+3 (Москва)"
+                  />
+                </div>
+              </div>
+            </>
+          )}
 
           {/* Образование — только для преподавателей */}
           {user.role === 'teacher' && (

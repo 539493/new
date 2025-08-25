@@ -14,6 +14,20 @@ export interface StudentProfile {
   bio?: string;
   avatar?: string;
   subjects?: string[];
+  // Новые поля для ученика:
+  age?: number; // возраст ученика
+  school?: string; // школа
+  city?: string; // город
+  phone?: string; // телефон
+  parentName?: string; // имя родителя
+  parentPhone?: string; // телефон родителя
+  goals?: string[]; // цели обучения
+  interests?: string[]; // интересы и хобби
+  learningStyle?: 'visual' | 'auditory' | 'kinesthetic' | 'mixed'; // стиль обучения
+  experience?: 'beginner' | 'intermediate' | 'advanced'; // уровень знаний
+  preferredFormats?: string[]; // предпочитаемые форматы занятий
+  preferredDurations?: number[]; // предпочитаемая длительность занятий
+  timeZone?: string; // часовой пояс
   [key: string]: unknown;
 }
 
