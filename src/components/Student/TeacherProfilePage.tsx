@@ -321,21 +321,21 @@ const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClos
 
           {/* Statistics Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6 mt-8">
-            <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg p-3 text-center shadow-md">
+            <div className="bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-lg p-3 text-center shadow-md">
               <div className="text-xl font-bold mb-1">{profile?.lessonsCount || 0}</div>
               <div className="text-blue-100 text-xs">Проведено уроков</div>
             </div>
-            <div className="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg p-3 text-center shadow-md">
+            <div className="bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-lg p-3 text-center shadow-md">
               <div className="text-xl font-bold mb-1">{profile?.students?.length || 0}</div>
-              <div className="text-green-100 text-xs">Учеников</div>
+              <div className="text-blue-100 text-xs">Учеников</div>
             </div>
-            <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-lg p-3 text-center shadow-md">
+            <div className="bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-lg p-3 text-center shadow-md">
               <div className="text-xl font-bold mb-1">{profile?.rating || 0}</div>
-              <div className="text-purple-100 text-xs">Рейтинг</div>
+              <div className="text-blue-100 text-xs">Рейтинг</div>
             </div>
-            <div className="bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-lg p-3 text-center shadow-md">
+            <div className="bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-lg p-3 text-center shadow-md">
               <div className="text-xl font-bold mb-1">{availableSlots.length}</div>
-              <div className="text-orange-100 text-xs">Свободных слотов</div>
+              <div className="text-blue-100 text-xs">Свободных слотов</div>
             </div>
           </div>
 
