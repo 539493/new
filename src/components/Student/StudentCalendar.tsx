@@ -57,14 +57,21 @@ const StudentCalendar: React.FC<StudentCalendarProps> = ({ onClose }) => {
   const eventStyleGetter = useCallback((event: any) => {
     let style: any = {
       backgroundColor: '#3B82F6',
-      borderRadius: '8px',
-      opacity: 0.9,
+      borderRadius: '6px',
+      opacity: 0.95,
       color: 'white',
       border: '0px',
       display: 'block',
-      padding: '4px 8px',
-      fontSize: '12px',
-      fontWeight: '500'
+      padding: '3px 6px',
+      fontSize: '11px',
+      fontWeight: '500',
+      margin: '1px 0',
+      maxWidth: '100%',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
+      cursor: 'pointer',
+      transition: 'all 0.2s ease'
     };
 
     // Разные цвета для разных форматов
@@ -83,6 +90,10 @@ const StudentCalendar: React.FC<StudentCalendarProps> = ({ onClose }) => {
   }, []);
 
   const handleBookSlot = (slot: TimeSlot) => {
+    if (!user) {
+      alert('Пожалуйста, войдите в систему для бронирования');
+      return;
+    }
     setSelectedSlot(slot);
     setShowBookingModal(true);
     setIsModalOpen(false);
@@ -90,10 +101,17 @@ const StudentCalendar: React.FC<StudentCalendarProps> = ({ onClose }) => {
 
   const handleConfirmBooking = async (comment: string) => {
     if (user && selectedSlot) {
-      console.log('Booking lesson:', selectedSlot.id, 'for user:', user.name, 'with comment:', comment);
-      bookLesson(selectedSlot.id, user.id, user.name, comment);
-      setShowBookingModal(false);
-      setSelectedSlot(null);
+      try {
+        console.log('Booking lesson:', selectedSlot.id, 'for user:', user.name, 'with comment:', comment);
+        await bookLesson(selectedSlot.id, user.id, user.name, comment);
+        setShowBookingModal(false);
+        setSelectedSlot(null);
+        // Обновляем события после бронирования
+        window.location.reload();
+      } catch (error) {
+        console.error('Error booking lesson:', error);
+        alert('Произошла ошибка при бронировании. Попробуйте еще раз.');
+      }
     }
   };
 
@@ -116,7 +134,7 @@ const StudentCalendar: React.FC<StudentCalendarProps> = ({ onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9998] p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-7xl w-full max-h-[90vh] overflow-hidden relative">
         {/* Header */}
         <div className="bg-white border-b border-gray-200 p-6 rounded-t-2xl">
@@ -156,14 +174,20 @@ const StudentCalendar: React.FC<StudentCalendarProps> = ({ onClose }) => {
                 noEventsInRange: "Нет свободных слотов в выбранном диапазоне",
                 showMore: (total: number) => `+${total} еще`,
               }}
-              className="custom-calendar"
             />
           </div>
         </div>
 
         {/* Event Details Modal */}
         {isModalOpen && selectedEvent && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60 p-4">
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setIsModalOpen(false);
+              }
+            }}
+          >
             <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
               <div className="flex items-start justify-between mb-4">
                 <h3 className="text-xl font-bold text-gray-900">Детали слота</h3>

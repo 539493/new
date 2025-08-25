@@ -554,7 +554,7 @@ const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClos
             {activeTab === 'about' && (
               <div className="space-y-3">
                 {/* Bio */}
-                {profile?.bio && (
+          {profile?.bio && (
                   <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-200 rounded-lg p-2.5 shadow-sm">
                     <h3 className="text-sm font-bold text-indigo-900 mb-1.5 flex items-center">
                       <div className="w-4 h-4 bg-gradient-to-br from-indigo-500 to-purple-600 rounded flex items-center justify-center mr-1.5">
@@ -564,11 +564,11 @@ const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClos
                     </h3>
                     <div className="bg-white/60 backdrop-blur-sm rounded-md p-2 border border-indigo-200/50">
                       <p className="text-indigo-800 leading-relaxed whitespace-pre-line text-xs">
-                        {profile.bio}
-                      </p>
-                    </div>
-                  </div>
-                )}
+                  {profile.bio}
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Subjects and Grades */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
@@ -748,7 +748,7 @@ const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClos
                       </div>
                     ))}
                   </div>
-                </div>
+              </div>
               )}
             </div>
           )}
@@ -838,85 +838,85 @@ const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClos
             {/* Slots Tab */}
             {activeTab === 'slots' && (
               <div className="space-y-6">
-                {/* Available Slots */}
+          {/* Available Slots */}
                 <div>
                   <h3 className="text-xl font-bold text-gray-900 mb-4">Доступные слоты</h3>
-                  {availableSlots.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {availableSlots.map((slot) => (
+              {availableSlots.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {availableSlots.map((slot) => (
                         <div key={slot.id} className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-lg transition-shadow">
                           <div className="flex items-start justify-between mb-4">
-                            <div className="flex-1">
+                        <div className="flex-1">
                               <h4 className="font-semibold text-gray-900 mb-2">{slot.subject}</h4>
                               <div className="space-y-2 text-sm text-gray-600">
                                 <div className="flex items-center space-x-2">
                                   <Clock className="h-4 w-4" />
-                                  <span>{formatDate(slot.date, slot.startTime)}</span>
-                                </div>
+                            <span>{formatDate(slot.date, slot.startTime)}</span>
+                          </div>
                                 <div className="flex items-center space-x-2">
                                   <MapPin className="h-4 w-4" />
-                                  <span>{getFormatLabel(slot.format)}</span>
-                                </div>
+                            <span>{getFormatLabel(slot.format)}</span>
+                          </div>
                               </div>
                               <div className="text-2xl font-bold text-blue-600 mt-3">
-                                {slot.price} ₽
-                              </div>
-                            </div>
+                            {slot.price} ₽
                           </div>
-                          <button
-                            onClick={() => handleBookSlot(slot)}
-                            className="w-full bg-blue-600 text-white px-4 py-3 rounded-xl font-medium hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
-                          >
-                            <BookOpen className="h-4 w-4" />
-                            <span>Забронировать</span>
-                          </button>
                         </div>
-                      ))}
+                      </div>
+                      <button
+                        onClick={() => handleBookSlot(slot)}
+                            className="w-full bg-blue-600 text-white px-4 py-3 rounded-xl font-medium hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
+                      >
+                        <BookOpen className="h-4 w-4" />
+                        <span>Забронировать</span>
+                      </button>
                     </div>
-                  ) : (
+                  ))}
+                </div>
+              ) : (
                     <div className="bg-gray-50 rounded-2xl p-8 text-center">
                       <Calendar className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                       <p className="text-gray-600 text-lg mb-2">Нет доступных слотов</p>
                       <p className="text-gray-500">Попробуйте позже или свяжитесь с преподавателем</p>
-                    </div>
-                  )}
                 </div>
+              )}
+            </div>
 
-                {/* Booked Slots */}
-                {bookedSlots.length > 0 && (
+          {/* Booked Slots */}
+          {bookedSlots.length > 0 && (
                   <div>
                     <h3 className="text-xl font-bold text-gray-900 mb-4">Забронированные уроки</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {bookedSlots.map((slot) => (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {bookedSlots.map((slot) => (
                         <div key={slot.id} className="bg-green-50 border border-green-200 rounded-2xl p-6">
                           <div className="flex items-start justify-between mb-4">
-                            <div className="flex-1">
+                      <div className="flex-1">
                               <h4 className="font-semibold text-gray-900 mb-2">{slot.subject}</h4>
                               <div className="space-y-2 text-sm text-gray-600">
                                 <div className="flex items-center space-x-2">
                                   <Clock className="h-4 w-4" />
-                                  <span>{formatDate(slot.date, slot.startTime)}</span>
-                                </div>
+                          <span>{formatDate(slot.date, slot.startTime)}</span>
+                        </div>
                                 <div className="flex items-center space-x-2">
                                   <MapPin className="h-4 w-4" />
-                                  <span>{getFormatLabel(slot.format)}</span>
-                                </div>
+                          <span>{getFormatLabel(slot.format)}</span>
+                        </div>
                               </div>
                               <div className="text-2xl font-bold text-green-600 mt-3">
-                                {slot.price} ₽
-                              </div>
-                            </div>
-                          </div>
-                          <div className="bg-green-100 text-green-800 px-4 py-2 rounded-xl text-sm font-medium text-center">
-                            Забронировано
-                          </div>
+                          {slot.price} ₽
                         </div>
-                      ))}
+                      </div>
+                    </div>
+                          <div className="bg-green-100 text-green-800 px-4 py-2 rounded-xl text-sm font-medium text-center">
+                      Забронировано
                     </div>
                   </div>
-                )}
+                ))}
               </div>
-            )}
+            </div>
+          )}
+                </div>
+              )}
 
             {/* Reviews Tab */}
             {activeTab === 'reviews' && (
@@ -926,8 +926,8 @@ const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClos
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">Пока нет отзывов</h3>
                 <p className="text-gray-500">Будьте первым, кто оставит отзыв о преподавателе</p>
-              </div>
-            )}
+                </div>
+              )}
           </div>
         </div>
       </div>
