@@ -220,11 +220,12 @@ const StudentHome: React.FC = () => {
     }
   };
 
-  // Собираем всех преподавателей (не только с доступными слотами)
+  // Собираем всех преподавателей (из сервера, локального списка и из слотов)
   const allTeachers: { id: string; name: string; avatar?: string; rating?: number; profile?: any }[] = React.useMemo(() => {
     console.log('DEBUG: Building allTeachers...');
     console.log('DEBUG: serverTeachers:', serverTeachers);
     console.log('DEBUG: allUsers:', allUsers);
+    console.log('DEBUG: timeSlots for teachers-from-slots:', timeSlots.length);
     
     // Получаем всех преподавателей из разных источников
     const teachersFromServer = serverTeachers.map(teacher => ({
@@ -245,12 +246,37 @@ const StudentHome: React.FC = () => {
         profile: user.profile
       })) || [];
 
+    // Преподаватели, извлечённые из слотов (если профиля ещё нет)
+    const teachersFromSlots = timeSlots
+      .filter((s: any) => !!s.teacherId && !!s.teacherName && !s.isDeleted)
+      .map((s: any) => ({
+        id: s.teacherId,
+        name: s.teacherName,
+        avatar: s.teacherAvatar,
+        rating: s.rating,
+        profile: {
+          subjects: s.subject ? [s.subject] : [],
+          experience: s.experience || 'experienced',
+          grades: s.grades || [],
+          goals: s.goals || [],
+          lessonTypes: s.lessonType ? [s.lessonType] : [],
+          durations: s.duration ? [s.duration] : [],
+          formats: s.format ? [s.format] : [],
+          offlineAvailable: s.format === 'offline',
+          city: s.city || '',
+          overbookingEnabled: true,
+          avatar: s.teacherAvatar || '',
+          rating: s.rating || 0,
+          hourlyRate: s.price || 0,
+        }
+      }));
+
     console.log('DEBUG: teachersFromServer:', teachersFromServer);
     console.log('DEBUG: teachersFromUsers:', teachersFromUsers);
 
     // Объединяем и убираем дубликаты
     const allTeachersMap = new Map<string, any>();
-    [...teachersFromServer, ...teachersFromUsers].forEach(teacher => {
+    [...teachersFromServer, ...teachersFromUsers, ...teachersFromSlots].forEach(teacher => {
       if (!allTeachersMap.has(teacher.id)) {
         allTeachersMap.set(teacher.id, teacher);
       }
