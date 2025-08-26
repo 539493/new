@@ -67,7 +67,11 @@ const StudentHome: React.FC = () => {
   useEffect(() => {
     fetch(`${SERVER_URL}/api/teachers`)
       .then(res => res.json())
-      .then(data => setServerTeachers(Array.isArray(data) ? data : []))
+      .then(data => {
+        const isTest = (v: string | undefined) => !!v && (v.toLowerCase().includes('test') || v.toLowerCase().includes('тест'));
+        const cleaned = (Array.isArray(data) ? data : []).filter((t: any) => !isTest(t.name) && !isTest(t.profile?.name));
+        setServerTeachers(cleaned);
+      })
       .catch(() => setServerTeachers([]));
   }, []);
 

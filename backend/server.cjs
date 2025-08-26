@@ -152,6 +152,38 @@ console.log('=== TEST COMPLETED ===');
 // Очищаем старые слоты при запуске сервера
 cleanupOldSlots();
 
+// Удаляем тестовые данные на старте (преподаватели/слоты/уроки с test/тест)
+function purgeTestDataServer() {
+  const isTest = (v) => typeof v === 'string' && (v.toLowerCase().includes('test') || v.toLowerCase().includes('тест'));
+
+  // Удаляем тестовые слоты
+  const beforeSlots = timeSlots.length;
+  timeSlots = timeSlots.filter(s => !isTest(s.teacherName) && !isTest(s.subject) && !(s.id || '').toString().startsWith('test_') && !s.isDeleted);
+  const removedSlots = beforeSlots - timeSlots.length;
+
+  // Удаляем тестовые уроки
+  const beforeLessons = lessons.length;
+  lessons = lessons.filter(l => !isTest(l.teacherName) && !isTest(l.studentName) && !(l.id || '').toString().startsWith('test_'));
+  const removedLessons = beforeLessons - lessons.length;
+
+  // Удаляем тестовые профили преподавателей
+  const beforeTeachers = Object.keys(teacherProfiles).length;
+  Object.keys(teacherProfiles).forEach((id) => {
+    const p = teacherProfiles[id] || {};
+    if (isTest(p.name) || isTest(p.city)) {
+      delete teacherProfiles[id];
+    }
+  });
+  const afterTeachers = Object.keys(teacherProfiles).length;
+
+  if (removedSlots || removedLessons || beforeTeachers !== afterTeachers) {
+    console.log(`[SERVER] purgeTestData: removed slots=${removedSlots}, lessons=${removedLessons}, teachers=${beforeTeachers - afterTeachers}`);
+    saveServerData();
+  }
+}
+
+purgeTestDataServer();
+
 // Хранилище для связи teacherId с socketId (ОБЫЧНЫЙ ОБЪЕКТ)
 let teacherSocketMap = {};
 
