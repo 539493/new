@@ -155,22 +155,30 @@ cleanupOldSlots();
 // Удаляем тестовые данные на старте (преподаватели/слоты/уроки с test/тест)
 function purgeTestDataServer() {
   const isTest = (v) => typeof v === 'string' && (v.toLowerCase().includes('test') || v.toLowerCase().includes('тест'));
+  const DEMO_TEACHER_NAMES = new Set([
+    'Михаил Сидоров',
+    'Анна Петрова',
+    'Елена Козлова',
+    'Дивитай Светлана Сергеевна',
+    'Грин',
+  ].map(s => s.toLowerCase()));
+  const isDemoName = (v) => typeof v === 'string' && DEMO_TEACHER_NAMES.has(v.toLowerCase());
 
   // Удаляем тестовые слоты
   const beforeSlots = timeSlots.length;
-  timeSlots = timeSlots.filter(s => !isTest(s.teacherName) && !isTest(s.subject) && !(s.id || '').toString().startsWith('test_') && !s.isDeleted);
+  timeSlots = timeSlots.filter(s => !isTest(s.teacherName) && !isTest(s.subject) && !isDemoName(s.teacherName) && !(s.id || '').toString().startsWith('test_') && !s.isDeleted);
   const removedSlots = beforeSlots - timeSlots.length;
 
   // Удаляем тестовые уроки
   const beforeLessons = lessons.length;
-  lessons = lessons.filter(l => !isTest(l.teacherName) && !isTest(l.studentName) && !(l.id || '').toString().startsWith('test_'));
+  lessons = lessons.filter(l => !isTest(l.teacherName) && !isTest(l.studentName) && !isDemoName(l.teacherName) && !(l.id || '').toString().startsWith('test_'));
   const removedLessons = beforeLessons - lessons.length;
 
   // Удаляем тестовые профили преподавателей
   const beforeTeachers = Object.keys(teacherProfiles).length;
   Object.keys(teacherProfiles).forEach((id) => {
     const p = teacherProfiles[id] || {};
-    if (isTest(p.name) || isTest(p.city)) {
+    if (isTest(p.name) || isTest(p.city) || isDemoName(p.name)) {
       delete teacherProfiles[id];
     }
   });
