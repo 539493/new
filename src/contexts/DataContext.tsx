@@ -27,6 +27,7 @@ interface DataContextType {
   createSlot: (slot: Omit<TimeSlot, 'id' | 'isBooked'>, studentId?: string, studentName?: string, options?: { mode?: string }) => Promise<TimeSlot>;
   allUsers: User[];
   setAllUsers: (users: User[]) => void;
+  purgeTestData: () => void;
   updateTeacherProfile: (teacherId: string, profile: TeacherProfile) => void;
   socketRef: React.MutableRefObject<Socket | null>;
   loadInitialData: () => void;
@@ -176,6 +177,52 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     saveToStorage('tutoring_studentProfiles', initialData.studentProfiles);
     
     console.log('Initial data loaded with saved slots:', uniqueTimeSlots.length);
+  };
+
+  // Удаление тестовых данных (пользователи, слоты, уроки)
+  const purgeTestData = () => {
+    try {
+      const testMatcher = (value?: string) => {
+        if (!value) return false;
+        const v = value.toLowerCase();
+        return v.includes('test') || v.includes('тест');
+      };
+
+      // Пользователи
+      const users: User[] = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
+      const cleanedUsers = users.filter(u =>
+        !testMatcher(u.name) && !testMatcher((u as any).email) && !(u.id || '').toString().startsWith('test_')
+      );
+      if (cleanedUsers.length !== users.length) {
+        localStorage.setItem('tutoring_users', JSON.stringify(cleanedUsers));
+        setAllUsers(cleanedUsers);
+        console.log('[purgeTestData] Removed', users.length - cleanedUsers.length, 'test users');
+      }
+
+      // Слоты
+      const slots: any[] = JSON.parse(localStorage.getItem('tutoring_timeSlots') || '[]');
+      const cleanedSlots = slots.filter(s =>
+        !testMatcher(s.teacherName) && !testMatcher(s.subject) && !(s.id || '').toString().startsWith('test_') && !s.isDeleted
+      );
+      if (cleanedSlots.length !== slots.length) {
+        localStorage.setItem('tutoring_timeSlots', JSON.stringify(cleanedSlots));
+        setTimeSlots(cleanedSlots as TimeSlot[]);
+        console.log('[purgeTestData] Removed', slots.length - cleanedSlots.length, 'test slots');
+      }
+
+      // Уроки
+      const lessonsLs: any[] = JSON.parse(localStorage.getItem('tutoring_lessons') || '[]');
+      const cleanedLessons = lessonsLs.filter(l =>
+        !testMatcher(l.teacherName) && !testMatcher(l.studentName) && !(l.id || '').toString().startsWith('test_')
+      );
+      if (cleanedLessons.length !== lessonsLs.length) {
+        localStorage.setItem('tutoring_lessons', JSON.stringify(cleanedLessons));
+        setLessons(cleanedLessons as Lesson[]);
+        console.log('[purgeTestData] Removed', lessonsLs.length - cleanedLessons.length, 'test lessons');
+      }
+    } catch (e) {
+      console.warn('[purgeTestData] Failed:', e);
+    }
   };
 
   // Инициализация WebSocket соединения
@@ -432,6 +479,11 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     return () => window.removeEventListener('storage', handleStorage);
   }, []);
 
+  // Автоматически чистим тестовые данные при первом запуске
+  useEffect(() => {
+    purgeTestData();
+  }, []);
+
   // Сохранение в localStorage при изменении состояния
   useEffect(() => {
     saveToStorage('tutoring_timeSlots', timeSlots);
@@ -679,6 +731,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     const filtered = timeSlots.filter(slot => {
       console.log(`Checking slot ${slot.id}: isBooked=${slot.isBooked}`);
       if (slot.isBooked) return false;
+      // Не показываем помеченные как удалённые или тестовые
+      if ((slot as any).isDeleted) return false;
       if (filters.grade && !slot.grades.includes(filters.grade)) return false;
       if (filters.subject && slot.subject !== filters.subject) return false;
       if (filters.experience && slot.experience !== filters.experience) return false;

@@ -16,7 +16,7 @@ import EmptyState from '../Shared/EmptyState';
 import { User as UserIcon } from 'lucide-react';
 
 const StudentHome: React.FC = () => {
-  const { getFilteredSlots, bookLesson, timeSlots, isConnected } = useData();
+  const { getFilteredSlots, bookLesson, timeSlots, isConnected, allUsers } = useData();
   const { user } = useAuth();
   
   const [filters, setFilters] = useState<FilterOptions>({});
@@ -61,7 +61,6 @@ const StudentHome: React.FC = () => {
   const locales = { 'ru': ru };
   const localizer = dateFnsLocalizer({ format, parse, startOfWeek, getDay, locales });
 
-  const { allUsers } = useData();
   const [serverTeachers, setServerTeachers] = useState<User[]>([]);
 
   // Загружаем преподавателей с сервера при монтировании
@@ -244,7 +243,7 @@ const StudentHome: React.FC = () => {
     console.log('DEBUG: teachersFromUsers:', teachersFromUsers);
 
     // Объединяем и убираем дубликаты
-    const allTeachersMap = new Map();
+    const allTeachersMap = new Map<string, any>();
     [...teachersFromServer, ...teachersFromUsers].forEach(teacher => {
       if (!allTeachersMap.has(teacher.id)) {
         allTeachersMap.set(teacher.id, teacher);
@@ -672,7 +671,7 @@ const StudentHome: React.FC = () => {
           filteredTeachers.map(teacher => {
             const profile = teacher.profile;
             // Получаем слоты этого преподавателя из всех слотов (не только отфильтрованных)
-            const allTeacherSlots = timeSlots.filter(slot => slot.teacherId === teacher.id);
+            const allTeacherSlots = timeSlots.filter(slot => slot.teacherId === teacher.id && !(slot as any).isDeleted);
             const availableTeacherSlots = allTeacherSlots.filter(slot => !slot.isBooked);
             
             // Для отображения цены используем все слоты преподавателя
