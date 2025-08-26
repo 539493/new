@@ -69,9 +69,7 @@ const StudentHome: React.FC = () => {
       .then(res => res.json())
       .then(data => {
         const isTest = (v: string | undefined) => !!v && (v.toLowerCase().includes('test') || v.toLowerCase().includes('тест'));
-        const demoNames = new Set(['михаил сидоров','анна петрова','елена козлова','дивитай светлана сергеевна','грин']);
-        const isDemo = (v: string | undefined) => !!v && demoNames.has(v.toLowerCase());
-        const cleaned = (Array.isArray(data) ? data : []).filter((t: any) => !isTest(t.name) && !isTest(t.profile?.name) && !isDemo(t.name) && !isDemo(t.profile?.name));
+        const cleaned = (Array.isArray(data) ? data : []).filter((t: any) => !isTest(t.name) && !isTest(t.profile?.name));
         setServerTeachers(cleaned);
       })
       .catch(() => setServerTeachers([]));
@@ -286,7 +284,7 @@ const StudentHome: React.FC = () => {
     console.log('DEBUG: Final allTeachers result:', result);
 
     return result;
-  }, [serverTeachers, allUsers]);
+  }, [serverTeachers, allUsers, timeSlots]);
 
   // Фильтруем преподавателей по доступным слотам
   const filteredTeachers = React.useMemo(() => {
