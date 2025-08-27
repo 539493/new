@@ -16,7 +16,7 @@ import EmptyState from '../Shared/EmptyState';
 import { User as UserIcon } from 'lucide-react';
 
 const StudentHome: React.FC = () => {
-  const { getFilteredSlots, bookLesson, timeSlots, isConnected, allUsers } = useData();
+  const { getFilteredSlots, bookLesson, timeSlots, isConnected, allUsers, purgeTestData } = useData();
   const { user } = useAuth();
   
   const [filters, setFilters] = useState<FilterOptions>({});
@@ -69,9 +69,7 @@ const StudentHome: React.FC = () => {
       .then(res => res.json())
       .then(data => {
         const isTest = (v: string | undefined) => !!v && (v.toLowerCase().includes('test') || v.toLowerCase().includes('тест'));
-        const demoNames = new Set(['анна петрова', 'михаил сидоров', 'елена козлова']);
-        const isDemo = (v: string | undefined) => !!v && demoNames.has(v.toLowerCase());
-        const cleaned = (Array.isArray(data) ? data : []).filter((t: any) => !isTest(t.name) && !isTest(t.profile?.name) && !isDemo(t.name) && !isDemo(t.profile?.name));
+        const cleaned = (Array.isArray(data) ? data : []).filter((t: any) => !isTest(t.name) && !isTest(t.profile?.name));
         setServerTeachers(cleaned);
       })
       .catch(() => setServerTeachers([]));
@@ -89,12 +87,8 @@ const StudentHome: React.FC = () => {
     console.log('StudentHome: Loading available slots...');
     console.log('StudentHome: Total timeSlots in context:', timeSlots.length);
     
-    // Функция для проверки демо-пользователей
-    const demoNames = new Set(['анна петрова', 'михаил сидоров', 'елена козлова']);
-    const isDemo = (v: string | undefined) => !!v && demoNames.has(v.toLowerCase());
-    
-    // Показываем все незабронированные слоты, независимо от статуса преподавателя, но исключаем демо
-    const availableSlots = timeSlots.filter(slot => !slot.isBooked && !isDemo(slot.teacherName));
+    // Показываем все незабронированные слоты, независимо от статуса преподавателя
+    const availableSlots = timeSlots.filter(slot => !slot.isBooked);
     
     console.log('StudentHome: Available slots to display:', availableSlots.length);
     setFilteredSlots(availableSlots);
@@ -108,13 +102,6 @@ const StudentHome: React.FC = () => {
     
     try {
       let results = getFilteredSlots(filters);
-      
-      // Функция для проверки демо-пользователей
-      const demoNames = new Set(['анна петрова', 'михаил сидоров', 'елена козлова']);
-      const isDemo = (v: string | undefined) => !!v && demoNames.has(v.toLowerCase());
-      
-      // Исключаем демо-пользователей
-      results = results.filter(slot => !isDemo(slot.teacherName));
       
       // Дополнительная фильтрация по дате и времени
       if (selectedDate) {
@@ -168,40 +155,24 @@ const StudentHome: React.FC = () => {
     if (user) {
       const slot = timeSlots.find(s => s.id === slotId);
       if (slot) {
-        // Проверяем, что это не демо-пользователь
-        const demoNames = new Set(['анна петрова', 'михаил сидоров', 'елена козлова']);
-        const isDemo = (v: string | undefined) => !!v && demoNames.has(v.toLowerCase());
-        
-        if (!isDemo(slot.teacherName)) {
-          setSelectedBookingSlot(slot);
-          setShowBookingModal(true);
-        } else {
-          console.log('Cannot book slot for demo user:', slot.teacherName);
-        }
+        setSelectedBookingSlot(slot);
+        setShowBookingModal(true);
       }
     }
   };
 
   const handleConfirmBooking = async (comment: string) => {
     if (user && selectedBookingSlot) {
-      // Проверяем, что это не демо-пользователь
-      const demoNames = new Set(['анна петрова', 'михаил сидоров', 'елена козлова']);
-      const isDemo = (v: string | undefined) => !!v && demoNames.has(v.toLowerCase());
+      console.log('Booking lesson:', selectedBookingSlot.id, 'for user:', user.name, 'with comment:', comment);
+      bookLesson(selectedBookingSlot.id, user.id, user.name, comment);
       
-      if (!isDemo(selectedBookingSlot.teacherName)) {
-        console.log('Booking lesson:', selectedBookingSlot.id, 'for user:', user.name, 'with comment:', comment);
-        bookLesson(selectedBookingSlot.id, user.id, user.name, comment);
-        
-        setTimeout(() => {
-          if (Object.keys(filters).length === 0 && !selectedDate && !selectedTimeRange) {
-            loadAvailableSlots();
-          } else {
-            applyFilters();
-          }
-        }, 100);
-      } else {
-        console.log('Cannot book lesson for demo user:', selectedBookingSlot.teacherName);
-      }
+      setTimeout(() => {
+        if (Object.keys(filters).length === 0 && !selectedDate && !selectedTimeRange) {
+          loadAvailableSlots();
+        } else {
+          applyFilters();
+        }
+      }, 100);
     }
   };
 
@@ -247,16 +218,11 @@ const StudentHome: React.FC = () => {
     }
   };
 
-  // Собираем всех преподавателей (из сервера, локального списка и из слотов)
+  // Собираем всех преподавателей (не только с доступными слотами)
   const allTeachers: { id: string; name: string; avatar?: string; rating?: number; profile?: any }[] = React.useMemo(() => {
     console.log('DEBUG: Building allTeachers...');
     console.log('DEBUG: serverTeachers:', serverTeachers);
     console.log('DEBUG: allUsers:', allUsers);
-    console.log('DEBUG: timeSlots for teachers-from-slots:', timeSlots.length);
-    
-    // Функция для проверки демо-пользователей
-    const demoNames = new Set(['анна петрова', 'михаил сидоров', 'елена козлова']);
-    const isDemo = (v: string | undefined) => !!v && demoNames.has(v.toLowerCase());
     
     // Получаем всех преподавателей из разных источников
     const teachersFromServer = serverTeachers.map(teacher => ({
@@ -268,7 +234,7 @@ const StudentHome: React.FC = () => {
     }));
 
     const teachersFromUsers = allUsers
-      ?.filter((u: any) => u.role === 'teacher' && !isDemo(u.name) && !isDemo(u.profile?.name))
+      ?.filter((u: any) => u.role === 'teacher')
       .map((user: any) => ({
         id: user.id,
         name: user.name || user.profile?.name || 'Репетитор',
@@ -277,37 +243,12 @@ const StudentHome: React.FC = () => {
         profile: user.profile
       })) || [];
 
-    // Преподаватели, извлечённые из слотов (если профиля ещё нет)
-    const teachersFromSlots = timeSlots
-      .filter((s: any) => !!s.teacherId && !!s.teacherName && !s.isDeleted && !isDemo(s.teacherName))
-      .map((s: any) => ({
-        id: s.teacherId,
-        name: s.teacherName,
-        avatar: s.teacherAvatar,
-        rating: s.rating,
-        profile: {
-          subjects: s.subject ? [s.subject] : [],
-          experience: s.experience || 'experienced',
-          grades: s.grades || [],
-          goals: s.goals || [],
-          lessonTypes: s.lessonType ? [s.lessonType] : [],
-          durations: s.duration ? [s.duration] : [],
-          formats: s.format ? [s.format] : [],
-          offlineAvailable: s.format === 'offline',
-          city: s.city || '',
-          overbookingEnabled: true,
-          avatar: s.teacherAvatar || '',
-          rating: s.rating || 0,
-          hourlyRate: s.price || 0,
-        }
-      }));
-
     console.log('DEBUG: teachersFromServer:', teachersFromServer);
     console.log('DEBUG: teachersFromUsers:', teachersFromUsers);
 
     // Объединяем и убираем дубликаты
     const allTeachersMap = new Map<string, any>();
-    [...teachersFromServer, ...teachersFromUsers, ...teachersFromSlots].forEach(teacher => {
+    [...teachersFromServer, ...teachersFromUsers].forEach(teacher => {
       if (!allTeachersMap.has(teacher.id)) {
         allTeachersMap.set(teacher.id, teacher);
       }
@@ -317,7 +258,7 @@ const StudentHome: React.FC = () => {
     console.log('DEBUG: Final allTeachers result:', result);
 
     return result;
-  }, [serverTeachers, allUsers, timeSlots]);
+  }, [serverTeachers, allUsers]);
 
   // Фильтруем преподавателей по доступным слотам
   const filteredTeachers = React.useMemo(() => {
@@ -348,11 +289,8 @@ const StudentHome: React.FC = () => {
   }, [allTeachers, filters, selectedDate, selectedTimeRange, filteredSlots]);
 
   function getTeacherProfileById(teacherId: string) {
-    const demoNames = new Set(['анна петрова', 'михаил сидоров', 'елена козлова']);
-    const isDemo = (v: string | undefined) => !!v && demoNames.has(v.toLowerCase());
-    
     const teacher = serverTeachers.find(t => t.id === teacherId) ||
-      allUsers?.find((u: any) => u.id === teacherId && u.role === 'teacher' && !isDemo(u.name) && !isDemo(u.profile?.name));
+      allUsers?.find((u: any) => u.id === teacherId && u.role === 'teacher');
     const profile = teacher && teacher.profile ? teacher.profile : null;
     return profile;
   }
@@ -361,9 +299,7 @@ const StudentHome: React.FC = () => {
   function getUserById(userId: string) {
     try {
       const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
-      const demoNames = new Set(['анна петрова', 'михаил сидоров', 'елена козлова']);
-      const isDemo = (v: string | undefined) => !!v && demoNames.has(v.toLowerCase());
-      return users.find((u: any) => u.id === userId && u.role === 'teacher' && !isDemo(u.name) && !isDemo(u.profile?.name)) || null;
+      return users.find((u: any) => u.id === userId && u.role === 'teacher') || null;
     } catch {
       return null;
     }
@@ -380,11 +316,7 @@ const StudentHome: React.FC = () => {
     if (!selectedTeacher) return;
     function updatePosts() {
       const teacher = getUserById(selectedTeacher.id);
-      if (teacher) {
-        setTeacherPosts(teacher.posts || []);
-      } else {
-        setTeacherPosts([]);
-      }
+      setTeacherPosts(teacher?.posts || []);
     }
     updatePosts();
     window.addEventListener('storage', updatePosts);
@@ -420,19 +352,10 @@ const StudentHome: React.FC = () => {
 
   const handleTeacherClick = (teacher: any) => {
     console.log('Teacher clicked:', teacher);
-    
-    // Проверяем, что это не демо-пользователь
-    const demoNames = new Set(['анна петрова', 'михаил сидоров', 'елена козлова']);
-    const isDemo = (v: string | undefined) => !!v && demoNames.has(v.toLowerCase());
-    
-    if (!isDemo(teacher.name)) {
-      const teacherUser = getUserById(teacher.id);
-      console.log('Teacher user data:', teacherUser);
-      setSelectedTeacher(teacherUser);
-      setShowTeacherProfilePage(true);
-    } else {
-      console.log('Cannot open profile for demo user:', teacher.name);
-    }
+    const teacherUser = getUserById(teacher.id);
+    console.log('Teacher user data:', teacherUser);
+    setSelectedTeacher(teacherUser);
+    setShowTeacherProfilePage(true);
   };
 
   const handleBookLesson = (teacherId: string) => {
@@ -440,6 +363,15 @@ const StudentHome: React.FC = () => {
     console.log('Booking lesson for teacher:', teacherId);
     setShowTeacherProfilePage(false);
     // Можно открыть модальное окно для выбора времени
+  };
+
+  // Функция для ручного удаления демо-данных
+  const handlePurgeDemoData = () => {
+    if (window.confirm('Удалить все демо-данные? Это действие нельзя отменить.')) {
+      purgeTestData();
+      // Перезагружаем страницу для обновления данных
+      window.location.reload();
+    }
   };
 
   return (
@@ -1366,6 +1298,17 @@ const StudentHome: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Кнопка для удаления демо-данных (только для разработки) */}
+      {process.env.NODE_ENV === 'development' && (
+        <button
+          onClick={handlePurgeDemoData}
+          className="fixed bottom-4 right-4 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg shadow-lg z-50"
+          title="Удалить демо-данные"
+        >
+          🗑️ Очистить демо
+        </button>
       )}
     </div>
   );

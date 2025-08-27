@@ -179,63 +179,69 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     console.log('Initial data loaded with saved slots:', uniqueTimeSlots.length);
   };
 
-  // Удаление тестовых данных (пользователи, слоты, уроки)
+  // Функция для удаления тестовых данных
   const purgeTestData = () => {
     try {
-      const testMatcher = (value?: string) => {
-        if (!value) return false;
-        const v = value.toLowerCase();
-        return v.includes('test') || v.includes('тест');
-      };
-      const demoNames = new Set([
-        'михаил сидоров',
-        'анна петрова',
-        'елена козлова',
-        'дивитай светлана сергеевна',
-        'грин',
-      ]);
-      const isDemo = (v?: string) => !!v && demoNames.has(v.toLowerCase());
-
-      // Пользователи
-      const users: User[] = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
-      const cleanedUsers = users.filter(u => {
-        const name = (u.name || (u as any).profile?.name || '').toString();
-        const email = ((u as any).email || (u as any).profile?.email || '').toString();
-        return !testMatcher(name) && !testMatcher(email) && !isDemo(name) && !(u.id || '').toString().startsWith('test_');
+      // Удаляем тестовых пользователей
+      const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
+      const filteredUsers = users.filter((user: any) => {
+        const name = user.name || user.profile?.name || '';
+        const email = user.email || '';
+        const id = user.id || '';
+        return !name.toLowerCase().includes('test') && 
+               !name.toLowerCase().includes('тест') && 
+               !email.toLowerCase().includes('test') && 
+               !email.toLowerCase().includes('тест') &&
+               !id.startsWith('test_') &&
+               !['анна петрова', 'михаил сидоров', 'елена козлова', 'дивитай светлана сергеевна', 'грин', 'марк', 'макрон'].includes(name.toLowerCase());
       });
-      if (cleanedUsers.length !== users.length) {
-        localStorage.setItem('tutoring_users', JSON.stringify(cleanedUsers));
-        setAllUsers(cleanedUsers);
-        console.log('[purgeTestData] Removed', users.length - cleanedUsers.length, 'test users');
-      }
-
-      // Слоты
-      const slots: any[] = JSON.parse(localStorage.getItem('tutoring_timeSlots') || '[]');
-      const cleanedSlots = slots.filter(s => {
-        const tname = (s.teacherName || '').toString();
-        const subj = (s.subject || '').toString();
-        return !testMatcher(tname) && !testMatcher(subj) && !isDemo(tname) && !(s.id || '').toString().startsWith('test_') && !s.isDeleted;
+      
+      // Удаляем тестовые слоты
+      const slots = JSON.parse(localStorage.getItem('tutoring_timeSlots') || '[]');
+      const filteredSlots = slots.filter((slot: any) => {
+        const teacherName = slot.teacherName || '';
+        const subject = slot.subject || '';
+        const id = slot.id || '';
+        return !teacherName.toLowerCase().includes('test') && 
+               !teacherName.toLowerCase().includes('тест') && 
+               !subject.toLowerCase().includes('test') && 
+               !subject.toLowerCase().includes('тест') &&
+               !id.startsWith('test_') &&
+               !['анна петрова', 'михаил сидоров', 'елена козлова', 'дивитай светлана сергеевна', 'грин', 'марк', 'макрон'].includes(teacherName.toLowerCase());
       });
-      if (cleanedSlots.length !== slots.length) {
-        localStorage.setItem('tutoring_timeSlots', JSON.stringify(cleanedSlots));
-        setTimeSlots(cleanedSlots as TimeSlot[]);
-        console.log('[purgeTestData] Removed', slots.length - cleanedSlots.length, 'test slots');
-      }
-
-      // Уроки
-      const lessonsLs: any[] = JSON.parse(localStorage.getItem('tutoring_lessons') || '[]');
-      const cleanedLessons = lessonsLs.filter(l => {
-        const tname = (l.teacherName || '').toString();
-        const sname = (l.studentName || '').toString();
-        return !testMatcher(tname) && !testMatcher(sname) && !isDemo(tname) && !(l.id || '').toString().startsWith('test_');
+      
+      // Удаляем тестовые уроки
+      const lessons = JSON.parse(localStorage.getItem('tutoring_lessons') || '[]');
+      const filteredLessons = lessons.filter((lesson: any) => {
+        const teacherName = lesson.teacherName || '';
+        const studentName = lesson.studentName || '';
+        const id = lesson.id || '';
+        return !teacherName.toLowerCase().includes('test') && 
+               !teacherName.toLowerCase().includes('тест') && 
+               !studentName.toLowerCase().includes('test') && 
+               !studentName.toLowerCase().includes('тест') &&
+               !id.startsWith('test_') &&
+               !['анна петрова', 'михаил сидоров', 'елена козлова', 'дивитай светлана сергеевна', 'грин', 'марк', 'макрон'].includes(teacherName.toLowerCase()) &&
+               !['анна петрова', 'михаил сидоров', 'елена козлова', 'дивитай светлана сергеевна', 'грин', 'марк', 'макрон'].includes(studentName.toLowerCase());
       });
-      if (cleanedLessons.length !== lessonsLs.length) {
-        localStorage.setItem('tutoring_lessons', JSON.stringify(cleanedLessons));
-        setLessons(cleanedLessons as Lesson[]);
-        console.log('[purgeTestData] Removed', lessonsLs.length - cleanedLessons.length, 'test lessons');
-      }
-    } catch (e) {
-      console.warn('[purgeTestData] Failed:', e);
+
+      // Сохраняем очищенные данные
+      localStorage.setItem('tutoring_users', JSON.stringify(filteredUsers));
+      localStorage.setItem('tutoring_timeSlots', JSON.stringify(filteredSlots));
+      localStorage.setItem('tutoring_lessons', JSON.stringify(filteredLessons));
+      
+      // Обновляем состояние
+      setAllUsers(filteredUsers);
+      setTimeSlots(filteredSlots);
+      setLessons(filteredLessons);
+      
+      console.log('Demo data purged:', {
+        usersRemoved: users.length - filteredUsers.length,
+        slotsRemoved: slots.length - filteredSlots.length,
+        lessonsRemoved: lessons.length - filteredLessons.length
+      });
+    } catch (error) {
+      console.error('Error purging demo data:', error);
     }
   };
 
