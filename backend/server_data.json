@@ -4,5 +4,7 @@
   "overbookingRequests": [],
   "timeSlots": [],
   "lessons": [],
-  "chats": []
+  "chats": [],
+  "posts": [],
+  "notifications": []
 }

@@ -34,6 +34,10 @@ const PostsPage: React.FC = () => {
           onEdit={editPost}
           onDelete={deletePost}
           title="Лента записей"
+          showSearch={true}
+          showNotifications={true}
+          showTrending={true}
+          showBookmarks={true}
         />
       </div>
     </div>

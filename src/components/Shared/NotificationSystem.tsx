@@ -1,302 +1,275 @@
-import React, { useState, useEffect } from 'react';
-import { Bell, X, CheckCircle, AlertCircle, Info, XCircle, Star } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  Bell, 
+  X, 
+  Check, 
+  Trash2, 
+  Heart, 
+  MessageCircle, 
+  FileText, 
+  Users, 
+  Calendar,
+  Settings,
+  MoreHorizontal,
+  ChevronDown,
+  ChevronUp
+} from 'lucide-react';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { Notification } from '../../types';
 
-export interface Notification {
-  id: string;
-  type: 'success' | 'error' | 'warning' | 'info';
-  title: string;
-  message: string;
-  timestamp: Date;
-  isRead: boolean;
-  actionUrl?: string;
-  lessonId?: string;
-  chatId?: string;
+interface NotificationSystemProps {
+  className?: string;
 }
 
-const NotificationSystem: React.FC = () => {
+const NotificationSystem: React.FC<NotificationSystemProps> = ({ className = '' }) => {
+  const { notifications, markNotificationAsRead, markAllNotificationsAsRead, deleteNotification } = useData();
   const { user } = useAuth();
-  const { lessons, chats } = useData();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [isOpen, setIsOpen] = useState(false);
+  const [showAll, setShowAll] = useState(false);
+  const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all');
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Генерируем уведомления на основе данных
+  const unreadCount = notifications.filter(n => !n.isRead).length;
+
+  // Закрытие при клике вне компонента
   useEffect(() => {
-    if (!user) return;
-
-    const newNotifications: Notification[] = [];
-
-    // Уведомления о новых уроках
-    const userLessons = lessons.filter(lesson => 
-      lesson.studentId === user.id || lesson.teacherId === user.id
-    );
-
-    userLessons.forEach(lesson => {
-      if (lesson.status === 'scheduled') {
-        const lessonDate = new Date(`${lesson.date}T${lesson.startTime}`);
-        const now = new Date();
-        const timeUntilLesson = lessonDate.getTime() - now.getTime();
-        const hoursUntilLesson = timeUntilLesson / (1000 * 60 * 60);
-
-        // Напоминание за 1 час до урока
-        if (hoursUntilLesson > 0 && hoursUntilLesson <= 1) {
-          newNotifications.push({
-            id: `lesson_reminder_${lesson.id}`,
-            type: 'warning',
-            title: 'Напоминание об уроке',
-            message: `Урок "${lesson.subject}" начнется через ${Math.ceil(hoursUntilLesson)} минут`,
-            timestamp: new Date(),
-            isRead: false,
-            lessonId: lesson.id
-          });
-        }
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
       }
-    });
+    };
 
-    // Уведомления о новых сообщениях в чатах
-    const userChats = chats.filter(chat => 
-      chat.participants.includes(user.id)
-    );
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
-    userChats.forEach(chat => {
-      const unreadMessages = chat.messages.filter(msg => 
-        !msg.isRead && msg.senderId !== user.id
-      );
+  // Фильтрация уведомлений
+  const filteredNotifications = notifications.filter(notification => {
+    if (filter === 'unread') return !notification.isRead;
+    if (filter === 'read') return notification.isRead;
+    return true;
+  });
 
-      if (unreadMessages.length > 0) {
-        newNotifications.push({
-          id: `new_message_${chat.id}`,
-          type: 'info',
-          title: 'Новое сообщение',
-          message: `У вас ${unreadMessages.length} непрочитанных сообщений`,
-          timestamp: new Date(),
-          isRead: false,
-          chatId: chat.id
-        });
-      }
-    });
+  const displayedNotifications = showAll ? filteredNotifications : filteredNotifications.slice(0, 5);
 
-    // Уведомления о статусе соединения
-    if (!useData().isConnected) {
-      newNotifications.push({
-        id: 'connection_lost',
-        type: 'error',
-        title: 'Соединение потеряно',
-        message: 'Приложение работает в офлайн режиме. Некоторые функции могут быть недоступны.',
-        timestamp: new Date(),
-        isRead: false
-      });
-    }
-
-    setNotifications(prev => {
-      const existingIds = prev.map(n => n.id);
-      const uniqueNewNotifications = newNotifications.filter(n => !existingIds.includes(n.id));
-      return [...prev, ...uniqueNewNotifications];
-    });
-  }, [user, lessons, chats]);
-
-  // Обновляем количество непрочитанных уведомлений
-  useEffect(() => {
-    setUnreadCount(notifications.filter(n => !n.isRead).length);
-  }, [notifications]);
-
-  const markAsRead = (notificationId: string) => {
-    setNotifications(prev => 
-      prev.map(n => n.id === notificationId ? { ...n, isRead: true } : n)
-    );
-  };
-
-  const markAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-  };
-
-  const removeNotification = (notificationId: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== notificationId));
-  };
-
-  const getNotificationIcon = (type: Notification['type']) => {
+  // Получение иконки для типа уведомления
+  const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'success':
-        return <CheckCircle className="h-5 w-5 text-green-600" />;
-      case 'error':
-        return <XCircle className="h-5 w-5 text-red-600" />;
-      case 'warning':
-        return <AlertCircle className="h-5 w-5 text-yellow-600" />;
-      case 'info':
-        return <Info className="h-5 w-5 text-blue-600" />;
+      case 'new_post':
+        return <FileText className="w-5 h-5 text-blue-500" />;
+      case 'reaction':
+        return <Heart className="w-5 h-5 text-red-500" />;
+      case 'comment':
+        return <MessageCircle className="w-5 h-5 text-green-500" />;
+      case 'follow':
+        return <Users className="w-5 h-5 text-purple-500" />;
+      case 'lesson_reminder':
+        return <Calendar className="w-5 h-5 text-orange-500" />;
+      case 'system':
+        return <Settings className="w-5 h-5 text-gray-500" />;
       default:
-        return <Info className="h-5 w-5 text-gray-600" />;
+        return <Bell className="w-5 h-5 text-gray-500" />;
     }
   };
 
-  const getNotificationColor = (type: Notification['type']) => {
-    switch (type) {
-      case 'success':
-        return 'border-green-200 bg-green-50';
-      case 'error':
-        return 'border-red-200 bg-red-50';
-      case 'warning':
-        return 'border-yellow-200 bg-yellow-50';
-      case 'info':
-        return 'border-blue-200 bg-blue-50';
-      default:
-        return 'border-gray-200 bg-gray-50';
-    }
-  };
-
-  const formatTime = (timestamp: Date) => {
+  // Форматирование времени
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
     const now = new Date();
-    const diff = now.getTime() - timestamp.getTime();
-    const minutes = Math.floor(diff / (1000 * 60));
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-
-    if (minutes < 1) return 'Только что';
-    if (minutes < 60) return `${minutes} мин назад`;
-    if (hours < 24) return `${hours} ч назад`;
-    if (days < 7) return `${days} дн назад`;
-    return timestamp.toLocaleDateString('ru-RU');
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+    
+    if (diffInMinutes < 1) return 'только что';
+    if (diffInMinutes < 60) return `${diffInMinutes}м назад`;
+    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}ч назад`;
+    return date.toLocaleDateString('ru-RU');
   };
 
-  if (!user) return null;
+  const handleMarkAllAsRead = () => {
+    if (user) {
+      markAllNotificationsAsRead(user.id);
+    }
+  };
+
+  const handleNotificationClick = (notification: Notification) => {
+    if (!notification.isRead) {
+      markNotificationAsRead(notification.id);
+    }
+    
+    // Здесь можно добавить навигацию к соответствующему контенту
+    if (notification.data?.postId) {
+      // Навигация к посту
+      console.log('Navigate to post:', notification.data.postId);
+    }
+  };
 
   return (
-    <>
+    <div className={`relative ${className}`} ref={dropdownRef}>
       {/* Кнопка уведомлений */}
-      <div className="relative">
-        <button
-          onClick={() => setShowNotifications(!showNotifications)}
-          className="relative p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-2xl transition-all duration-200"
-        >
-          <Bell className="h-6 w-6" />
-          {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold animate-pulse">
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </span>
-          )}
-        </button>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="relative p-2 rounded-full hover:bg-gray-100 transition-colors"
+      >
+        <Bell className="w-6 h-6 text-gray-600" />
+        {unreadCount > 0 && (
+          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+            {unreadCount > 99 ? '99+' : unreadCount}
+          </span>
+        )}
+      </button>
 
-        {/* Панель уведомлений */}
-        {showNotifications && (
-          <div className="absolute right-0 top-full mt-2 w-96 bg-white rounded-3xl shadow-2xl border border-gray-200 z-50 animate-scale-in">
-            <div className="p-4 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">Уведомления</h3>
-                <div className="flex items-center space-x-2">
-                  {unreadCount > 0 && (
-                    <button
-                      onClick={markAllAsRead}
-                      className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-                    >
-                      Прочитать все
-                    </button>
-                  )}
+      {/* Выпадающее меню */}
+      {isOpen && (
+        <div className="absolute right-0 top-full mt-2 w-96 bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 max-h-[600px] overflow-hidden">
+          {/* Заголовок */}
+          <div className="p-4 border-b border-gray-100">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900">Уведомления</h3>
+              <div className="flex items-center space-x-2">
+                {unreadCount > 0 && (
                   <button
-                    onClick={() => setShowNotifications(false)}
-                    className="p-1 text-gray-400 hover:text-gray-600 rounded-lg transition-colors"
+                    onClick={handleMarkAllAsRead}
+                    className="text-sm text-blue-600 hover:text-blue-700 font-medium"
                   >
-                    <X className="h-4 w-4" />
+                    Отметить все как прочитанные
                   </button>
-                </div>
+                )}
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+                >
+                  <X className="w-4 h-4 text-gray-500" />
+                </button>
               </div>
             </div>
 
-            <div className="max-h-96 overflow-y-auto">
-              {notifications.length === 0 ? (
-                <div className="p-6 text-center text-gray-500">
-                  <Bell className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                  <p>Нет уведомлений</p>
-                </div>
-              ) : (
-                <div className="p-2">
-                  {notifications.map((notification) => (
-                    <div
-                      key={notification.id}
-                      className={`p-3 rounded-2xl border mb-2 transition-all duration-200 hover:shadow-md ${
-                        notification.isRead ? 'opacity-75' : ''
-                      } ${getNotificationColor(notification.type)}`}
-                    >
-                      <div className="flex items-start space-x-3">
-                        <div className="flex-shrink-0 mt-0.5">
-                          {getNotificationIcon(notification.type)}
-                        </div>
-                        
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between">
-                            <h4 className="text-sm font-semibold text-gray-900 mb-1">
+            {/* Фильтры */}
+            <div className="flex items-center space-x-2 mt-3">
+              {[
+                { key: 'all', label: 'Все', count: notifications.length },
+                { key: 'unread', label: 'Непрочитанные', count: unreadCount },
+                { key: 'read', label: 'Прочитанные', count: notifications.length - unreadCount }
+              ].map(({ key, label, count }) => (
+                <button
+                  key={key}
+                  onClick={() => setFilter(key as any)}
+                  className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                    filter === key
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  {label} ({count})
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Список уведомлений */}
+          <div className="overflow-y-auto max-h-[400px]">
+            {displayedNotifications.length === 0 ? (
+              <div className="p-8 text-center">
+                <Bell className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-500">
+                  {filter === 'all' && 'Нет уведомлений'}
+                  {filter === 'unread' && 'Нет непрочитанных уведомлений'}
+                  {filter === 'read' && 'Нет прочитанных уведомлений'}
+                </p>
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-100">
+                {displayedNotifications.map((notification) => (
+                  <div
+                    key={notification.id}
+                    className={`p-4 hover:bg-gray-50 transition-colors cursor-pointer ${
+                      !notification.isRead ? 'bg-blue-50' : ''
+                    }`}
+                    onClick={() => handleNotificationClick(notification)}
+                  >
+                    <div className="flex items-start space-x-3">
+                      {/* Иконка */}
+                      <div className="flex-shrink-0 mt-1">
+                        {getNotificationIcon(notification.type)}
+                      </div>
+
+                      {/* Контент */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-gray-900">
                               {notification.title}
-                            </h4>
-                            <div className="flex items-center space-x-1">
-                              <button
-                                onClick={() => markAsRead(notification.id)}
-                                className="p-1 text-gray-400 hover:text-gray-600 rounded transition-colors"
-                                title={notification.isRead ? 'Отметить как непрочитанное' : 'Отметить как прочитанное'}
-                              >
-                                <CheckCircle className={`h-3 w-3 ${notification.isRead ? 'text-green-500' : 'text-gray-400'}`} />
-                              </button>
-                              <button
-                                onClick={() => removeNotification(notification.id)}
-                                className="p-1 text-gray-400 hover:text-red-600 rounded transition-colors"
-                                title="Удалить уведомление"
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
-                            </div>
+                            </p>
+                            <p className="text-sm text-gray-600 mt-1">
+                              {notification.message}
+                            </p>
+                            <p className="text-xs text-gray-400 mt-2">
+                              {formatTime(notification.createdAt)}
+                            </p>
                           </div>
-                          
-                          <p className="text-sm text-gray-700 mb-2">
-                            {notification.message}
-                          </p>
-                          
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-gray-500">
-                              {formatTime(notification.timestamp)}
-                            </span>
-                            
-                            {notification.lessonId && (
-                              <button className="text-xs text-blue-600 hover:text-blue-700 font-medium">
-                                Перейти к уроку
-                              </button>
-                            )}
-                            
-                            {notification.chatId && (
-                              <button className="text-xs text-blue-600 hover:text-blue-700 font-medium">
-                                Открыть чат
-                              </button>
-                            )}
-                          </div>
+
+                          {/* Индикатор непрочитанного */}
+                          {!notification.isRead && (
+                            <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-2"></div>
+                          )}
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
 
-            {notifications.length > 0 && (
-              <div className="p-3 border-t border-gray-200 bg-gray-50/50 rounded-b-3xl">
-                <button
-                  onClick={() => setNotifications([])}
-                  className="w-full text-sm text-gray-600 hover:text-gray-800 font-medium py-2 rounded-xl hover:bg-white transition-colors"
-                >
-                  Очистить все уведомления
-                </button>
+                      {/* Действия */}
+                      <div className="flex-shrink-0 flex items-center space-x-1">
+                        {!notification.isRead && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              markNotificationAsRead(notification.id);
+                            }}
+                            className="p-1 rounded-full hover:bg-green-100 transition-colors"
+                            title="Отметить как прочитанное"
+                          >
+                            <Check className="w-4 h-4 text-green-600" />
+                          </button>
+                        )}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteNotification(notification.id);
+                          }}
+                          className="p-1 rounded-full hover:bg-red-100 transition-colors"
+                          title="Удалить"
+                        >
+                          <Trash2 className="w-4 h-4 text-red-600" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
-        )}
-      </div>
 
-      {/* Автоматическое скрытие панели при клике вне её */}
-      {showNotifications && (
-        <div
-          className="fixed inset-0 z-40"
-          onClick={() => setShowNotifications(false)}
-        />
+          {/* Показать больше/меньше */}
+          {filteredNotifications.length > 5 && (
+            <div className="p-4 border-t border-gray-100">
+              <button
+                onClick={() => setShowAll(!showAll)}
+                className="w-full flex items-center justify-center space-x-2 text-sm text-blue-600 hover:text-blue-700 font-medium"
+              >
+                {showAll ? (
+                  <>
+                    <ChevronUp className="w-4 h-4" />
+                    <span>Показать меньше</span>
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="w-4 h-4" />
+                    <span>Показать все ({filteredNotifications.length})</span>
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+        </div>
       )}
-    </>
+    </div>
   );
 };
 

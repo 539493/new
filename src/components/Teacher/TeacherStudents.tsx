@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { User, Calendar, MessageCircle, User as UserIcon, Info } from 'lucide-react';
+import { User, Calendar, MessageCircle, User as UserIcon, Info, Eye, FileText } from 'lucide-react';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
 import type { StudentProfile } from '../../types';
 import { TimeSlot } from '../../types';
 import TeacherCalendar from './TeacherCalendar';
 import Modal from '../../components/Shared/Modal';
+import UserProfile from '../Shared/UserProfile';
 
 // Вспомогательная функция для получения профиля ученика по studentId
 function getStudentProfile(studentId: string) {
@@ -42,6 +43,7 @@ const TeacherStudents: React.FC = () => {
   const [error, setError] = useState('');
   const [calendarModalOpen, setCalendarModalOpen] = useState(false);
   const [calendarStudent, setCalendarStudent] = useState<{ id: string; name: string } | null>(null);
+  const [selectedUserProfile, setSelectedUserProfile] = useState<string | null>(null);
 
   // Собираем всех учеников, которые бронировали уроки у этого преподавателя
   const teacherLessons = lessons.filter(lesson => lesson.teacherId === user?.id);
@@ -155,13 +157,22 @@ const TeacherStudents: React.FC = () => {
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900">{student.studentName}</h3>
                   </div>
-                  <button
-                    className="ml-auto p-2 text-gray-400 hover:text-blue-600"
-                    title="Подробнее о профиле"
-                    onClick={e => { e.stopPropagation(); handleCardClick(student); }}
-                  >
-                    <Info className="h-5 w-5" />
-                  </button>
+                  <div className="ml-auto flex items-center space-x-1">
+                    <button
+                      className="p-2 text-gray-400 hover:text-blue-600"
+                      title="Просмотреть записи"
+                      onClick={e => { e.stopPropagation(); setSelectedUserProfile(student.studentId); }}
+                    >
+                      <FileText className="h-5 w-5" />
+                    </button>
+                    <button
+                      className="p-2 text-gray-400 hover:text-blue-600"
+                      title="Подробнее о профиле"
+                      onClick={e => { e.stopPropagation(); handleCardClick(student); }}
+                    >
+                      <Info className="h-5 w-5" />
+                    </button>
+                  </div>
                 </div>
                 <div className="mb-4">
                   <h4 className="text-md font-bold text-gray-800 mb-2 flex items-center"><Calendar className="h-4 w-4 mr-1 text-blue-500" />Забронированные уроки</h4>
@@ -300,6 +311,23 @@ const TeacherStudents: React.FC = () => {
             />
           </div>
         </Modal>
+      )}
+
+      {/* Модальное окно профиля пользователя */}
+      {selectedUserProfile && (
+        <UserProfile
+          userId={selectedUserProfile}
+          onClose={() => setSelectedUserProfile(null)}
+          onMessage={(userId) => {
+            console.log('Open chat with user:', userId);
+            setSelectedUserProfile(null);
+          }}
+          onBookLesson={(teacherId) => {
+            console.log('Book lesson with teacher:', teacherId);
+            setSelectedUserProfile(null);
+          }}
+          isModal={true}
+        />
       )}
     </div>
   );

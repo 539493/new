@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
-import { TimeSlot, Lesson, Chat, FilterOptions, User, Post, Comment, StudentProfile, TeacherProfile } from '../types';
+import { TimeSlot, Lesson, Chat, FilterOptions, User, Post, Comment, StudentProfile, TeacherProfile, Notification, SearchFilters } from '../types';
 import { io, Socket } from 'socket.io-client';
 import { SERVER_URL, SOCKET_CONFIG } from '../config';
 import { useAuth } from './AuthContext';
@@ -10,6 +10,7 @@ interface DataContextType {
   lessons: Lesson[];
   chats: Chat[];
   posts: Post[];
+  notifications: Notification[];
   createTimeSlot: (slot: Omit<TimeSlot, 'id'>) => void;
   bookLesson: (slotId: string, studentId: string, studentName: string, comment?: string) => void;
   cancelLesson: (lessonId: string) => void;
@@ -38,6 +39,16 @@ interface DataContextType {
   bookmarkPost: (postId: string) => void;
   editPost: (postId: string, newText: string) => void;
   deletePost: (postId: string) => void;
+  // Новые функции для постов
+  searchPosts: (filters: SearchFilters) => void;
+  getPostsByUser: (userId: string) => Post[];
+  getBookmarkedPosts: (userId: string) => Post[];
+  // Функции для уведомлений
+  subscribeToNotifications: (userId: string) => void;
+  unsubscribeFromNotifications: (userId: string) => void;
+  markNotificationAsRead: (notificationId: string) => void;
+  markAllNotificationsAsRead: (userId: string) => void;
+  deleteNotification: (notificationId: string) => void;
   // Функции для управления чатами
   deleteChat: (chatId: string) => void;
   markChatAsRead: (chatId: string) => void;
@@ -146,6 +157,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     return loadFromStorage('tutoring_posts', []);
   });
 
+  const [notifications, setNotifications] = useState<Notification[]>(() => {
+    return loadFromStorage('tutoring_notifications', []);
+  });
+
   const { user, updateProfile } = useAuth();
 
   // Функция для загрузки начальных данных
@@ -204,6 +219,15 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
             socketRef.current.emit('createSlot', slot);
           }
         });
+      }
+
+      // Запрашиваем все посты и уведомления
+      if (socketRef.current) {
+        socketRef.current.emit('requestAllPosts');
+        if (user) {
+          socketRef.current.emit('requestUserNotifications', user.id);
+          socketRef.current.emit('subscribeNotifications', user.id);
+        }
       }
     });
 
@@ -411,6 +435,130 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       }
     });
 
+    // ===== ОБРАБОТЧИКИ ДЛЯ ПОСТОВ =====
+    
+    // Получение всех постов
+    newSocket.on('allPosts', (allPosts: Post[]) => {
+      console.log('[SOCKET] Received all posts:', allPosts.length);
+      setPosts(allPosts);
+      saveToStorage('tutoring_posts', allPosts);
+    });
+
+    // Новый пост создан
+    newSocket.on('postCreated', (newPost: Post) => {
+      console.log('[SOCKET] New post created:', newPost);
+      setPosts(prev => {
+        const updated = [newPost, ...prev];
+        saveToStorage('tutoring_posts', updated);
+        return updated;
+      });
+    });
+
+    // Обновление реакции на пост
+    newSocket.on('postReactionUpdated', (data: { postId: string; reactions: any[]; likes: number }) => {
+      console.log('[SOCKET] Post reaction updated:', data);
+      setPosts(prev => {
+        const updated = prev.map(post => 
+          post.id === data.postId 
+            ? { ...post, reactions: data.reactions, likes: data.likes }
+            : post
+        );
+        saveToStorage('tutoring_posts', updated);
+        return updated;
+      });
+    });
+
+    // Добавлен комментарий к посту
+    newSocket.on('postCommentAdded', (data: { postId: string; comment: Comment }) => {
+      console.log('[SOCKET] Comment added to post:', data);
+      setPosts(prev => {
+        const updated = prev.map(post => 
+          post.id === data.postId 
+            ? { ...post, comments: [...post.comments, data.comment] }
+            : post
+        );
+        saveToStorage('tutoring_posts', updated);
+        return updated;
+      });
+    });
+
+    // Пост отредактирован
+    newSocket.on('postEdited', (data: { postId: string; text: string; tags: string[]; editedAt: string }) => {
+      console.log('[SOCKET] Post edited:', data);
+      setPosts(prev => {
+        const updated = prev.map(post => 
+          post.id === data.postId 
+            ? { ...post, text: data.text, tags: data.tags, editedAt: data.editedAt }
+            : post
+        );
+        saveToStorage('tutoring_posts', updated);
+        return updated;
+      });
+    });
+
+    // Пост удален
+    newSocket.on('postDeleted', (data: { postId: string }) => {
+      console.log('[SOCKET] Post deleted:', data);
+      setPosts(prev => {
+        const updated = prev.filter(post => post.id !== data.postId);
+        saveToStorage('tutoring_posts', updated);
+        return updated;
+      });
+    });
+
+    // Обновление закладки поста
+    newSocket.on('postBookmarkUpdated', (data: { postId: string; bookmarks: string[] }) => {
+      console.log('[SOCKET] Post bookmark updated:', data);
+      setPosts(prev => {
+        const updated = prev.map(post => 
+          post.id === data.postId 
+            ? { ...post, bookmarks: data.bookmarks }
+            : post
+        );
+        saveToStorage('tutoring_posts', updated);
+        return updated;
+      });
+    });
+
+    // Результаты поиска постов
+    newSocket.on('searchResults', (results: Post[]) => {
+      console.log('[SOCKET] Search results received:', results.length);
+      // Здесь можно добавить состояние для результатов поиска
+    });
+
+    // ===== ОБРАБОТЧИКИ ДЛЯ УВЕДОМЛЕНИЙ =====
+    
+    // Получение уведомлений пользователя
+    newSocket.on('userNotifications', (userNotifications: Notification[]) => {
+      console.log('[SOCKET] Received user notifications:', userNotifications.length);
+      setNotifications(userNotifications);
+      saveToStorage('tutoring_notifications', userNotifications);
+    });
+
+    // Новое уведомление
+    newSocket.on('newNotification', (notification: Notification) => {
+      console.log('[SOCKET] New notification received:', notification);
+      setNotifications(prev => {
+        const updated = [notification, ...prev];
+        saveToStorage('tutoring_notifications', updated);
+        return updated;
+      });
+    });
+
+    // Уведомление отмечено как прочитанное
+    newSocket.on('notificationMarkedAsRead', (data: { notificationId: string }) => {
+      console.log('[SOCKET] Notification marked as read:', data);
+      setNotifications(prev => {
+        const updated = prev.map(n => 
+          n.id === data.notificationId 
+            ? { ...n, isRead: true, readAt: new Date().toISOString() }
+            : n
+        );
+        saveToStorage('tutoring_notifications', updated);
+        return updated;
+      });
+    });
+
     return () => {
       newSocket.close();
       socketRef.current = null;
@@ -445,6 +593,22 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   useEffect(() => {
     saveToStorage('tutoring_chats', chats);
   }, [chats]);
+
+  useEffect(() => {
+    saveToStorage('tutoring_posts', posts);
+  }, [posts]);
+
+  useEffect(() => {
+    saveToStorage('tutoring_notifications', notifications);
+  }, [notifications]);
+
+  // Подписка на уведомления при изменении пользователя
+  useEffect(() => {
+    if (user && socketRef.current && isConnected) {
+      socketRef.current.emit('subscribeNotifications', user.id);
+      socketRef.current.emit('requestUserNotifications', user.id);
+    }
+  }, [user, isConnected]);
 
   const createTimeSlot = (slot: Omit<TimeSlot, 'id'>) => {
     console.log('DEBUG: createTimeSlot called, isConnected:', isConnected, 'socketRef:', !!socketRef.current);
@@ -823,6 +987,14 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
     console.log('Creating post with data:', postData);
 
+    // Извлекаем теги из текста
+    const extractTags = (text: string) => {
+      if (!text) return [];
+      const hashtagRegex = /#[\wа-яё]+/gi;
+      const matches = text.match(hashtagRegex);
+      return matches ? [...new Set(matches.map(tag => tag.toLowerCase()))] : [];
+    };
+
     // Создаем URL для медиафайлов
     const mediaUrls = postData.media.map(file => {
       const url = URL.createObjectURL(file);
@@ -841,7 +1013,11 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       date: new Date().toISOString(),
       reactions: [],
       comments: [],
-      isBookmarked: false
+      isBookmarked: false,
+      tags: extractTags(postData.text),
+      likes: 0,
+      views: 0,
+      bookmarks: []
     };
 
     console.log('Created new post:', newPost);
@@ -864,37 +1040,33 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     setPosts(prev => {
       const updated = prev.map(post => {
         if (post.id === postId) {
-          const existingReaction = post.reactions.find(r => r.type === reactionType);
-          const userReacted = post.reactions.some(r => r.userReacted);
+          // Проверяем, есть ли уже реакция от этого пользователя
+          const existingReaction = post.reactions.find(r => r.userId === user.id);
           
           let newReactions = [...post.reactions];
+          let newLikes = post.likes || 0;
           
           if (existingReaction) {
-            if (userReacted) {
+            if (existingReaction.type === reactionType) {
               // Убираем реакцию
-              newReactions = post.reactions.map(r => 
-                r.type === reactionType 
-                  ? { ...r, count: Math.max(0, r.count - 1), userReacted: false }
-                  : r
-              );
+              newReactions = post.reactions.filter(r => r.userId !== user.id);
+              newLikes = Math.max(0, newLikes - 1);
             } else {
-              // Добавляем реакцию
-              newReactions = post.reactions.map(r => 
-                r.type === reactionType 
-                  ? { ...r, count: r.count + 1, userReacted: true }
-                  : r
-              );
+              // Меняем тип реакции
+              existingReaction.type = reactionType as 'like' | 'love' | 'smile' | 'thumbsup';
             }
           } else {
-            // Создаем новую реакцию
+            // Добавляем новую реакцию
             newReactions.push({
+              id: `reaction_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+              userId: user.id,
               type: reactionType as 'like' | 'love' | 'smile' | 'thumbsup',
-              count: 1,
-              userReacted: true
+              date: new Date().toISOString()
             });
+            newLikes++;
           }
 
-          return { ...post, reactions: newReactions };
+          return { ...post, reactions: newReactions, likes: newLikes };
         }
         return post;
       });
@@ -944,21 +1116,49 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     if (!user) return;
 
     setPosts(prev => {
-      const updated = prev.map(post => 
-        post.id === postId 
-          ? { ...post, isBookmarked: !post.isBookmarked }
-          : post
-      );
+      const updated = prev.map(post => {
+        if (post.id === postId) {
+          const bookmarks = post.bookmarks || [];
+          const bookmarkIndex = bookmarks.indexOf(user.id);
+          
+          let newBookmarks = [...bookmarks];
+          if (bookmarkIndex === -1) {
+            newBookmarks.push(user.id);
+          } else {
+            newBookmarks.splice(bookmarkIndex, 1);
+          }
+          
+          return { ...post, bookmarks: newBookmarks };
+        }
+        return post;
+      });
       saveToStorage('tutoring_posts', updated);
       return updated;
     });
+
+    if (socketRef.current && isConnected) {
+      socketRef.current.emit('bookmarkPost', { postId, userId: user.id });
+    }
   };
 
   const editPost = (postId: string, newText: string) => {
+    // Извлекаем теги из текста
+    const extractTags = (text: string) => {
+      if (!text) return [];
+      const hashtagRegex = /#[\wа-яё]+/gi;
+      const matches = text.match(hashtagRegex);
+      return matches ? [...new Set(matches.map(tag => tag.toLowerCase()))] : [];
+    };
+
     setPosts(prev => {
       const updated = prev.map(post => 
         post.id === postId 
-          ? { ...post, text: newText }
+          ? { 
+              ...post, 
+              text: newText, 
+              tags: extractTags(newText),
+              editedAt: new Date().toISOString()
+            }
           : post
       );
       saveToStorage('tutoring_posts', updated);
@@ -1088,6 +1288,63 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         bookmarkPost,
         editPost,
         deletePost,
+        // Новые функции для постов
+        searchPosts: (filters: SearchFilters) => {
+          if (socketRef.current && isConnected) {
+            socketRef.current.emit('searchPosts', filters);
+          }
+        },
+        getPostsByUser: (userId: string) => {
+          return posts.filter(post => post.userId === userId);
+        },
+        getBookmarkedPosts: (userId: string) => {
+          return posts.filter(post => post.bookmarks?.includes(userId));
+        },
+        // Функции для уведомлений
+        notifications,
+        subscribeToNotifications: (userId: string) => {
+          if (socketRef.current && isConnected) {
+            socketRef.current.emit('subscribeNotifications', userId);
+          }
+        },
+        unsubscribeFromNotifications: (userId: string) => {
+          if (socketRef.current && isConnected) {
+            socketRef.current.emit('unsubscribeNotifications', userId);
+          }
+        },
+        markNotificationAsRead: (notificationId: string) => {
+          setNotifications(prev => {
+            const updated = prev.map(n => 
+              n.id === notificationId 
+                ? { ...n, isRead: true, readAt: new Date().toISOString() }
+                : n
+            );
+            saveToStorage('tutoring_notifications', updated);
+            return updated;
+          });
+          
+          if (socketRef.current && isConnected) {
+            socketRef.current.emit('markNotificationAsRead', notificationId);
+          }
+        },
+        markAllNotificationsAsRead: (userId: string) => {
+          setNotifications(prev => {
+            const updated = prev.map(n => 
+              n.userId === userId 
+                ? { ...n, isRead: true, readAt: new Date().toISOString() }
+                : n
+            );
+            saveToStorage('tutoring_notifications', updated);
+            return updated;
+          });
+        },
+        deleteNotification: (notificationId: string) => {
+          setNotifications(prev => {
+            const updated = prev.filter(n => n.id !== notificationId);
+            saveToStorage('tutoring_notifications', updated);
+            return updated;
+          });
+        },
         // Функции для управления чатами
         deleteChat,
         markChatAsRead,

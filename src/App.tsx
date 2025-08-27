@@ -14,6 +14,8 @@ import TeacherProfilePage from './components/Student/TeacherProfilePage';
 import WebSocketTest from './components/Shared/WebSocketTest';
 import ChatList from './components/Shared/ChatList';
 import ProfileForm from './components/Shared/ProfileForm';
+import PostsPage from './components/Shared/PostsPage';
+import UsersPage from './components/Shared/UsersPage';
 import { Routes, Route } from 'react-router-dom';
 import './index.css';
 
@@ -29,6 +31,10 @@ const AppContent: React.FC = () => {
     switch (activeTab) {
       case 'home':
         return user.role === 'student' ? <StudentHome /> : <TeacherSlots />;
+      case 'posts':
+        return <PostsPage />;
+      case 'users':
+        return <UsersPage />;
       case 'slots':
         return user.role === 'teacher' ? <TeacherSlots /> : <StudentHome />;
       case 'calendar':

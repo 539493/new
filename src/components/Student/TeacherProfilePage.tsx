@@ -31,6 +31,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useData } from '../../contexts/DataContext';
 import { TeacherProfile, TimeSlot } from '../../types';
 import BookingModal from '../Shared/BookingModal';
+import PostsFeed from '../Shared/PostsFeed';
 
 interface TeacherProfilePageProps {
   teacher: any;
@@ -40,7 +41,7 @@ interface TeacherProfilePageProps {
 
 const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClose, onBookLesson }) => {
   const { user } = useAuth();
-  const { timeSlots, bookLesson } = useData();
+  const { timeSlots, bookLesson, posts, createPost, addReaction, addComment, sharePost, bookmarkPost, editPost, deletePost } = useData();
   const [isLiked, setIsLiked] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [showContactInfo, setShowContactInfo] = useState(false);
@@ -59,7 +60,7 @@ const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClos
   const profile = teacher.profile as TeacherProfile;
 
   // Получаем посты преподавателя
-  const teacherPosts = teacher.posts || [];
+  const teacherPosts = posts.filter(post => post.userId === teacher.id);
 
   const getExperienceLabel = (exp: string) => {
     switch (exp) {
@@ -373,180 +374,25 @@ const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClos
             {/* Posts Tab */}
             {activeTab === 'posts' && (
               <div className="space-y-6">
-                {teacherPosts.length === 0 ? (
-                  <div className="text-center py-16">
-                    <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <FileText className="w-12 h-12 text-gray-400" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">Пока нет записей</h3>
-                    <p className="text-gray-500">Преподаватель еще не опубликовал записи</p>
-                  </div>
-                ) : (
-                  teacherPosts.map((post: any) => (
-                    <div key={post.id} className="bg-white border border-gray-200 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
-                      {/* Post Header */}
-                      <div className="p-6 pb-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center overflow-hidden">
-                              {profile?.avatar && profile.avatar.trim() !== '' ? (
-                                <img 
-                                  src={profile.avatar} 
-                                  alt={teacher.name} 
-                                  className="w-12 h-12 object-cover rounded-full"
-                                />
-                              ) : (
-                                <UserIcon className="h-6 w-6 text-white" />
-                              )}
-                            </div>
-                            <div>
-                              <div className="font-semibold text-gray-900">{profile?.name || teacher.name}</div>
-                              <div className="text-sm text-gray-500">{formatPostDate(post.date)}</div>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center space-x-2">
-                            <button
-                              onClick={() => handleBookmark(post.id)}
-                              className="p-2 text-gray-400 hover:text-blue-500 transition-colors"
-                            >
-                              <Bookmark className="w-5 h-5" />
-                            </button>
-                            <button
-                              onClick={() => handleShare(post.id)}
-                              className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
-                            >
-                              <Share2 className="w-5 h-5" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Post Content */}
-                      <div className="px-6 pb-4">
-                        {post.text && (
-                          <p className="text-gray-900 whitespace-pre-line mb-4 leading-relaxed">
-                            {post.text}
-                          </p>
-                        )}
-
-                        {/* Post Media */}
-                        {post.media && post.media.length > 0 && (
-                          <div className="mb-4">
-                            {post.type === 'video' ? (
-                              <div className="relative rounded-xl overflow-hidden">
-                                <video 
-                                  src={post.media[0]} 
-                                  className="w-full"
-                                  controls
-                                />
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                  <Play className="w-16 h-16 text-white opacity-80" />
-                                </div>
-                              </div>
-                            ) : (
-                              <div className={`grid gap-3 ${
-                                post.media.length === 1 ? 'grid-cols-1' : 
-                                post.media.length === 2 ? 'grid-cols-2' : 'grid-cols-3'
-                              }`}>
-                                {post.media.map((url: string, index: number) => (
-                                  <div key={index} className="relative aspect-square rounded-xl overflow-hidden">
-                                    <img 
-                                      src={url} 
-                                      alt="Post media" 
-                                      className="w-full h-full object-cover"
-                                    />
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Post Actions */}
-                      <div className="px-6 py-4 border-t border-gray-100">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-6">
-                            {/* Reactions */}
-                            <div className="relative">
-                              <button
-                                onClick={() => setShowReactions(showReactions === post.id ? null : post.id)}
-                                className="flex items-center space-x-2 px-4 py-2 rounded-full hover:bg-gray-50 transition-colors"
-                              >
-                                <Heart className="w-5 h-5 text-red-500" />
-                                <span className="text-sm text-gray-600">Нравится</span>
-                              </button>
-                              
-                              {/* Reactions Panel */}
-                              {showReactions === post.id && (
-                                <div className="absolute bottom-full left-0 mb-2 bg-white border border-gray-200 rounded-xl shadow-lg p-3 flex space-x-2">
-                                  <button
-                                    onClick={() => handleReaction(post.id, 'like')}
-                                    className="p-2 hover:bg-gray-50 rounded-full transition-colors"
-                                    title="Нравится"
-                                  >
-                                    <ThumbsUp className="w-6 h-6 text-blue-500" />
-                                  </button>
-                                  <button
-                                    onClick={() => handleReaction(post.id, 'love')}
-                                    className="p-2 hover:bg-gray-50 rounded-full transition-colors"
-                                    title="Любовь"
-                                  >
-                                    <Heart className="w-6 h-6 text-red-500" />
-                                  </button>
-                                  <button
-                                    onClick={() => handleReaction(post.id, 'smile')}
-                                    className="p-2 hover:bg-gray-50 rounded-full transition-colors"
-                                    title="Улыбка"
-                                  >
-                                    <Smile className="w-6 h-6 text-yellow-500" />
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Comments */}
-                            <button className="flex items-center space-x-2 px-4 py-2 rounded-full hover:bg-gray-50 transition-colors">
-                              <MessageCircle className="w-5 h-5 text-gray-500" />
-                              <span className="text-sm text-gray-600">Комментировать</span>
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Add Comment */}
-                        <div className="mt-4 flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center">
-                            <span className="text-white text-sm font-medium">
-                              {user?.name?.charAt(0).toUpperCase() || 'U'}
-                            </span>
-                          </div>
-                          <div className="flex-1 flex items-center space-x-2 bg-gray-50 rounded-full px-4 py-2">
-                            <input
-                              type="text"
-                              value={newComment[post.id] || ''}
-                              onChange={(e) => setNewComment({ ...newComment, [post.id]: e.target.value })}
-                              placeholder="Написать комментарий..."
-                              className="flex-1 border-none outline-none text-sm bg-transparent"
-                              onKeyPress={(e) => e.key === 'Enter' && handleComment(post.id)}
-                            />
-                            <button
-                              onClick={() => handleComment(post.id)}
-                              disabled={!newComment[post.id]?.trim()}
-                              className={`p-1 rounded-full transition-colors ${
-                                newComment[post.id]?.trim() 
-                                  ? 'text-blue-500 hover:bg-blue-100' 
-                                  : 'text-gray-400'
-                              }`}
-                            >
-                              <Send className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
+                <PostsFeed
+                  posts={teacherPosts}
+                  currentUserId={user?.id || ''}
+                  currentUserName={user?.name || ''}
+                  currentUserAvatar={user?.avatar}
+                  onCreatePost={createPost}
+                  onReaction={addReaction}
+                  onComment={addComment}
+                  onShare={sharePost}
+                  onBookmark={bookmarkPost}
+                  onEdit={editPost}
+                  onDelete={deletePost}
+                  showCreateButton={user?.id === teacher.id} // Только автор может создавать записи
+                  title={`Записи ${profile?.name || teacher.name}`}
+                  showSearch={true}
+                  showNotifications={false} // Уведомления уже есть в навигации
+                  showTrending={false}
+                  showBookmarks={true}
+                />
               </div>
             )}
 

@@ -144,9 +144,10 @@ export interface FilterOptions {
 }
 
 export interface Reaction {
+  id: string;
+  userId: string;
   type: 'like' | 'love' | 'smile' | 'thumbsup';
-  count: number;
-  userReacted: boolean;
+  date: string;
 }
 
 export interface Comment {
@@ -170,4 +171,36 @@ export interface Post {
   reactions: Reaction[];
   comments: Comment[];
   isBookmarked: boolean;
+  // Новые поля
+  tags?: string[];
+  likes?: number;
+  views?: number;
+  editedAt?: string;
+  bookmarks?: string[];
+  isModerated?: boolean;
+  moderationStatus?: 'pending' | 'approved' | 'rejected';
+  moderationReason?: string;
+}
+
+export interface Notification {
+  id: string;
+  userId: string;
+  type: 'new_post' | 'reaction' | 'comment' | 'follow' | 'lesson_reminder' | 'system';
+  title: string;
+  message: string;
+  data?: any;
+  isRead: boolean;
+  createdAt: string;
+  readAt?: string;
+}
+
+export interface SearchFilters {
+  query?: string;
+  tags?: string[];
+  userId?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  type?: 'text' | 'image' | 'video';
+  limit?: number;
+  offset?: number;
 }

@@ -8,7 +8,8 @@ import {
   Smile, 
   Bookmark,
   Play,
-  Send
+  Send,
+  Eye
 } from 'lucide-react';
 import PostEditor from './PostEditor';
 
@@ -39,6 +40,11 @@ interface Post {
   reactions: Reaction[];
   comments: Comment[];
   isBookmarked: boolean;
+  tags?: string[];
+  likes?: number;
+  views?: number;
+  editedAt?: string;
+  bookmarks?: string[];
 }
 
 interface PostCardProps {
@@ -169,6 +175,20 @@ const PostCard: React.FC<PostCardProps> = ({
           {post.text && (
             <div className="px-4 pb-3">
               <p className="text-gray-900 whitespace-pre-line">{post.text}</p>
+              
+              {/* Теги */}
+              {post.tags && post.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {post.tags.map(tag => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-700 font-medium"
+                    >
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -206,20 +226,32 @@ const PostCard: React.FC<PostCardProps> = ({
           )}
 
           {/* Статистика реакций и комментариев */}
-          {(totalReactions > 0 || post.comments.length > 0) && (
+          {((post.likes && post.likes > 0) || post.comments.length > 0 || (post.views && post.views > 0)) && (
             <div className="px-4 py-2 border-t border-gray-100">
               <div className="flex items-center justify-between text-sm text-gray-500">
-                <div className="flex items-center space-x-1">
-                  {totalReactions > 0 && (
+                <div className="flex items-center space-x-4">
+                  {post.likes && post.likes > 0 && (
                     <div className="flex items-center space-x-1">
                       <Heart className="w-4 h-4 text-red-500 fill-current" />
-                      <span>{totalReactions}</span>
+                      <span>{post.likes}</span>
                     </div>
                   )}
                   {post.comments.length > 0 && (
-                    <span>{post.comments.length} комментариев</span>
+                    <div className="flex items-center space-x-1">
+                      <MessageCircle className="w-4 h-4 text-blue-500" />
+                      <span>{post.comments.length}</span>
+                    </div>
+                  )}
+                  {post.views && post.views > 0 && (
+                    <div className="flex items-center space-x-1">
+                      <Eye className="w-4 h-4 text-gray-500" />
+                      <span>{post.views}</span>
+                    </div>
                   )}
                 </div>
+                {post.editedAt && (
+                  <span className="text-xs text-gray-400">ред.</span>
+                )}
               </div>
             </div>
           )}

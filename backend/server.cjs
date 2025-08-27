@@ -117,7 +117,9 @@ function loadServerData() {
         overbookingRequests: [],
         timeSlots: initialData.timeSlots || [],
         lessons: [],
-        chats: []
+        chats: [],
+        posts: [],
+        notifications: []
       };
     }
   } catch (error) {
@@ -130,7 +132,9 @@ function loadServerData() {
     overbookingRequests: [],
     timeSlots: [],
     lessons: [],
-    chats: []
+    chats: [],
+    posts: [],
+    notifications: []
   };
 }
 
@@ -142,7 +146,9 @@ function saveServerData() {
       overbookingRequests,
       timeSlots,
       lessons,
-      chats
+      chats,
+      posts,
+      notifications
     };
     console.log('=== SAVING SERVER DATA ===');
     console.log('Data file path:', DATA_FILE);
@@ -152,6 +158,8 @@ function saveServerData() {
     console.log('Time slots count:', timeSlots.length);
     console.log('Lessons count:', lessons.length);
     console.log('Chats count:', chats.length);
+    console.log('Posts count:', posts.length);
+    console.log('Notifications count:', notifications.length);
     
     fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
     console.log('Server data saved to file successfully');
@@ -180,6 +188,10 @@ let chats = Array.isArray(serverData.chats) ? serverData.chats : [];
 let overbookingRequests = Array.isArray(serverData.overbookingRequests) ? serverData.overbookingRequests : [];
 // Добавляем хранилище для отложенных заявок по teacherId
 let pendingOverbookingForTeacher = {};
+// Хранилище для постов
+let posts = Array.isArray(serverData.posts) ? serverData.posts : [];
+// Хранилище для уведомлений
+let notifications = Array.isArray(serverData.notifications) ? serverData.notifications : [];
 
 // Тестовое сохранение при запуске для проверки работы функции
 console.log('=== TESTING SAVE FUNCTION ===');
@@ -582,6 +594,259 @@ io.on('connection', (socket) => {
     console.log(`[WebRTC] ${socket.id} left room ${roomId}`);
   });
 
+  // ===== ОБРАБОТЧИКИ ДЛЯ ПОСТОВ =====
+  
+  // Создание поста
+  socket.on('createPost', (postData) => {
+    console.log('[POSTS] Creating new post:', postData);
+    
+    const newPost = {
+      ...postData,
+      id: `post_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      date: new Date().toISOString(),
+      reactions: [],
+      comments: [],
+      isBookmarked: false,
+      tags: extractTags(postData.text),
+      likes: 0,
+      views: 0
+    };
+    
+    posts.unshift(newPost);
+    saveServerData();
+    
+    // Отправляем всем клиентам
+    io.emit('postCreated', newPost);
+    
+    // Создаем уведомления для подписчиков
+    createPostNotifications(newPost);
+    
+    console.log('[POSTS] Post created successfully, total posts:', posts.length);
+  });
+
+  // Добавление реакции
+  socket.on('addReaction', (data) => {
+    console.log('[POSTS] Adding reaction:', data);
+    
+    const { postId, reactionType, userId } = data;
+    const post = posts.find(p => p.id === postId);
+    
+    if (!post) {
+      console.log('[POSTS] Post not found:', postId);
+      return;
+    }
+    
+    // Проверяем, есть ли уже реакция от этого пользователя
+    const existingReaction = post.reactions.find(r => r.userId === userId);
+    
+    if (existingReaction) {
+      if (existingReaction.type === reactionType) {
+        // Убираем реакцию
+        post.reactions = post.reactions.filter(r => r.userId !== userId);
+        post.likes = Math.max(0, post.likes - 1);
+      } else {
+        // Меняем тип реакции
+        existingReaction.type = reactionType;
+      }
+    } else {
+      // Добавляем новую реакцию
+      post.reactions.push({
+        id: `reaction_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        userId,
+        type: reactionType,
+        date: new Date().toISOString()
+      });
+      post.likes++;
+    }
+    
+    saveServerData();
+    
+    // Отправляем обновление всем клиентам
+    io.emit('postReactionUpdated', { postId, reactions: post.reactions, likes: post.likes });
+    
+    // Создаем уведомление о реакции
+    if (existingReaction && existingReaction.type !== reactionType) {
+      createReactionNotification(post, userId, reactionType);
+    }
+  });
+
+  // Добавление комментария
+  socket.on('addComment', (data) => {
+    console.log('[POSTS] Adding comment:', data);
+    
+    const { postId, comment } = data;
+    const post = posts.find(p => p.id === postId);
+    
+    if (!post) {
+      console.log('[POSTS] Post not found:', postId);
+      return;
+    }
+    
+    const newComment = {
+      ...comment,
+      id: `comment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      date: new Date().toISOString()
+    };
+    
+    post.comments.push(newComment);
+    saveServerData();
+    
+    // Отправляем обновление всем клиентам
+    io.emit('postCommentAdded', { postId, comment: newComment });
+    
+    // Создаем уведомление о комментарии
+    createCommentNotification(post, newComment);
+    
+    console.log('[POSTS] Comment added successfully');
+  });
+
+  // Редактирование поста
+  socket.on('editPost', (data) => {
+    console.log('[POSTS] Editing post:', data);
+    
+    const { postId, newText } = data;
+    const post = posts.find(p => p.id === postId);
+    
+    if (!post) {
+      console.log('[POSTS] Post not found:', postId);
+      return;
+    }
+    
+    post.text = newText;
+    post.tags = extractTags(newText);
+    post.editedAt = new Date().toISOString();
+    saveServerData();
+    
+    // Отправляем обновление всем клиентам
+    io.emit('postEdited', { postId, text: newText, tags: post.tags, editedAt: post.editedAt });
+    
+    console.log('[POSTS] Post edited successfully');
+  });
+
+  // Удаление поста
+  socket.on('deletePost', (data) => {
+    console.log('[POSTS] Deleting post:', data);
+    
+    const { postId } = data;
+    const postIndex = posts.findIndex(p => p.id === postId);
+    
+    if (postIndex === -1) {
+      console.log('[POSTS] Post not found:', postId);
+      return;
+    }
+    
+    posts.splice(postIndex, 1);
+    saveServerData();
+    
+    // Отправляем всем клиентам
+    io.emit('postDeleted', { postId });
+    
+    console.log('[POSTS] Post deleted successfully');
+  });
+
+  // Закладка поста
+  socket.on('bookmarkPost', (data) => {
+    console.log('[POSTS] Bookmarking post:', data);
+    
+    const { postId, userId } = data;
+    const post = posts.find(p => p.id === postId);
+    
+    if (!post) {
+      console.log('[POSTS] Post not found:', postId);
+      return;
+    }
+    
+    if (!post.bookmarks) post.bookmarks = [];
+    
+    const bookmarkIndex = post.bookmarks.indexOf(userId);
+    if (bookmarkIndex === -1) {
+      post.bookmarks.push(userId);
+    } else {
+      post.bookmarks.splice(bookmarkIndex, 1);
+    }
+    
+    saveServerData();
+    
+    // Отправляем обновление клиенту
+    socket.emit('postBookmarkUpdated', { postId, bookmarks: post.bookmarks });
+    
+    console.log('[POSTS] Post bookmark updated');
+  });
+
+  // Запрос всех постов
+  socket.on('requestAllPosts', () => {
+    console.log('[POSTS] Requesting all posts');
+    socket.emit('allPosts', posts);
+  });
+
+  // Поиск постов
+  socket.on('searchPosts', (searchData) => {
+    console.log('[POSTS] Searching posts:', searchData);
+    
+    const { query, tags, userId, limit = 20 } = searchData;
+    let filteredPosts = [...posts];
+    
+    if (query) {
+      const searchQuery = query.toLowerCase();
+      filteredPosts = filteredPosts.filter(post => 
+        post.text.toLowerCase().includes(searchQuery) ||
+        post.userName.toLowerCase().includes(searchQuery)
+      );
+    }
+    
+    if (tags && tags.length > 0) {
+      filteredPosts = filteredPosts.filter(post => 
+        post.tags && tags.some(tag => post.tags.includes(tag))
+      );
+    }
+    
+    if (userId) {
+      filteredPosts = filteredPosts.filter(post => post.userId === userId);
+    }
+    
+    // Сортируем по дате (новые сначала)
+    filteredPosts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    
+    // Ограничиваем количество
+    filteredPosts = filteredPosts.slice(0, limit);
+    
+    socket.emit('searchResults', filteredPosts);
+    console.log('[POSTS] Search completed, found:', filteredPosts.length, 'posts');
+  });
+
+  // Подписка на уведомления
+  socket.on('subscribeNotifications', (userId) => {
+    console.log('[NOTIFICATIONS] User subscribing to notifications:', userId);
+    socket.join(`notifications_${userId}`);
+  });
+
+  // Отписка от уведомлений
+  socket.on('unsubscribeNotifications', (userId) => {
+    console.log('[NOTIFICATIONS] User unsubscribing from notifications:', userId);
+    socket.leave(`notifications_${userId}`);
+  });
+
+  // Запрос уведомлений пользователя
+  socket.on('requestUserNotifications', (userId) => {
+    console.log('[NOTIFICATIONS] Requesting notifications for user:', userId);
+    const userNotifications = notifications.filter(n => n.userId === userId);
+    socket.emit('userNotifications', userNotifications);
+  });
+
+  // Отметка уведомления как прочитанного
+  socket.on('markNotificationAsRead', (notificationId) => {
+    console.log('[NOTIFICATIONS] Marking notification as read:', notificationId);
+    
+    const notification = notifications.find(n => n.id === notificationId);
+    if (notification) {
+      notification.isRead = true;
+      notification.readAt = new Date().toISOString();
+      saveServerData();
+      
+      socket.emit('notificationMarkedAsRead', { notificationId });
+    }
+  });
+
   socket.on('disconnect', () => {
     // Удаляем сокет из всех комнат
     for (const roomId in rooms) {
@@ -674,6 +939,124 @@ function findSocketByTeacherId(teacherId) {
     return io.sockets.sockets.get(socketId);
   }
   return null;
+}
+
+// ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ ПОСТОВ =====
+
+// Извлечение тегов из текста
+function extractTags(text) {
+  if (!text) return [];
+  const hashtagRegex = /#[\wа-яё]+/gi;
+  const matches = text.match(hashtagRegex);
+  return matches ? [...new Set(matches.map(tag => tag.toLowerCase()))] : [];
+}
+
+// Создание уведомлений о новом посте
+function createPostNotifications(post) {
+  // Получаем всех пользователей, кроме автора поста
+  const allUsers = [
+    ...Object.keys(teacherProfiles).map(id => ({ id, type: 'teacher' })),
+    ...Object.keys(studentProfiles).map(id => ({ id, type: 'student' }))
+  ].filter(user => user.id !== post.userId);
+
+  // Создаем уведомления для каждого пользователя
+  allUsers.forEach(user => {
+    const notification = {
+      id: `notification_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      userId: user.id,
+      type: 'new_post',
+      title: 'Новая запись',
+      message: `${post.userName} опубликовал новую запись`,
+      data: {
+        postId: post.id,
+        authorId: post.userId,
+        authorName: post.userName
+      },
+      isRead: false,
+      createdAt: new Date().toISOString()
+    };
+
+    notifications.push(notification);
+  });
+
+  saveServerData();
+}
+
+// Создание уведомления о реакции
+function createReactionNotification(post, userId, reactionType) {
+  if (post.userId === userId) return; // Не уведомляем автора о его собственной реакции
+
+  const reactionEmojis = {
+    'like': '👍',
+    'love': '❤️',
+    'smile': '😊',
+    'thumbsup': '👍'
+  };
+
+  const notification = {
+    id: `notification_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    userId: post.userId,
+    type: 'reaction',
+    title: 'Новая реакция',
+    message: `Кто-то поставил ${reactionEmojis[reactionType] || '👍'} на вашу запись`,
+    data: {
+      postId: post.id,
+      reactorId: userId,
+      reactionType
+    },
+    isRead: false,
+    createdAt: new Date().toISOString()
+  };
+
+  notifications.push(notification);
+  saveServerData();
+
+  // Отправляем уведомление в реальном времени
+  io.to(`notifications_${post.userId}`).emit('newNotification', notification);
+}
+
+// Создание уведомления о комментарии
+function createCommentNotification(post, comment) {
+  if (post.userId === comment.userId) return; // Не уведомляем автора о его собственном комментарии
+
+  const notification = {
+    id: `notification_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    userId: post.userId,
+    type: 'comment',
+    title: 'Новый комментарий',
+    message: `${comment.userName} прокомментировал вашу запись`,
+    data: {
+      postId: post.id,
+      commentId: comment.id,
+      commenterId: comment.userId,
+      commenterName: comment.userName
+    },
+    isRead: false,
+    createdAt: new Date().toISOString()
+  };
+
+  notifications.push(notification);
+  saveServerData();
+
+  // Отправляем уведомление в реальном времени
+  io.to(`notifications_${post.userId}`).emit('newNotification', notification);
+}
+
+// Модерация контента
+function moderateContent(text) {
+  const forbiddenWords = [
+    'спам', 'реклама', 'оскорбление', 'нецензурная лексика'
+  ];
+  
+  const lowerText = text.toLowerCase();
+  const hasForbiddenContent = forbiddenWords.some(word => 
+    lowerText.includes(word)
+  );
+  
+  return {
+    isAppropriate: !hasForbiddenContent,
+    flaggedWords: forbiddenWords.filter(word => lowerText.includes(word))
+  };
 }
 
 // Вспомогательная функция для получения уникальных преподавателей из timeSlots
