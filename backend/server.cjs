@@ -152,51 +152,6 @@ console.log('=== TEST COMPLETED ===');
 // Очищаем старые слоты при запуске сервера
 cleanupOldSlots();
 
-// Удаляем тестовые данные на старте (преподаватели/слоты/уроки с test/тест)
-function purgeTestDataServer() {
-  const isTest = (v) => typeof v === 'string' && (v.toLowerCase().includes('test') || v.toLowerCase().includes('тест'));
-  const DEMO_NAMES = new Set([
-    'анна петрова', 'михаил сидоров', 'елена козлова', 
-    'дивитай светлана сергеевна', 'грин', 'марк', 'макрон'
-  ]);
-  const isDemo = (v) => typeof v === 'string' && DEMO_NAMES.has(v.toLowerCase());
-
-  // Удаляем тестовые слоты
-  const beforeSlots = timeSlots.length;
-  timeSlots = timeSlots.filter(s => 
-    !isTest(s.teacherName) && !isTest(s.subject) && 
-    !isDemo(s.teacherName) &&
-    !(s.id || '').toString().startsWith('test_') && !s.isDeleted
-  );
-  const removedSlots = beforeSlots - timeSlots.length;
-
-  // Удаляем тестовые уроки
-  const beforeLessons = lessons.length;
-  lessons = lessons.filter(l => 
-    !isTest(l.teacherName) && !isTest(l.studentName) && 
-    !isDemo(l.teacherName) && !isDemo(l.studentName) &&
-    !(l.id || '').toString().startsWith('test_')
-  );
-  const removedLessons = beforeLessons - lessons.length;
-
-  // Удаляем тестовые профили преподавателей
-  const beforeTeachers = Object.keys(teacherProfiles).length;
-  Object.keys(teacherProfiles).forEach((id) => {
-    const p = teacherProfiles[id] || {};
-    if (isTest(p.name) || isTest(p.city) || isDemo(p.name)) {
-      delete teacherProfiles[id];
-    }
-  });
-  const afterTeachers = Object.keys(teacherProfiles).length;
-
-  if (removedSlots || removedLessons || beforeTeachers !== afterTeachers) {
-    console.log(`[SERVER] purgeTestData: removed slots=${removedSlots}, lessons=${removedLessons}, teachers=${beforeTeachers - afterTeachers}`);
-    saveServerData();
-  }
-}
-
-purgeTestDataServer();
-
 // Хранилище для связи teacherId с socketId (ОБЫЧНЫЙ ОБЪЕКТ)
 let teacherSocketMap = {};
 
@@ -722,21 +677,13 @@ function getTeachersFromSlots() {
 
 // Endpoint для получения преподавателей
 app.get('/api/teachers', (req, res) => {
-  const DEMO_NAMES = new Set([
-    'анна петрова', 'михаил сидоров', 'елена козлова', 
-    'дивитай светлана сергеевна', 'грин', 'марк', 'макрон'
-  ]);
-  const isDemo = (v) => typeof v === 'string' && DEMO_NAMES.has(v.toLowerCase());
-  
-  // Собираем преподавателей из teacherProfiles и фильтруем демо записи
-  const teachers = Object.entries(teacherProfiles)
-    .filter(([, profile]) => !isDemo(profile?.name))
-    .map(([id, profile]) => ({
-      id,
-      name: profile.name || '',
-      avatar: profile.avatar || '',
-      profile
-    }));
+  // Собираем преподавателей из teacherProfiles
+  const teachers = Object.entries(teacherProfiles).map(([id, profile]) => ({
+    id,
+    name: profile.name || '',
+    avatar: profile.avatar || '',
+    profile
+  }));
   res.json(teachers);
 });
 

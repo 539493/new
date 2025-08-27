@@ -179,69 +179,109 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     console.log('Initial data loaded with saved slots:', uniqueTimeSlots.length);
   };
 
-  // Функция для удаления тестовых данных
+  // Удаление тестовых данных (пользователи, слоты, уроки)
   const purgeTestData = () => {
     try {
-      // Удаляем тестовых пользователей
-      const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
-      const filteredUsers = users.filter((user: any) => {
-        const name = user.name || user.profile?.name || '';
-        const email = user.email || '';
-        const id = user.id || '';
-        return !name.toLowerCase().includes('test') && 
-               !name.toLowerCase().includes('тест') && 
-               !email.toLowerCase().includes('test') && 
-               !email.toLowerCase().includes('тест') &&
-               !id.startsWith('test_') &&
-               !['анна петрова', 'михаил сидоров', 'елена козлова', 'дивитай светлана сергеевна', 'грин', 'марк', 'макрон'].includes(name.toLowerCase());
-      });
+      console.log('[purgeTestData] Starting cleanup...');
       
-      // Удаляем тестовые слоты
-      const slots = JSON.parse(localStorage.getItem('tutoring_timeSlots') || '[]');
-      const filteredSlots = slots.filter((slot: any) => {
-        const teacherName = slot.teacherName || '';
-        const subject = slot.subject || '';
-        const id = slot.id || '';
-        return !teacherName.toLowerCase().includes('test') && 
-               !teacherName.toLowerCase().includes('тест') && 
-               !subject.toLowerCase().includes('test') && 
-               !subject.toLowerCase().includes('тест') &&
-               !id.startsWith('test_') &&
-               !['анна петрова', 'михаил сидоров', 'елена козлова', 'дивитай светлана сергеевна', 'грин', 'марк', 'макрон'].includes(teacherName.toLowerCase());
-      });
-      
-      // Удаляем тестовые уроки
-      const lessons = JSON.parse(localStorage.getItem('tutoring_lessons') || '[]');
-      const filteredLessons = lessons.filter((lesson: any) => {
-        const teacherName = lesson.teacherName || '';
-        const studentName = lesson.studentName || '';
-        const id = lesson.id || '';
-        return !teacherName.toLowerCase().includes('test') && 
-               !teacherName.toLowerCase().includes('тест') && 
-               !studentName.toLowerCase().includes('test') && 
-               !studentName.toLowerCase().includes('тест') &&
-               !id.startsWith('test_') &&
-               !['анна петрова', 'михаил сидоров', 'елена козлова', 'дивитай светлана сергеевна', 'грин', 'марк', 'макрон'].includes(teacherName.toLowerCase()) &&
-               !['анна петрова', 'михаил сидоров', 'елена козлова', 'дивитай светлана сергеевна', 'грин', 'марк', 'макрон'].includes(studentName.toLowerCase());
-      });
+      const testMatcher = (value?: string) => {
+        if (!value) return false;
+        const v = value.toLowerCase();
+        return v.includes('test') || v.includes('тест') || v.includes('demo') || v.includes('демо');
+      };
 
-      // Сохраняем очищенные данные
-      localStorage.setItem('tutoring_users', JSON.stringify(filteredUsers));
-      localStorage.setItem('tutoring_timeSlots', JSON.stringify(filteredSlots));
-      localStorage.setItem('tutoring_lessons', JSON.stringify(filteredLessons));
-      
-      // Обновляем состояние
-      setAllUsers(filteredUsers);
-      setTimeSlots(filteredSlots);
-      setLessons(filteredLessons);
-      
-      console.log('Demo data purged:', {
-        usersRemoved: users.length - filteredUsers.length,
-        slotsRemoved: slots.length - filteredSlots.length,
-        lessonsRemoved: lessons.length - filteredLessons.length
+      // Пользователи
+      const users: User[] = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
+      console.log('[purgeTestData] Found users:', users.length);
+      const cleanedUsers = users.filter(u => {
+        const isTest = testMatcher(u.name) || 
+                      testMatcher((u as any).email) || 
+                      (u.id || '').toString().startsWith('test_') ||
+                      (u.id || '').toString().startsWith('demo_') ||
+                      (u.id || '').toString().includes('test') ||
+                      (u.id || '').toString().includes('demo');
+        if (isTest) {
+          console.log('[purgeTestData] Removing test user:', u.name, u.id);
+        }
+        return !isTest;
       });
-    } catch (error) {
-      console.error('Error purging demo data:', error);
+      
+      if (cleanedUsers.length !== users.length) {
+        localStorage.setItem('tutoring_users', JSON.stringify(cleanedUsers));
+        setAllUsers(cleanedUsers);
+        console.log('[purgeTestData] Removed', users.length - cleanedUsers.length, 'test users');
+      }
+
+      // Слоты
+      const slots: any[] = JSON.parse(localStorage.getItem('tutoring_timeSlots') || '[]');
+      console.log('[purgeTestData] Found slots:', slots.length);
+      const cleanedSlots = slots.filter(s => {
+        const isTest = testMatcher(s.teacherName) || 
+                      testMatcher(s.subject) || 
+                      (s.id || '').toString().startsWith('test_') ||
+                      (s.id || '').toString().startsWith('demo_') ||
+                      (s.id || '').toString().includes('test') ||
+                      (s.id || '').toString().includes('demo') ||
+                      s.isDeleted;
+        if (isTest) {
+          console.log('[purgeTestData] Removing test slot:', s.teacherName, s.subject, s.id);
+        }
+        return !isTest;
+      });
+      
+      if (cleanedSlots.length !== slots.length) {
+        localStorage.setItem('tutoring_timeSlots', JSON.stringify(cleanedSlots));
+        setTimeSlots(cleanedSlots as TimeSlot[]);
+        console.log('[purgeTestData] Removed', slots.length - cleanedSlots.length, 'test slots');
+      }
+
+      // Уроки
+      const lessonsLs: any[] = JSON.parse(localStorage.getItem('tutoring_lessons') || '[]');
+      console.log('[purgeTestData] Found lessons:', lessonsLs.length);
+      const cleanedLessons = lessonsLs.filter(l => {
+        const isTest = testMatcher(l.teacherName) || 
+                      testMatcher(l.studentName) || 
+                      (l.id || '').toString().startsWith('test_') ||
+                      (l.id || '').toString().startsWith('demo_') ||
+                      (l.id || '').toString().includes('test') ||
+                      (l.id || '').toString().includes('demo');
+        if (isTest) {
+          console.log('[purgeTestData] Removing test lesson:', l.teacherName, l.studentName, l.id);
+        }
+        return !isTest;
+      });
+      
+      if (cleanedLessons.length !== lessonsLs.length) {
+        localStorage.setItem('tutoring_lessons', JSON.stringify(cleanedLessons));
+        setLessons(cleanedLessons as Lesson[]);
+        console.log('[purgeTestData] Removed', lessonsLs.length - cleanedLessons.length, 'test lessons');
+      }
+
+      // Посты
+      const postsLs: any[] = JSON.parse(localStorage.getItem('tutoring_posts') || '[]');
+      console.log('[purgeTestData] Found posts:', postsLs.length);
+      const cleanedPosts = postsLs.filter(p => {
+        const isTest = testMatcher(p.userName) || 
+                      testMatcher(p.text) || 
+                      (p.id || '').toString().startsWith('test_') ||
+                      (p.id || '').toString().startsWith('demo_') ||
+                      (p.id || '').toString().includes('test') ||
+                      (p.id || '').toString().includes('demo');
+        if (isTest) {
+          console.log('[purgeTestData] Removing test post:', p.userName, p.id);
+        }
+        return !isTest;
+      });
+      
+      if (cleanedPosts.length !== postsLs.length) {
+        localStorage.setItem('tutoring_posts', JSON.stringify(cleanedPosts));
+        setPosts(cleanedPosts as Post[]);
+        console.log('[purgeTestData] Removed', postsLs.length - cleanedPosts.length, 'test posts');
+      }
+
+      console.log('[purgeTestData] Cleanup completed successfully');
+    } catch (e) {
+      console.warn('[purgeTestData] Failed:', e);
     }
   };
 
@@ -1167,6 +1207,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         markChatAsRead,
         clearChatMessages,
         archiveChat,
+        purgeTestData,
       }}
     >
       {children}

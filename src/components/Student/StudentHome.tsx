@@ -16,7 +16,8 @@ import EmptyState from '../Shared/EmptyState';
 import { User as UserIcon } from 'lucide-react';
 
 const StudentHome: React.FC = () => {
-  const { getFilteredSlots, bookLesson, timeSlots, isConnected, allUsers, purgeTestData } = useData();
+  const { getFilteredSlots, bookLesson, timeSlots, isConnected, allUsers } = useData();
+  const { purgeTestData } = useData();
   const { user } = useAuth();
   
   const [filters, setFilters] = useState<FilterOptions>({});
@@ -68,11 +69,13 @@ const StudentHome: React.FC = () => {
     fetch(`${SERVER_URL}/api/teachers`)
       .then(res => res.json())
       .then(data => {
-        const isTest = (v: string | undefined) => !!v && (v.toLowerCase().includes('test') || v.toLowerCase().includes('тест'));
-        const cleaned = (Array.isArray(data) ? data : []).filter((t: any) => !isTest(t.name) && !isTest(t.profile?.name));
-        setServerTeachers(cleaned);
+        console.log('DEBUG: Fetched teachers from server:', data);
+        setServerTeachers(Array.isArray(data) ? data : []);
       })
-      .catch(() => setServerTeachers([]));
+      .catch((error) => {
+        console.error('DEBUG: Error fetching teachers from server:', error);
+        setServerTeachers([]);
+      });
   }, []);
 
   const socket = React.useRef<Socket | null>(null);
@@ -270,22 +273,9 @@ const StudentHome: React.FC = () => {
       allTeachersCount: allTeachers.length
     });
 
-    if (Object.keys(filters).length === 0 && !selectedDate && !selectedTimeRange) {
-      // Если фильтры не применены, показываем ВСЕХ преподавателей
-      console.log('DEBUG: No filters applied, showing ALL teachers');
-      return allTeachers;
-    }
-
-    // Если есть фильтры, показываем только тех преподавателей, у которых есть подходящие слоты
-    const teachersWithSlots = allTeachers.filter(teacher => {
-      const teacherSlots = filteredSlots.filter(slot => slot.teacherId === teacher.id);
-      const hasSlots = teacherSlots.length > 0;
-      console.log(`DEBUG: Teacher ${teacher.name} (${teacher.id}) has ${teacherSlots.length} slots: ${hasSlots}`);
-      return hasSlots;
-    });
-
-    console.log(`DEBUG: Filtered teachers result: ${teachersWithSlots.length} out of ${allTeachers.length}`);
-    return teachersWithSlots;
+    // Всегда показываем всех преподавателей, независимо от фильтров
+    console.log('DEBUG: Showing ALL teachers regardless of filters');
+    return allTeachers;
   }, [allTeachers, filters, selectedDate, selectedTimeRange, filteredSlots]);
 
   function getTeacherProfileById(teacherId: string) {
@@ -339,6 +329,18 @@ const StudentHome: React.FC = () => {
 
   React.useEffect(() => {
     console.log('DEBUG: timeSlots у ученика', timeSlots);
+    console.log('DEBUG: allUsers from context:', allUsers);
+    console.log('DEBUG: serverTeachers:', serverTeachers);
+    
+    // Проверяем localStorage напрямую
+    try {
+      const localUsers = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
+      const localSlots = JSON.parse(localStorage.getItem('tutoring_timeSlots') || '[]');
+      console.log('DEBUG: localStorage tutoring_users:', localUsers);
+      console.log('DEBUG: localStorage tutoring_timeSlots:', localSlots);
+    } catch (e) {
+      console.error('DEBUG: Error reading localStorage:', e);
+    }
   }, [timeSlots]);
 
   // Первоначальная загрузка слотов при монтировании компонента
@@ -365,9 +367,9 @@ const StudentHome: React.FC = () => {
     // Можно открыть модальное окно для выбора времени
   };
 
-  // Функция для ручного удаления демо-данных
-  const handlePurgeDemoData = () => {
-    if (window.confirm('Удалить все демо-данные? Это действие нельзя отменить.')) {
+  // Функция для ручного удаления тестовых данных
+  const handlePurgeTestData = () => {
+    if (window.confirm('Удалить все тестовые данные? Это действие нельзя отменить.')) {
       purgeTestData();
       // Перезагружаем страницу для обновления данных
       window.location.reload();
@@ -450,6 +452,19 @@ const StudentHome: React.FC = () => {
             <div className="text-xs opacity-90">Данные</div>
           </div>
         </button>
+       
+       <button
+         onClick={handlePurgeTestData}
+         className="group bg-gradient-to-r from-red-500 to-pink-500 text-white px-5 py-3 rounded-xl font-semibold text-base hover:from-red-600 hover:to-pink-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center space-x-2"
+       >
+         <div className="p-1.5 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
+           <X className="h-5 w-5" />
+         </div>
+         <div className="text-left">
+           <div className="font-bold">Очистить</div>
+           <div className="text-xs opacity-90">Тестовые данные</div>
+         </div>
+       </button>
       </div>
 
       {/* Search and Filter */}
@@ -693,6 +708,9 @@ const StudentHome: React.FC = () => {
             
             // Определяем, есть ли доступные слоты у этого преподавателя
             const hasAvailableSlots = availableTeacherSlots.length > 0;
+            
+            // Показываем всех преподавателей, даже без слотов
+            console.log(`DEBUG: Teacher ${teacher.name} (${teacher.id}): ${availableTeacherSlots.length} available slots out of ${allTeacherSlots.length} total`);
             
             return (
               <div 
@@ -1298,17 +1316,6 @@ const StudentHome: React.FC = () => {
             </div>
           </div>
         </div>
-      )}
-
-      {/* Кнопка для удаления демо-данных (только для разработки) */}
-      {process.env.NODE_ENV === 'development' && (
-        <button
-          onClick={handlePurgeDemoData}
-          className="fixed bottom-4 right-4 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg shadow-lg z-50"
-          title="Удалить демо-данные"
-        >
-          🗑️ Очистить демо
-        </button>
       )}
     </div>
   );
