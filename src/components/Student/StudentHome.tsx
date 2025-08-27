@@ -212,7 +212,7 @@ const StudentHome: React.FC = () => {
     const teachersFromServer = serverTeachers.map(teacher => ({
       id: teacher.id,
       name: teacher.name || teacher.profile?.name || 'Репетитор',
-      avatar: teacher.avatar || teacher.profile?.avatar,
+      avatar: teacher.avatar || teacher.profile?.avatar || '',
       rating: teacher.profile?.rating,
       profile: teacher.profile
     }));
@@ -222,7 +222,7 @@ const StudentHome: React.FC = () => {
       .map((user: any) => ({
         id: user.id,
         name: user.name || user.profile?.name || 'Репетитор',
-        avatar: user.avatar || user.profile?.avatar,
+        avatar: user.avatar || user.profile?.avatar || '',
         rating: user.profile?.rating,
         profile: user.profile
       })) || [];
@@ -233,7 +233,7 @@ const StudentHome: React.FC = () => {
       .map(slot => ({
         id: slot.teacherId,
         name: slot.teacherName,
-        avatar: slot.teacherAvatar,
+        avatar: slot.teacherAvatar || '',
         rating: slot.rating,
         profile: {
           subjects: slot.subject ? [slot.subject] : [],
@@ -247,15 +247,36 @@ const StudentHome: React.FC = () => {
         }
       }));
 
-    // Объединяем и убираем дубликаты
+    // Объединяем и убираем дубликаты, приоритет у тех, у кого есть аватары
     const allTeachersMap = new Map();
     [...teachersFromServer, ...teachersFromUsers, ...teachersFromSlots].forEach(teacher => {
-      if (!allTeachersMap.has(teacher.id)) {
+      const existingTeacher = allTeachersMap.get(teacher.id);
+      
+      if (!existingTeacher) {
         allTeachersMap.set(teacher.id, teacher);
+      } else {
+        // Если у нового преподавателя есть аватар, а у существующего нет, заменяем
+        const newHasAvatar = teacher.avatar && teacher.avatar.trim() !== '' && teacher.avatar !== 'undefined' && teacher.avatar !== 'null';
+        const existingHasAvatar = existingTeacher.avatar && existingTeacher.avatar.trim() !== '' && existingTeacher.avatar !== 'undefined' && existingTeacher.avatar !== 'null';
+        
+        if (newHasAvatar && !existingHasAvatar) {
+          allTeachersMap.set(teacher.id, teacher);
+        }
       }
     });
 
-    return Array.from(allTeachersMap.values());
+    const result = Array.from(allTeachersMap.values());
+    
+    // Отладочная информация для аватаров
+    result.forEach(teacher => {
+      if (teacher.avatar && teacher.avatar.trim() !== '') {
+        console.log(`Teacher ${teacher.name} has avatar: ${teacher.avatar}`);
+      } else {
+        console.log(`Teacher ${teacher.name} has no avatar`);
+      }
+    });
+    
+    return result;
   }, [serverTeachers, allUsers, timeSlots]);
 
   // Фильтруем преподавателей по доступным слотам
@@ -727,19 +748,34 @@ const StudentHome: React.FC = () => {
                     {/* Online Status */}
                     <div className="absolute top-2 right-2 w-5 h-5 bg-green-500 border-2 border-white rounded-full shadow-lg"></div>
                     
-                    {(profile?.avatar && profile.avatar.trim() !== '') || (teacher.avatar && teacher.avatar.trim() !== '') ? (
-                      <img 
-                        src={profile?.avatar || teacher.avatar} 
-                      alt={teacher.name} 
-                        className="w-32 h-32 object-cover rounded-full"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                        target.nextElementSibling?.classList.remove('hidden');
-                      }}
-                    />
-                  ) : null}
-                    <div className={`w-32 h-32 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center ${(profile?.avatar && profile.avatar.trim() !== '') || (teacher.avatar && teacher.avatar.trim() !== '') ? 'hidden' : ''}`}>
+                    {/* Avatar Image */}
+                    {(() => {
+                      const avatarUrl = profile?.avatar || teacher.avatar;
+                      const hasAvatar = avatarUrl && avatarUrl.trim() !== '' && avatarUrl !== 'undefined' && avatarUrl !== 'null';
+                      
+                      if (hasAvatar) {
+                        return (
+                          <img 
+                            src={avatarUrl} 
+                            alt={teacher.name} 
+                            className="w-32 h-32 object-cover rounded-full"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                              target.nextElementSibling?.classList.remove('hidden');
+                            }}
+                          />
+                        );
+                      }
+                      return null;
+                    })()}
+                    
+                    {/* Fallback Avatar */}
+                    <div className={`w-32 h-32 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center ${(() => {
+                      const avatarUrl = profile?.avatar || teacher.avatar;
+                      const hasAvatar = avatarUrl && avatarUrl.trim() !== '' && avatarUrl !== 'undefined' && avatarUrl !== 'null';
+                      return hasAvatar ? 'hidden' : '';
+                    })()}`}>
                       <UserIcon className="h-16 w-16 text-white" />
                     </div>
                   </div>
