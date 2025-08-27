@@ -81,20 +81,15 @@ const StudentHome: React.FC = () => {
 
   // Функция для загрузки всех доступных слотов
   const loadAvailableSlots = () => {
-    console.log('StudentHome: Loading available slots...');
-    console.log('StudentHome: Total timeSlots in context:', timeSlots.length);
-    
     // Показываем все незабронированные слоты, независимо от статуса преподавателя
     const availableSlots = timeSlots.filter(slot => !slot.isBooked);
     
-    console.log('StudentHome: Available slots to display:', availableSlots.length);
     setFilteredSlots(availableSlots);
     
     return availableSlots;
   };
 
   const applyFilters = () => {
-    console.log('Applying filters:', filters);
     setLoading(true);
     
     try {
@@ -115,7 +110,6 @@ const StudentHome: React.FC = () => {
         });
       }
       
-      console.log('Filter results:', results.length);
       setFilteredSlots(results);
       setShowFilters(false);
     } catch (error) {
@@ -126,7 +120,6 @@ const StudentHome: React.FC = () => {
   };
 
   const clearFilters = () => {
-    console.log('Clearing filters and loading all available slots');
     setFilters({});
     setSelectedDate(null);
     setSelectedTimeRange(null);
@@ -135,7 +128,6 @@ const StudentHome: React.FC = () => {
   };
 
   const refreshSlots = () => {
-    console.log('Refreshing slots manually');
     setLoading(true);
     
     setTimeout(() => {
@@ -160,7 +152,6 @@ const StudentHome: React.FC = () => {
 
   const handleConfirmBooking = async (comment: string) => {
     if (user && selectedBookingSlot) {
-      console.log('Booking lesson:', selectedBookingSlot.id, 'for user:', user.name, 'with comment:', comment);
       bookLesson(selectedBookingSlot.id, user.id, user.name, comment);
       
       setTimeout(() => {
@@ -217,11 +208,6 @@ const StudentHome: React.FC = () => {
 
   // Собираем всех преподавателей (не только с доступными слотами)
   const allTeachers: { id: string; name: string; avatar?: string; rating?: number; profile?: any }[] = React.useMemo(() => {
-    console.log('DEBUG: Building allTeachers...');
-    console.log('DEBUG: serverTeachers:', serverTeachers);
-    console.log('DEBUG: allUsers:', allUsers);
-    console.log('DEBUG: timeSlots:', timeSlots);
-    
     // Получаем всех преподавателей из разных источников
     const teachersFromServer = serverTeachers.map(teacher => ({
       id: teacher.id,
@@ -261,10 +247,6 @@ const StudentHome: React.FC = () => {
         }
       }));
 
-    console.log('DEBUG: teachersFromServer:', teachersFromServer);
-    console.log('DEBUG: teachersFromUsers:', teachersFromUsers);
-    console.log('DEBUG: teachersFromSlots:', teachersFromSlots);
-
     // Объединяем и убираем дубликаты
     const allTeachersMap = new Map();
     [...teachersFromServer, ...teachersFromUsers, ...teachersFromSlots].forEach(teacher => {
@@ -273,37 +255,22 @@ const StudentHome: React.FC = () => {
       }
     });
 
-    const result = Array.from(allTeachersMap.values());
-    console.log('DEBUG: Final allTeachers result:', result);
-
-    return result;
+    return Array.from(allTeachersMap.values());
   }, [serverTeachers, allUsers, timeSlots]);
 
   // Фильтруем преподавателей по доступным слотам
   const filteredTeachers = React.useMemo(() => {
-    console.log('DEBUG: filteredTeachers recalculating', {
-      filtersCount: Object.keys(filters).length,
-      selectedDate,
-      selectedTimeRange,
-      filteredSlotsCount: filteredSlots.length,
-      allTeachersCount: allTeachers.length
-    });
-
     if (Object.keys(filters).length === 0 && !selectedDate && !selectedTimeRange) {
       // Если фильтры не применены, показываем ВСЕХ преподавателей
-      console.log('DEBUG: No filters applied, showing ALL teachers');
       return allTeachers;
     }
 
     // Если есть фильтры, показываем только тех преподавателей, у которых есть подходящие слоты
     const teachersWithSlots = allTeachers.filter(teacher => {
       const teacherSlots = filteredSlots.filter(slot => slot.teacherId === teacher.id);
-      const hasSlots = teacherSlots.length > 0;
-      console.log(`DEBUG: Teacher ${teacher.name} (${teacher.id}) has ${teacherSlots.length} slots: ${hasSlots}`);
-      return hasSlots;
+      return teacherSlots.length > 0;
     });
 
-    console.log(`DEBUG: Filtered teachers result: ${teachersWithSlots.length} out of ${allTeachers.length}`);
     return teachersWithSlots;
   }, [allTeachers, filters, selectedDate, selectedTimeRange, filteredSlots]);
 
@@ -328,12 +295,6 @@ const StudentHome: React.FC = () => {
   const [selectedTeacher, setSelectedTeacher] = useState<any>(null);
   const [showTeacherModal, setShowTeacherModal] = useState(false);
   const [showTeacherProfilePage, setShowTeacherProfilePage] = useState(false);
-  
-  // Отладочная информация для showTeacherProfilePage
-  useEffect(() => {
-    console.log('DEBUG: showTeacherProfilePage changed to:', showTeacherProfilePage);
-    console.log('DEBUG: selectedTeacher:', selectedTeacher);
-  }, [showTeacherProfilePage, selectedTeacher]);
   const [teacherPosts, setTeacherPosts] = useState<any[]>([]);
 
   // Автоматическая подгрузка постов преподавателя
@@ -362,23 +323,16 @@ const StudentHome: React.FC = () => {
     }
   }, [filters, selectedDate, selectedTimeRange]);
 
-  React.useEffect(() => {
-    console.log('DEBUG: timeSlots у ученика', timeSlots);
-  }, [timeSlots]);
+
 
   // Первоначальная загрузка слотов при монтировании компонента
   React.useEffect(() => {
-    console.log('DEBUG: Initial load - timeSlots count:', timeSlots.length);
-    
     if (timeSlots.length > 0) {
       loadAvailableSlots();
     }
   }, [timeSlots]);
 
   const handleTeacherClick = (teacher: any) => {
-    console.log('Teacher clicked:', teacher);
-    console.log('Teacher profile:', teacher.profile);
-    
     // Сначала пытаемся найти преподавателя в localStorage
     let teacherUser = getUserById(teacher.id);
     
@@ -394,15 +348,12 @@ const StudentHome: React.FC = () => {
       };
     }
     
-    console.log('Teacher user data:', teacherUser);
-    console.log('Setting showTeacherProfilePage to true');
     setSelectedTeacher(teacherUser);
     setShowTeacherProfilePage(true);
   };
 
   const handleBookLesson = (teacherId: string) => {
     // Здесь можно добавить логику для бронирования урока
-    console.log('Booking lesson for teacher:', teacherId);
     setShowTeacherProfilePage(false);
     // Можно открыть модальное окно для выбора времени
   };
