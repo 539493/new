@@ -16,7 +16,7 @@ import EmptyState from '../Shared/EmptyState';
 import { User as UserIcon } from 'lucide-react';
 
 const StudentHome: React.FC = () => {
-  const { getFilteredSlots, bookLesson, timeSlots, isConnected, allUsers } = useData();
+  const { getFilteredSlots, bookLesson, timeSlots, isConnected } = useData();
   const { user } = useAuth();
   
   const [filters, setFilters] = useState<FilterOptions>({});
@@ -61,35 +61,15 @@ const StudentHome: React.FC = () => {
   const locales = { 'ru': ru };
   const localizer = dateFnsLocalizer({ format, parse, startOfWeek, getDay, locales });
 
+  const { allUsers } = useData();
   const [serverTeachers, setServerTeachers] = useState<User[]>([]);
 
   // Загружаем преподавателей с сервера при монтировании
   useEffect(() => {
     fetch(`${SERVER_URL}/api/teachers`)
       .then(res => res.json())
-      .then(data => {
-        console.log('DEBUG: Fetched teachers from server:', data);
-        setServerTeachers(Array.isArray(data) ? data : []);
-      })
-      .catch((error) => {
-        console.error('DEBUG: Error fetching teachers from server:', error);
-        setServerTeachers([]);
-      });
-  }, []);
-
-  // Дополнительная загрузка пользователей из localStorage при монтировании
-  useEffect(() => {
-    try {
-      const localUsers = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
-      console.log('DEBUG: Loaded users from localStorage:', localUsers);
-      // Обновляем allUsers через контекст
-      if (localUsers.length > 0) {
-        // Это обновит allUsers в контексте
-        console.log('DEBUG: Found', localUsers.length, 'users in localStorage');
-      }
-    } catch (e) {
-      console.error('DEBUG: Error reading users from localStorage:', e);
-    }
+      .then(data => setServerTeachers(Array.isArray(data) ? data : []))
+      .catch(() => setServerTeachers([]));
   }, []);
 
   const socket = React.useRef<Socket | null>(null);
@@ -112,25 +92,6 @@ const StudentHome: React.FC = () => {
     
     return availableSlots;
   };
-
-  // Принудительная загрузка слотов при монтировании
-  useEffect(() => {
-    console.log('DEBUG: Initial load - timeSlots count:', timeSlots.length);
-    
-    // Загружаем слоты из localStorage напрямую
-    try {
-      const localSlots = JSON.parse(localStorage.getItem('tutoring_timeSlots') || '[]');
-      console.log('DEBUG: Slots from localStorage:', localSlots.length);
-      
-      if (localSlots.length > 0 && timeSlots.length === 0) {
-        console.log('DEBUG: Found slots in localStorage but not in context, forcing reload');
-        // Если есть слоты в localStorage, но нет в контексте, перезагружаем страницу
-        window.location.reload();
-      }
-    } catch (e) {
-      console.error('DEBUG: Error reading slots from localStorage:', e);
-    }
-  }, [timeSlots.length]);
 
   const applyFilters = () => {
     console.log('Applying filters:', filters);
@@ -283,7 +244,7 @@ const StudentHome: React.FC = () => {
     console.log('DEBUG: teachersFromUsers:', teachersFromUsers);
 
     // Объединяем и убираем дубликаты
-    const allTeachersMap = new Map<string, any>();
+    const allTeachersMap = new Map();
     [...teachersFromServer, ...teachersFromUsers].forEach(teacher => {
       if (!allTeachersMap.has(teacher.id)) {
         allTeachersMap.set(teacher.id, teacher);
@@ -306,15 +267,23 @@ const StudentHome: React.FC = () => {
       allTeachersCount: allTeachers.length
     });
 
-    // Всегда показываем всех преподавателей, независимо от фильтров
-    console.log('DEBUG: Showing ALL teachers regardless of filters');
-    return allTeachers;
-  }, [allTeachers, filters, selectedDate, selectedTimeRange, filteredSlots]);
+    if (Object.keys(filters).length === 0 && !selectedDate && !selectedTimeRange) {
+      // Если фильтры не применены, показываем ВСЕХ преподавателей
+      console.log('DEBUG: No filters applied, showing ALL teachers');
+      return allTeachers;
+    }
 
-  // Принудительно обновляем список преподавателей при изменении данных
-  useEffect(() => {
-    console.log('DEBUG: Teachers data changed - serverTeachers:', serverTeachers.length, 'allUsers:', allUsers?.length);
-  }, [serverTeachers, allUsers]);
+    // Если есть фильтры, показываем только тех преподавателей, у которых есть подходящие слоты
+    const teachersWithSlots = allTeachers.filter(teacher => {
+      const teacherSlots = filteredSlots.filter(slot => slot.teacherId === teacher.id);
+      const hasSlots = teacherSlots.length > 0;
+      console.log(`DEBUG: Teacher ${teacher.name} (${teacher.id}) has ${teacherSlots.length} slots: ${hasSlots}`);
+      return hasSlots;
+    });
+
+    console.log(`DEBUG: Filtered teachers result: ${teachersWithSlots.length} out of ${allTeachers.length}`);
+    return teachersWithSlots;
+  }, [allTeachers, filters, selectedDate, selectedTimeRange, filteredSlots]);
 
   function getTeacherProfileById(teacherId: string) {
     const teacher = serverTeachers.find(t => t.id === teacherId) ||
@@ -367,18 +336,6 @@ const StudentHome: React.FC = () => {
 
   React.useEffect(() => {
     console.log('DEBUG: timeSlots у ученика', timeSlots);
-    console.log('DEBUG: allUsers from context:', allUsers);
-    console.log('DEBUG: serverTeachers:', serverTeachers);
-    
-    // Проверяем localStorage напрямую
-    try {
-      const localUsers = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
-      const localSlots = JSON.parse(localStorage.getItem('tutoring_timeSlots') || '[]');
-      console.log('DEBUG: localStorage tutoring_users:', localUsers);
-      console.log('DEBUG: localStorage tutoring_timeSlots:', localSlots);
-    } catch (e) {
-      console.error('DEBUG: Error reading localStorage:', e);
-    }
   }, [timeSlots]);
 
   // Первоначальная загрузка слотов при монтировании компонента
@@ -481,19 +438,6 @@ const StudentHome: React.FC = () => {
             <div className="text-xs opacity-90">Данные</div>
           </div>
         </button>
-       
-       <button
-         onClick={() => window.location.reload()}
-         className="group bg-gradient-to-r from-orange-500 to-red-500 text-white px-5 py-3 rounded-xl font-semibold text-base hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center space-x-2"
-       >
-         <div className="p-1.5 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
-           <RefreshCw className="h-5 w-5" />
-         </div>
-         <div className="text-left">
-           <div className="font-bold">Перезагрузить</div>
-           <div className="text-xs opacity-90">Страницу</div>
-         </div>
-       </button>
       </div>
 
       {/* Search and Filter */}
@@ -728,7 +672,7 @@ const StudentHome: React.FC = () => {
           filteredTeachers.map(teacher => {
             const profile = teacher.profile;
             // Получаем слоты этого преподавателя из всех слотов (не только отфильтрованных)
-            const allTeacherSlots = timeSlots.filter(slot => slot.teacherId === teacher.id && !(slot as any).isDeleted);
+            const allTeacherSlots = timeSlots.filter(slot => slot.teacherId === teacher.id);
             const availableTeacherSlots = allTeacherSlots.filter(slot => !slot.isBooked);
             
             // Для отображения цены используем все слоты преподавателя
@@ -737,14 +681,6 @@ const StudentHome: React.FC = () => {
             
             // Определяем, есть ли доступные слоты у этого преподавателя
             const hasAvailableSlots = availableTeacherSlots.length > 0;
-            
-            // Показываем всех преподавателей, даже без слотов
-            console.log(`DEBUG: Teacher ${teacher.name} (${teacher.id}): ${availableTeacherSlots.length} available slots out of ${allTeacherSlots.length} total`);
-            
-            // Если у преподавателя нет слотов, показываем информацию о профиле
-            const displayPrice = allTeacherSlots.length > 0 
-              ? (minPrice === maxPrice ? `${minPrice} ₽` : `${minPrice}-${maxPrice} ₽`)
-              : profile?.hourlyRate ? `${profile.hourlyRate} ₽` : 'Цена не указана';
             
             return (
               <div 
@@ -844,17 +780,10 @@ const StudentHome: React.FC = () => {
                     <div className="flex items-center justify-center space-x-1 text-sm text-gray-600">
                       <MapPin className="h-4 w-4" />
                       <span>{profile?.city || 'Город не указан'}</span>
-                    </div>
+                  </div>
                   </div>
                   
-                  {/* Price */}
-                  <div className="text-center mb-4">
-                    <div className="flex items-center justify-center space-x-1 text-sm text-gray-600">
-                      <span className="font-semibold text-green-600">{displayPrice}</span>
-                    </div>
-                  </div>
-                  
-                  {/* Action Buttons */}
+                                    {/* Action Buttons */}
                   <div className="space-y-2">
                   <button
                     onClick={(e) => {
