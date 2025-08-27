@@ -220,6 +220,7 @@ const StudentHome: React.FC = () => {
     console.log('DEBUG: Building allTeachers...');
     console.log('DEBUG: serverTeachers:', serverTeachers);
     console.log('DEBUG: allUsers:', allUsers);
+    console.log('DEBUG: timeSlots:', timeSlots);
     
     // Получаем всех преподавателей из разных источников
     const teachersFromServer = serverTeachers.map(teacher => ({
@@ -327,6 +328,12 @@ const StudentHome: React.FC = () => {
   const [selectedTeacher, setSelectedTeacher] = useState<any>(null);
   const [showTeacherModal, setShowTeacherModal] = useState(false);
   const [showTeacherProfilePage, setShowTeacherProfilePage] = useState(false);
+  
+  // Отладочная информация для showTeacherProfilePage
+  useEffect(() => {
+    console.log('DEBUG: showTeacherProfilePage changed to:', showTeacherProfilePage);
+    console.log('DEBUG: selectedTeacher:', selectedTeacher);
+  }, [showTeacherProfilePage, selectedTeacher]);
   const [teacherPosts, setTeacherPosts] = useState<any[]>([]);
 
   // Автоматическая подгрузка постов преподавателя
@@ -370,8 +377,25 @@ const StudentHome: React.FC = () => {
 
   const handleTeacherClick = (teacher: any) => {
     console.log('Teacher clicked:', teacher);
-    const teacherUser = getUserById(teacher.id);
+    console.log('Teacher profile:', teacher.profile);
+    
+    // Сначала пытаемся найти преподавателя в localStorage
+    let teacherUser = getUserById(teacher.id);
+    
+    // Если не найден в localStorage, используем данные с сервера
+    if (!teacherUser) {
+      teacherUser = {
+        id: teacher.id,
+        name: teacher.name,
+        email: teacher.profile?.email || '',
+        avatar: teacher.avatar,
+        role: 'teacher',
+        profile: teacher.profile
+      };
+    }
+    
     console.log('Teacher user data:', teacherUser);
+    console.log('Setting showTeacherProfilePage to true');
     setSelectedTeacher(teacherUser);
     setShowTeacherProfilePage(true);
   };
