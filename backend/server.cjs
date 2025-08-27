@@ -717,8 +717,20 @@ function getTeachersFromSlots() {
 
 // Endpoint для получения преподавателей
 app.get('/api/teachers', (req, res) => {
-  // Собираем преподавателей из teacherProfiles
-  const teachers = Object.entries(teacherProfiles).map(([id, profile]) => ({
+  const isTest = (v) => typeof v === 'string' && (v.toLowerCase().includes('test') || v.toLowerCase().includes('тест'));
+  const DEMO_TEACHER_NAMES = new Set([
+    'михаил сидоров',
+    'анна петрова',
+    'елена козлова',
+    'дивитай светлана сергеевна',
+    'грин',
+  ]);
+  const isDemoName = (v) => typeof v === 'string' && DEMO_TEACHER_NAMES.has(v.toLowerCase());
+
+  // Собираем преподавателей из teacherProfiles и фильтруем тест/демо записи
+  const teachers = Object.entries(teacherProfiles)
+    .filter(([, profile]) => !isTest(profile?.name) && !isDemoName(profile?.name) && !isTest(profile?.email))
+    .map(([id, profile]) => ({
     id,
     name: profile.name || '',
     avatar: profile.avatar || '',

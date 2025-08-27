@@ -187,14 +187,22 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         const v = value.toLowerCase();
         return v.includes('test') || v.includes('тест');
       };
-      const demoNames = new Set(['михаил сидоров','анна петрова','елена козлова','дивитай светлана сергеевна','грин']);
+      const demoNames = new Set([
+        'михаил сидоров',
+        'анна петрова',
+        'елена козлова',
+        'дивитай светлана сергеевна',
+        'грин',
+      ]);
       const isDemo = (v?: string) => !!v && demoNames.has(v.toLowerCase());
 
       // Пользователи
       const users: User[] = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
-      const cleanedUsers = users.filter(u =>
-        !testMatcher(u.name) && !testMatcher((u as any).email) && !isDemo(u.name) && !(u.id || '').toString().startsWith('test_')
-      );
+      const cleanedUsers = users.filter(u => {
+        const name = (u.name || (u as any).profile?.name || '').toString();
+        const email = ((u as any).email || (u as any).profile?.email || '').toString();
+        return !testMatcher(name) && !testMatcher(email) && !isDemo(name) && !(u.id || '').toString().startsWith('test_');
+      });
       if (cleanedUsers.length !== users.length) {
         localStorage.setItem('tutoring_users', JSON.stringify(cleanedUsers));
         setAllUsers(cleanedUsers);
@@ -203,9 +211,11 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
       // Слоты
       const slots: any[] = JSON.parse(localStorage.getItem('tutoring_timeSlots') || '[]');
-      const cleanedSlots = slots.filter(s =>
-        !testMatcher(s.teacherName) && !testMatcher(s.subject) && !isDemo(s.teacherName) && !(s.id || '').toString().startsWith('test_') && !s.isDeleted
-      );
+      const cleanedSlots = slots.filter(s => {
+        const tname = (s.teacherName || '').toString();
+        const subj = (s.subject || '').toString();
+        return !testMatcher(tname) && !testMatcher(subj) && !isDemo(tname) && !(s.id || '').toString().startsWith('test_') && !s.isDeleted;
+      });
       if (cleanedSlots.length !== slots.length) {
         localStorage.setItem('tutoring_timeSlots', JSON.stringify(cleanedSlots));
         setTimeSlots(cleanedSlots as TimeSlot[]);
@@ -214,9 +224,11 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
       // Уроки
       const lessonsLs: any[] = JSON.parse(localStorage.getItem('tutoring_lessons') || '[]');
-      const cleanedLessons = lessonsLs.filter(l =>
-        !testMatcher(l.teacherName) && !testMatcher(l.studentName) && !isDemo(l.teacherName) && !(l.id || '').toString().startsWith('test_')
-      );
+      const cleanedLessons = lessonsLs.filter(l => {
+        const tname = (l.teacherName || '').toString();
+        const sname = (l.studentName || '').toString();
+        return !testMatcher(tname) && !testMatcher(sname) && !isDemo(tname) && !(l.id || '').toString().startsWith('test_');
+      });
       if (cleanedLessons.length !== lessonsLs.length) {
         localStorage.setItem('tutoring_lessons', JSON.stringify(cleanedLessons));
         setLessons(cleanedLessons as Lesson[]);
