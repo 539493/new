@@ -240,12 +240,33 @@ const StudentHome: React.FC = () => {
         profile: user.profile
       })) || [];
 
+    // Также получаем преподавателей из слотов, если они еще не добавлены
+    const teachersFromSlots = timeSlots
+      .filter(slot => slot.teacherId && slot.teacherName)
+      .map(slot => ({
+        id: slot.teacherId,
+        name: slot.teacherName,
+        avatar: slot.teacherAvatar,
+        rating: slot.rating,
+        profile: {
+          subjects: slot.subject ? [slot.subject] : [],
+          experience: slot.experience || 'beginner',
+          grades: slot.grades || [],
+          goals: slot.goals || [],
+          city: '',
+          bio: '',
+          rating: slot.rating || 0,
+          hourlyRate: slot.price || 0,
+        }
+      }));
+
     console.log('DEBUG: teachersFromServer:', teachersFromServer);
     console.log('DEBUG: teachersFromUsers:', teachersFromUsers);
+    console.log('DEBUG: teachersFromSlots:', teachersFromSlots);
 
     // Объединяем и убираем дубликаты
     const allTeachersMap = new Map();
-    [...teachersFromServer, ...teachersFromUsers].forEach(teacher => {
+    [...teachersFromServer, ...teachersFromUsers, ...teachersFromSlots].forEach(teacher => {
       if (!allTeachersMap.has(teacher.id)) {
         allTeachersMap.set(teacher.id, teacher);
       }
@@ -255,7 +276,7 @@ const StudentHome: React.FC = () => {
     console.log('DEBUG: Final allTeachers result:', result);
 
     return result;
-  }, [serverTeachers, allUsers]);
+  }, [serverTeachers, allUsers, timeSlots]);
 
   // Фильтруем преподавателей по доступным слотам
   const filteredTeachers = React.useMemo(() => {
@@ -617,7 +638,7 @@ const StudentHome: React.FC = () => {
                   {selectedDate && (
                     <div className="mt-4 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
                       <div className="flex items-center space-x-2 mb-2">
-                        <Calendar className="h-4 w-4 text-blue-600" />
+                        <CalendarIcon className="h-4 w-4 text-blue-600" />
                         <span className="text-sm font-semibold text-blue-800">Выбрана дата:</span>
                       </div>
                       <p className="text-base font-medium text-blue-900">
