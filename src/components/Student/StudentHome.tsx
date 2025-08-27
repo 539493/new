@@ -17,7 +17,6 @@ import { User as UserIcon } from 'lucide-react';
 
 const StudentHome: React.FC = () => {
   const { getFilteredSlots, bookLesson, timeSlots, isConnected, allUsers } = useData();
-  const { purgeTestData } = useData();
   const { user } = useAuth();
   
   const [filters, setFilters] = useState<FilterOptions>({});
@@ -78,6 +77,21 @@ const StudentHome: React.FC = () => {
       });
   }, []);
 
+  // Дополнительная загрузка пользователей из localStorage при монтировании
+  useEffect(() => {
+    try {
+      const localUsers = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
+      console.log('DEBUG: Loaded users from localStorage:', localUsers);
+      // Обновляем allUsers через контекст
+      if (localUsers.length > 0) {
+        // Это обновит allUsers в контексте
+        console.log('DEBUG: Found', localUsers.length, 'users in localStorage');
+      }
+    } catch (e) {
+      console.error('DEBUG: Error reading users from localStorage:', e);
+    }
+  }, []);
+
   const socket = React.useRef<Socket | null>(null);
   React.useEffect(() => {
     if (!socket.current) {
@@ -98,6 +112,25 @@ const StudentHome: React.FC = () => {
     
     return availableSlots;
   };
+
+  // Принудительная загрузка слотов при монтировании
+  useEffect(() => {
+    console.log('DEBUG: Initial load - timeSlots count:', timeSlots.length);
+    
+    // Загружаем слоты из localStorage напрямую
+    try {
+      const localSlots = JSON.parse(localStorage.getItem('tutoring_timeSlots') || '[]');
+      console.log('DEBUG: Slots from localStorage:', localSlots.length);
+      
+      if (localSlots.length > 0 && timeSlots.length === 0) {
+        console.log('DEBUG: Found slots in localStorage but not in context, forcing reload');
+        // Если есть слоты в localStorage, но нет в контексте, перезагружаем страницу
+        window.location.reload();
+      }
+    } catch (e) {
+      console.error('DEBUG: Error reading slots from localStorage:', e);
+    }
+  }, [timeSlots.length]);
 
   const applyFilters = () => {
     console.log('Applying filters:', filters);
@@ -278,6 +311,11 @@ const StudentHome: React.FC = () => {
     return allTeachers;
   }, [allTeachers, filters, selectedDate, selectedTimeRange, filteredSlots]);
 
+  // Принудительно обновляем список преподавателей при изменении данных
+  useEffect(() => {
+    console.log('DEBUG: Teachers data changed - serverTeachers:', serverTeachers.length, 'allUsers:', allUsers?.length);
+  }, [serverTeachers, allUsers]);
+
   function getTeacherProfileById(teacherId: string) {
     const teacher = serverTeachers.find(t => t.id === teacherId) ||
       allUsers?.find((u: any) => u.id === teacherId && u.role === 'teacher');
@@ -367,15 +405,6 @@ const StudentHome: React.FC = () => {
     // Можно открыть модальное окно для выбора времени
   };
 
-  // Функция для ручного удаления тестовых данных
-  const handlePurgeTestData = () => {
-    if (window.confirm('Удалить все тестовые данные? Это действие нельзя отменить.')) {
-      purgeTestData();
-      // Перезагружаем страницу для обновления данных
-      window.location.reload();
-    }
-  };
-
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
               <div className="mb-6">
@@ -454,15 +483,15 @@ const StudentHome: React.FC = () => {
         </button>
        
        <button
-         onClick={handlePurgeTestData}
-         className="group bg-gradient-to-r from-red-500 to-pink-500 text-white px-5 py-3 rounded-xl font-semibold text-base hover:from-red-600 hover:to-pink-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center space-x-2"
+         onClick={() => window.location.reload()}
+         className="group bg-gradient-to-r from-orange-500 to-red-500 text-white px-5 py-3 rounded-xl font-semibold text-base hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center space-x-2"
        >
          <div className="p-1.5 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
-           <X className="h-5 w-5" />
+           <RefreshCw className="h-5 w-5" />
          </div>
          <div className="text-left">
-           <div className="font-bold">Очистить</div>
-           <div className="text-xs opacity-90">Тестовые данные</div>
+           <div className="font-bold">Перезагрузить</div>
+           <div className="text-xs opacity-90">Страницу</div>
          </div>
        </button>
       </div>
@@ -712,6 +741,11 @@ const StudentHome: React.FC = () => {
             // Показываем всех преподавателей, даже без слотов
             console.log(`DEBUG: Teacher ${teacher.name} (${teacher.id}): ${availableTeacherSlots.length} available slots out of ${allTeacherSlots.length} total`);
             
+            // Если у преподавателя нет слотов, показываем информацию о профиле
+            const displayPrice = allTeacherSlots.length > 0 
+              ? (minPrice === maxPrice ? `${minPrice} ₽` : `${minPrice}-${maxPrice} ₽`)
+              : profile?.hourlyRate ? `${profile.hourlyRate} ₽` : 'Цена не указана';
+            
             return (
               <div 
                 key={teacher.id} 
@@ -810,10 +844,17 @@ const StudentHome: React.FC = () => {
                     <div className="flex items-center justify-center space-x-1 text-sm text-gray-600">
                       <MapPin className="h-4 w-4" />
                       <span>{profile?.city || 'Город не указан'}</span>
-                  </div>
+                    </div>
                   </div>
                   
-                                    {/* Action Buttons */}
+                  {/* Price */}
+                  <div className="text-center mb-4">
+                    <div className="flex items-center justify-center space-x-1 text-sm text-gray-600">
+                      <span className="font-semibold text-green-600">{displayPrice}</span>
+                    </div>
+                  </div>
+                  
+                  {/* Action Buttons */}
                   <div className="space-y-2">
                   <button
                     onClick={(e) => {
