@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Calendar, Clock, MessageCircle, User, MapPin, Users, X, Edit, Trash2 } from 'lucide-react';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
-import VideoChatLink from '../Shared/VideoChatLink';
 
 const StudentLessons: React.FC = () => {
   const { lessons, cancelLesson, rescheduleLesson, getOrCreateChat } = useData();
@@ -130,11 +129,10 @@ const StudentLessons: React.FC = () => {
               </button>
               {/* Видеозвонок */}
               {lesson.format === 'online' && (
-                <VideoChatLink
-                  lessonId={lesson.id}
-                  userName={user?.name || 'Student'}
-                  role="student"
-                />
+                <div className="flex items-center space-x-1 px-3 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                  <Video className="h-4 w-4" />
+                  <span className="text-sm">Видеозвонок</span>
+                </div>
               )}
             </div>
             

@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { Calendar, Clock, Plus, Trash2, Edit, MapPin, Users, MessageCircle, CheckCircle, Bell, X } from 'lucide-react';
+import { Calendar, Clock, Plus, Trash2, Edit, MapPin, Users, MessageCircle, CheckCircle, Bell, X, Video } from 'lucide-react';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { TimeSlot, Lesson } from '../../types';
-import VideoChatLink from '../Shared/VideoChatLink';
 
 // убираем локальный socket, используем глобальный из DataContext
 
@@ -557,11 +556,10 @@ const TeacherSlots: React.FC = () => {
               )}
               {selectedSlot && selectedSlot.isBooked && selectedSlot.format === 'online' && (
                 <div className="flex items-center gap-2">
-                  <VideoChatLink
-                    lessonId={selectedSlot.lessonId || selectedSlot.id}
-                    userName={user?.name || 'Teacher'}
-                    role="teacher"
-                  />
+                  <div className="flex items-center space-x-1 px-3 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                    <Video className="h-4 w-4" />
+                    <span className="text-sm">Видеозвонок</span>
+                  </div>
                 </div>
               )}
               {selectedSlot && selectedSlot.isBooked && (
@@ -582,11 +580,10 @@ const TeacherSlots: React.FC = () => {
                   </button>
                   {/* Видеозвонок */}
                   {selectedLesson.format === 'online' && (
-                    <VideoChatLink
-                      lessonId={selectedLesson.id}
-                      userName={user?.name || 'Teacher'}
-                      role="teacher"
-                    />
+                    <div className="flex items-center space-x-1 px-3 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                      <Video className="h-4 w-4" />
+                      <span className="text-sm">Видеозвонок</span>
+                    </div>
                   )}
                   <button onClick={() => { completeLesson(selectedLesson.id); handleCloseModal(); }} className="flex items-center gap-2 bg-amber-100 text-amber-700 px-4 py-2 rounded-lg hover:bg-amber-200">
                     <CheckCircle className="w-5 h-5" /> Завершить урок

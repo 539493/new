@@ -13,6 +13,7 @@ import TeacherProfilePage from './TeacherProfilePage';
 import StudentCalendar from './StudentCalendar';
 import BookingModal from '../Shared/BookingModal';
 import EmptyState from '../Shared/EmptyState';
+import UsersList from '../Shared/UsersList';
 import { User as UserIcon } from 'lucide-react';
 
 const StudentHome: React.FC = () => {
@@ -41,6 +42,7 @@ const StudentHome: React.FC = () => {
   const [showCalendar, setShowCalendar] = useState(false);
   const [showTeacherCalendarModal, setShowTeacherCalendarModal] = useState(false);
   const [selectedTeacherForCalendar, setSelectedTeacherForCalendar] = useState<any>(null);
+  const [showUsersList, setShowUsersList] = useState(false);
   const [currentWeekStart, setCurrentWeekStart] = useState(() => {
     const now = new Date();
     const dayOfWeek = now.getDay();
@@ -68,46 +70,62 @@ const StudentHome: React.FC = () => {
     console.log('🔄 StudentHome: Начинаем загрузку преподавателей...');
     console.log('🔄 StudentHome: SERVER_URL =', SERVER_URL);
     
-    // Загружаем преподавателей через API /api/teachers
-    fetch(`${SERVER_URL}/api/teachers`)
-      .then(res => {
-        console.log('🔄 StudentHome: Ответ от /api/teachers:', res.status, res.ok);
-        if (!res.ok) {
-          console.warn('Failed to load teachers from /api/teachers:', res.status);
-          return [];
-        }
-        return res.json();
-      })
-      .then(data => {
-        console.log('🔄 StudentHome: Данные от /api/teachers:', data);
-        setServerTeachers(Array.isArray(data) ? data : []);
-      })
-      .catch((error) => {
-        console.error('Error loading teachers from /api/teachers:', error);
-        setServerTeachers([]);
-      });
-      
-    // Также загружаем всех пользователей через API /api/users
-    fetch(`${SERVER_URL}/api/users`)
-      .then(res => {
-        console.log('🔄 StudentHome: Ответ от /api/users:', res.status, res.ok);
-        if (!res.ok) {
-          console.warn('Failed to load users from /api/users:', res.status);
-          return [];
-        }
-        return res.json();
-      })
-      .then(data => {
-        console.log('🔄 StudentHome: Данные от /api/users:', data);
-        const teachers = data.filter((user: any) => user.role === 'teacher');
-        console.log('🔄 StudentHome: Преподаватели из /api/users:', teachers.length);
-        // Обновляем allUsers в контексте
-        refreshUsers();
-      })
-      .catch((error) => {
-        console.error('Error loading users from /api/users:', error);
-        console.log('Using local data only');
-      });
+    const loadTeachers = () => {
+      // Загружаем преподавателей через API /api/teachers
+      fetch(`${SERVER_URL}/api/teachers`)
+        .then(res => {
+          console.log('🔄 StudentHome: Ответ от /api/teachers:', res.status, res.ok);
+          if (!res.ok) {
+            console.warn('Failed to load teachers from /api/teachers:', res.status);
+            return [];
+          }
+          return res.json();
+        })
+        .then(data => {
+          console.log('🔄 StudentHome: Данные от /api/teachers:', data);
+          setServerTeachers(Array.isArray(data) ? data : []);
+        })
+        .catch((error) => {
+          console.error('Error loading teachers from /api/teachers:', error);
+          setServerTeachers([]);
+        });
+        
+      // Также загружаем всех пользователей через API /api/users
+      fetch(`${SERVER_URL}/api/users`)
+        .then(res => {
+          console.log('🔄 StudentHome: Ответ от /api/users:', res.status, res.ok);
+          if (!res.ok) {
+            console.warn('Failed to load users from /api/users:', res.status);
+            return [];
+          }
+          return res.json();
+        })
+        .then(data => {
+          console.log('🔄 StudentHome: Данные от /api/users:', data);
+          const teachers = data.filter((user: any) => user.role === 'teacher');
+          console.log('🔄 StudentHome: Преподаватели из /api/users:', teachers.length);
+          // Обновляем allUsers в контексте
+          refreshUsers();
+        })
+        .catch((error) => {
+          console.error('Error loading users from /api/users:', error);
+          console.log('Using local data only');
+        });
+    };
+    
+    // Первоначальная загрузка
+    loadTeachers();
+    
+    // Автоматическая синхронизация каждые 30 секунд
+    const intervalId = setInterval(() => {
+      console.log('🔄 StudentHome: Автоматическая синхронизация данных...');
+      loadTeachers();
+    }, 30000);
+    
+    // Очистка интервала при размонтировании
+    return () => {
+      clearInterval(intervalId);
+    };
   }, []);
 
   const socket = React.useRef<Socket | null>(null);
@@ -511,6 +529,19 @@ const StudentHome: React.FC = () => {
           <div className="text-left">
             <div className="font-bold">Календарь</div>
             <div className="text-xs opacity-90">Слоты</div>
+          </div>
+        </button>
+        
+        <button
+          onClick={() => setShowUsersList(!showUsersList)}
+          className="group bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 text-white px-6 py-3 rounded-xl font-semibold text-base hover:from-orange-600 hover:via-red-600 hover:to-pink-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center space-x-2"
+        >
+          <div className="p-1.5 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
+            <Users className="h-5 w-5" />
+          </div>
+          <div className="text-left">
+            <div className="font-bold">Пользователи</div>
+            <div className="text-xs opacity-90">Синхронизация</div>
           </div>
         </button>
         
@@ -1387,6 +1418,28 @@ const StudentHome: React.FC = () => {
                 <h4 className="font-medium text-gray-900 mb-2">Доступные слоты: {timeSlots.filter(slot => slot.teacherId === selectedTeacherForCalendar?.id && !slot.isBooked).length}</h4>
                 <p className="text-sm text-gray-600">Нажмите на любой слот в календаре для бронирования</p>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Users List Modal */}
+      {showUsersList && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-gray-900">Синхронизация пользователей</h2>
+                <button
+                  onClick={() => setShowUsersList(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+            </div>
+            <div className="p-6">
+              <UsersList />
             </div>
           </div>
         </div>

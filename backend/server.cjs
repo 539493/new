@@ -80,66 +80,37 @@ const io = new Server(server, {
 
 // Функции для работы с данными
 const DATA_FILE = path.join(__dirname, 'server_data.json');
-const INITIAL_DATA_FILE = path.join(__dirname, 'initial-data.json');
 
 function loadServerData() {
   try {
     if (fs.existsSync(DATA_FILE)) {
       const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
       console.log('Loaded server data from file');
-      
-      // Если нет преподавателей в сохраненных данных, загружаем из initial-data.json
-      if (!data.teacherProfiles || Object.keys(data.teacherProfiles).length === 0) {
-        console.log('No teacher profiles found in server data, loading from initial-data.json');
-        if (fs.existsSync(INITIAL_DATA_FILE)) {
-          const initialData = JSON.parse(fs.readFileSync(INITIAL_DATA_FILE, 'utf8'));
-          data.teacherProfiles = initialData.teacherProfiles || {};
-          data.studentProfiles = initialData.studentProfiles || {};
-          data.timeSlots = initialData.timeSlots || [];
-          console.log('Loaded initial data:', {
-            teachers: Object.keys(data.teacherProfiles).length,
-            students: Object.keys(data.studentProfiles).length,
-            slots: data.timeSlots.length
-          });
-        }
-      }
-      
       return data;
-    }
-  } catch (error) {
-    console.error('Error loading server data:', error);
-  }
-  
-  // Если файл server_data.json не существует, загружаем из initial-data.json
-  try {
-    if (fs.existsSync(INITIAL_DATA_FILE)) {
-      const initialData = JSON.parse(fs.readFileSync(INITIAL_DATA_FILE, 'utf8'));
-      console.log('Loading initial data from initial-data.json');
+    } else {
+      console.log('No server data file found, creating new one');
       return {
-        teacherProfiles: initialData.teacherProfiles || {},
-        studentProfiles: initialData.studentProfiles || {},
+        teacherProfiles: {},
+        studentProfiles: {},
         overbookingRequests: [],
-        timeSlots: initialData.timeSlots || [],
+        timeSlots: [],
         lessons: [],
         chats: [],
-        posts: [],
-        notifications: []
+        posts: []
       };
     }
   } catch (error) {
-    console.error('Error loading initial data:', error);
+    console.error('Error loading server data:', error);
+    return {
+      teacherProfiles: {},
+      studentProfiles: {},
+      overbookingRequests: [],
+      timeSlots: [],
+      lessons: [],
+      chats: [],
+      posts: []
+    };
   }
-  
-  return {
-    teacherProfiles: {},
-    studentProfiles: {},
-    overbookingRequests: [],
-    timeSlots: [],
-    lessons: [],
-    chats: [],
-    posts: [],
-    notifications: []
-  };
 }
 
 function saveServerData() {
@@ -151,8 +122,7 @@ function saveServerData() {
       timeSlots,
       lessons,
       chats,
-      posts,
-      notifications
+      posts
     };
     console.log('=== SAVING SERVER DATA ===');
     console.log('Data file path:', DATA_FILE);
@@ -163,7 +133,6 @@ function saveServerData() {
     console.log('Lessons count:', lessons.length);
     console.log('Chats count:', chats.length);
     console.log('Posts count:', posts.length);
-    console.log('Notifications count:', notifications.length);
     
     fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
     console.log('Server data saved to file successfully');
@@ -194,8 +163,6 @@ let overbookingRequests = Array.isArray(serverData.overbookingRequests) ? server
 let pendingOverbookingForTeacher = {};
 // Хранилище для постов
 let posts = Array.isArray(serverData.posts) ? serverData.posts : [];
-// Хранилище для уведомлений
-let notifications = Array.isArray(serverData.notifications) ? serverData.notifications : [];
 
 // Тестовое сохранение при запуске для проверки работы функции
 console.log('=== TESTING SAVE FUNCTION ===');
@@ -242,6 +209,9 @@ io.on('connection', (socket) => {
 
   // Отправляем профили учеников новому клиенту
   socket.emit('studentProfiles', studentProfiles);
+  
+  // Отправляем профили преподавателей новому клиенту
+  socket.emit('teacherProfiles', teacherProfiles);
   
   // Отправляем все слоты для синхронизации
   socket.emit('allSlots', timeSlots);
@@ -373,6 +343,17 @@ io.on('connection', (socket) => {
       io.emit('profileUpdated', { type: 'student', userId: data.studentId, profile: data.profile });
       // Старое событие для обратной совместимости
       io.emit('studentProfileUpdated', { studentId: data.studentId, profile: data.profile });
+      // Отправляем событие регистрации для синхронизации между устройствами
+      const userData = {
+        id: data.studentId,
+        email: data.profile.email || '',
+        name: data.profile.name || '',
+        nickname: data.profile.nickname || '',
+        role: 'student',
+        phone: data.profile.phone || '',
+        createdAt: data.profile.createdAt || new Date().toISOString()
+      };
+      io.emit('userRegistered', userData);
       console.log('Сервер рассылает profileUpdated (student):', { userId: data.studentId, profile: data.profile });
     }
   });
@@ -389,6 +370,17 @@ io.on('connection', (socket) => {
       io.emit('profileUpdated', { type: 'teacher', userId: data.teacherId, profile: data.profile });
       // Старое событие для обратной совместимости
       io.emit('teacherProfileUpdated', { teacherId: data.teacherId, profile: data.profile });
+      // Отправляем событие регистрации для синхронизации между устройствами
+      const userData = {
+        id: data.teacherId,
+        email: data.profile.email || '',
+        name: data.profile.name || '',
+        nickname: data.profile.nickname || '',
+        role: 'teacher',
+        phone: data.profile.phone || '',
+        createdAt: data.profile.createdAt || new Date().toISOString()
+      };
+      io.emit('userRegistered', userData);
       console.log('Сервер рассылает profileUpdated (teacher):', { userId: data.teacherId, profile: data.profile });
     } else {
       console.log('Invalid profile data received');

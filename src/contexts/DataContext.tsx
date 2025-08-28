@@ -439,6 +439,57 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
     newSocket.on('studentProfiles', (profiles: Record<string, StudentProfile>) => {
       setStudentProfiles(profiles || {});
+      console.log('[SOCKET] Received student profiles:', Object.keys(profiles).length);
+      // Обновляем список всех пользователей с профилями студентов
+      const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
+      const updatedUsers = [...users];
+      
+      Object.entries(profiles).forEach(([studentId, profile]) => {
+        const existingUserIndex = updatedUsers.findIndex((u: User) => u.id === studentId);
+        if (existingUserIndex >= 0) {
+          updatedUsers[existingUserIndex] = { ...updatedUsers[existingUserIndex], profile };
+        } else {
+          updatedUsers.push({
+            id: studentId,
+            email: profile.email || '',
+            name: profile.name || '',
+            nickname: profile.nickname || '',
+            role: 'student',
+            phone: profile.phone || '',
+            profile
+          });
+        }
+      });
+      
+      localStorage.setItem('tutoring_users', JSON.stringify(updatedUsers));
+      setAllUsers(updatedUsers);
+    });
+    
+    newSocket.on('teacherProfiles', (profiles: Record<string, TeacherProfile>) => {
+      console.log('[SOCKET] Received teacher profiles:', Object.keys(profiles).length);
+      // Обновляем список всех пользователей с профилями преподавателей
+      const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
+      const updatedUsers = [...users];
+      
+      Object.entries(profiles).forEach(([teacherId, profile]) => {
+        const existingUserIndex = updatedUsers.findIndex((u: User) => u.id === teacherId);
+        if (existingUserIndex >= 0) {
+          updatedUsers[existingUserIndex] = { ...updatedUsers[existingUserIndex], profile };
+        } else {
+          updatedUsers.push({
+            id: teacherId,
+            email: profile.email || '',
+            name: profile.name || '',
+            nickname: profile.nickname || '',
+            role: 'teacher',
+            phone: profile.phone || '',
+            profile
+          });
+        }
+      });
+      
+      localStorage.setItem('tutoring_users', JSON.stringify(updatedUsers));
+      setAllUsers(updatedUsers);
     });
     newSocket.on('studentProfileUpdated', (data: { studentId: string; profile: StudentProfile }) => {
       console.log('Получено обновление профиля:', data);

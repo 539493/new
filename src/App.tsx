@@ -11,7 +11,6 @@ import TeacherCalendar from './components/Teacher/TeacherCalendar';
 import StudentLessons from './components/Student/StudentLessons';
 import StudentCalendar from './components/Student/StudentCalendar';
 import TeacherProfilePage from './components/Student/TeacherProfilePage';
-import WebSocketTest from './components/Shared/WebSocketTest';
 import ChatList from './components/Shared/ChatList';
 import ProfileForm from './components/Shared/ProfileForm';
 import { Routes, Route } from 'react-router-dom';
@@ -61,7 +60,6 @@ const App: React.FC = () => {
     <AuthProvider>
       <DataProvider>
         <Routes>
-          <Route path="/websocket-test" element={<WebSocketTest />} />
           <Route path="/teacher/:teacherId" element={<TeacherProfilePage teacher={{}} onClose={() => {}} onBookLesson={() => {}} />} />
           <Route path="*" element={<AppContent />} />
         </Routes>
