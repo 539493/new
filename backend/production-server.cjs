@@ -122,9 +122,14 @@ io.on('connection', (socket) => {
 const PORT = process.env.PORT || 10000;
 const HOST = process.env.HOST || '0.0.0.0';
 
+// Log memory usage
+const used = process.memoryUsage();
+console.log(`📊 Memory usage: ${Math.round(used.heapUsed / 1024 / 1024)}MB / ${Math.round(used.heapTotal / 1024 / 1024)}MB`);
+
 server.listen(PORT, HOST, () => {
   console.log(`🚀 Production server running on http://${HOST}:${PORT}`);
   console.log(`📊 Health check available at http://${HOST}:${PORT}/health`);
   console.log(`🔌 Socket.IO server ready for connections`);
   console.log(`📁 Data loaded: ${Object.keys(serverData.teacherProfiles).length} teachers, ${serverData.posts.length} posts`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
 }); 
