@@ -8,9 +8,10 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "start": "node backend/production-server-simple.cjs",
+    "start": "npm run build && node backend/production-server.cjs",
     "server": "node backend/server.cjs",
-    "build:server": "echo 'Server is already built'"
+    "build:server": "echo 'Server is already built'",
+    "postinstall": "npm run build"
   },
   "dependencies": {
     "@tailwindcss/aspect-ratio": "^0.4.2",

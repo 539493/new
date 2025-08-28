@@ -1,9 +1,9 @@
 services:
   - type: web
-    name: tutoring-platform
+    name: nauchi-platform
     env: node
-    buildCommand: npm install && npm run build
-    startCommand: cd backend && node static-server.cjs
+    buildCommand: npm install
+    startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
@@ -11,12 +11,6 @@ services:
         value: 10000
       - key: HOST
         value: 0.0.0.0
-    healthCheckPath: /api/health
+    healthCheckPath: /health
     autoDeploy: true
-    plan: starter
-    branch: main
-    numInstances: 1
-    disk:
-      name: data
-      mountPath: /opt/render/project/src/backend
-      sizeGB: 1 
+    branch: main 
