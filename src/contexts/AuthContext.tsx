@@ -96,8 +96,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       try {
         // Проверяем, есть ли пользователи в системе
         const users = loadUsersFromStorage();
-        if (users.length === 0) 
-            }
+        if (users.length === 0) {
+          // Создаем демо-пользователя, если система пустая
+          const demoUser: User = {
+            id: uuidv4(),
+            email: 'demo@example.com',
+            name: 'Демо пользователь',
+            nickname: 'demo',
+            role: 'student',
+            phone: '+7 (999) 123-45-67'
           };
           
           saveUsersToStorage([demoUser]);
