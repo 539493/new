@@ -197,32 +197,39 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   // Функция для загрузки пользователей с сервера
   const loadUsersFromServer = async () => {
     try {
-      console.log('Loading users from server:', SERVER_URL);
+      console.log('🔄 DataContext: Loading users from server:', SERVER_URL);
       const response = await fetch(`${SERVER_URL}/api/users`);
       
+      console.log('🔄 DataContext: Response status:', response.status, response.ok);
+      
       if (!response.ok) {
-        console.warn('Server responded with status:', response.status);
+        console.warn('🔄 DataContext: Server responded with status:', response.status);
         return [];
       }
       
       const serverUsers = await response.json();
-      console.log('Loaded users from server:', serverUsers.length);
+      console.log('🔄 DataContext: Loaded users from server:', serverUsers.length, serverUsers);
       
       // Объединяем с локальными пользователями
       const localUsers = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
+      console.log('🔄 DataContext: Local users:', localUsers.length, localUsers);
+      
       const allUsers = [...localUsers, ...serverUsers];
+      console.log('🔄 DataContext: Combined users:', allUsers.length);
       
       // Убираем дубликаты по ID, приоритет у серверных данных
       const uniqueUsers = allUsers.filter((user, index, self) => 
         index === self.findIndex(u => u.id === user.id)
       );
       
+      console.log('🔄 DataContext: Unique users after deduplication:', uniqueUsers.length, uniqueUsers);
+      
       setAllUsers(uniqueUsers);
       localStorage.setItem('tutoring_users', JSON.stringify(uniqueUsers));
       return uniqueUsers;
     } catch (error) {
-      console.error('Failed to load users from server:', error);
-      console.log('Using local users only');
+      console.error('🔄 DataContext: Failed to load users from server:', error);
+      console.log('🔄 DataContext: Using local users only');
       return [];
     }
   };

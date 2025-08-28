@@ -65,16 +65,23 @@ const StudentHome: React.FC = () => {
 
   // Загружаем преподавателей с сервера при монтировании
   useEffect(() => {
+    console.log('🔄 StudentHome: Начинаем загрузку преподавателей...');
+    console.log('🔄 StudentHome: SERVER_URL =', SERVER_URL);
+    
     // Загружаем преподавателей через API /api/teachers
     fetch(`${SERVER_URL}/api/teachers`)
       .then(res => {
+        console.log('🔄 StudentHome: Ответ от /api/teachers:', res.status, res.ok);
         if (!res.ok) {
           console.warn('Failed to load teachers from /api/teachers:', res.status);
           return [];
         }
         return res.json();
       })
-      .then(data => setServerTeachers(Array.isArray(data) ? data : []))
+      .then(data => {
+        console.log('🔄 StudentHome: Данные от /api/teachers:', data);
+        setServerTeachers(Array.isArray(data) ? data : []);
+      })
       .catch((error) => {
         console.error('Error loading teachers from /api/teachers:', error);
         setServerTeachers([]);
@@ -83,6 +90,7 @@ const StudentHome: React.FC = () => {
     // Также загружаем всех пользователей через API /api/users
     fetch(`${SERVER_URL}/api/users`)
       .then(res => {
+        console.log('🔄 StudentHome: Ответ от /api/users:', res.status, res.ok);
         if (!res.ok) {
           console.warn('Failed to load users from /api/users:', res.status);
           return [];
@@ -90,8 +98,9 @@ const StudentHome: React.FC = () => {
         return res.json();
       })
       .then(data => {
+        console.log('🔄 StudentHome: Данные от /api/users:', data);
         const teachers = data.filter((user: any) => user.role === 'teacher');
-        console.log('Loaded teachers from /api/users:', teachers.length);
+        console.log('🔄 StudentHome: Преподаватели из /api/users:', teachers.length);
         // Обновляем allUsers в контексте
         refreshUsers();
       })

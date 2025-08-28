@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frontend Debug Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .teacher-card {
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            background: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Frontend Debug Test - Nauchi Platform</h1>
+    
+    <div class="container">
+        <h2>🌐 Тестирование фронтенда</h2>
+        <button onclick="testAll()">🧪 Тестировать все</button>
+        <button onclick="clearResults()">🗑️ Очистить результаты</button>
+        <button onclick="openMainApp()">🚀 Открыть основное приложение</button>
+    </div>
+
+    <div class="grid">
+        <div class="container">
+            <h3>📊 Загрузка данных</h3>
+            <div id="data-loading-result"></div>
+        </div>
+
+        <div class="container">
+            <h3>👨‍🏫 Преподаватели</h3>
+            <div id="teachers-display"></div>
+        </div>
+
+        <div class="container">
+            <h3>🔧 Конфигурация</h3>
+            <div id="config-result"></div>
+        </div>
+
+        <div class="container">
+            <h3>🌐 Сетевая диагностика</h3>
+            <div id="network-result"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h3>📝 Логи</h3>
+        <div id="logs"></div>
+    </div>
+
+    <script>
+        const SERVER_URL = 'https://na-uchi.onrender.com';
+        let logs = [];
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}`;
+            logs.push(logEntry);
+            
+            const logsDiv = document.getElementById('logs');
+            logsDiv.innerHTML = logs.map(log => `<div>${log}</div>`).join('');
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+            
+            console.log(logEntry);
+        }
+
+        function showResult(elementId, content, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="status ${type}">${content}</div>`;
+        }
+
+        async function testDataLoading() {
+            log('Тестирование загрузки данных...');
+            
+            try {
+                // Тест 1: Загрузка преподавателей
+                const teachersResponse = await fetch(`${SERVER_URL}/api/teachers`);
+                const teachers = await teachersResponse.json();
+                
+                // Тест 2: Загрузка пользователей
+                const usersResponse = await fetch(`${SERVER_URL}/api/users`);
+                const users = await usersResponse.json();
+                
+                // Тест 3: Проверка статуса
+                const statusResponse = await fetch(`${SERVER_URL}/api/status`);
+                const status = await statusResponse.json();
+                
+                showResult('data-loading-result', `
+                    <strong>✅ Данные загружены успешно!</strong><br>
+                    <strong>Преподаватели:</strong> ${teachers.length}<br>
+                    <strong>Пользователи:</strong> ${users.length}<br>
+                    <strong>Статус сервера:</strong> ${status.status}<br>
+                    <strong>Подключения:</strong> ${status.connectedClients}
+                `, 'success');
+                
+                log(`✅ Данные загружены: ${teachers.length} преподавателей, ${users.length} пользователей`);
+                
+                // Отображаем преподавателей
+                displayTeachers(teachers);
+                
+            } catch (error) {
+                showResult('data-loading-result', `❌ Ошибка загрузки данных: ${error.message}`, 'error');
+                log(`❌ Ошибка загрузки данных: ${error.message}`, 'error');
+            }
+        }
+
+        function displayTeachers(teachers) {
+            const container = document.getElementById('teachers-display');
+            
+            if (teachers.length === 0) {
+                container.innerHTML = '<div class="status info">⚠️ Преподаватели не найдены</div>';
+                return;
+            }
+            
+            const teachersHtml = teachers.map(teacher => `
+                <div class="teacher-card">
+                    <h4>${teacher.name}</h4>
+                    <p><strong>ID:</strong> ${teacher.id}</p>
+                    <p><strong>Предметы:</strong> ${teacher.profile?.subjects?.join(', ') || 'Не указаны'}</p>
+                    <p><strong>Опыт:</strong> ${teacher.profile?.experience || 'Не указан'}</p>
+                    <p><strong>Рейтинг:</strong> ${teacher.profile?.rating || 'Не указан'}</p>
+                </div>
+            `).join('');
+            
+            container.innerHTML = `
+                <div class="status success">
+                    <strong>✅ Найдено ${teachers.length} преподавателей</strong>
+                </div>
+                ${teachersHtml}
+            `;
+        }
+
+        function testConfiguration() {
+            log('Проверка конфигурации...');
+            
+            const config = {
+                serverUrl: SERVER_URL,
+                userAgent: navigator.userAgent,
+                language: navigator.language,
+                cookiesEnabled: navigator.cookieEnabled,
+                online: navigator.onLine,
+                platform: navigator.platform
+            };
+            
+            showResult('config-result', `
+                <strong>✅ Конфигурация проверена</strong><br>
+                <strong>Сервер:</strong> ${config.serverUrl}<br>
+                <strong>Браузер:</strong> ${config.userAgent.split(' ')[0]}<br>
+                <strong>Язык:</strong> ${config.language}<br>
+                <strong>Cookies:</strong> ${config.cookiesEnabled ? 'Включены' : 'Отключены'}<br>
+                <strong>Онлайн:</strong> ${config.online ? 'Да' : 'Нет'}<br>
+                <strong>Платформа:</strong> ${config.platform}
+            `, 'success');
+            
+            log(`✅ Конфигурация: ${config.serverUrl}, онлайн: ${config.online}`);
+        }
+
+        function testNetwork() {
+            log('Тестирование сети...');
+            
+            const startTime = Date.now();
+            
+            fetch(`${SERVER_URL}/api/status`)
+                .then(response => {
+                    const endTime = Date.now();
+                    const responseTime = endTime - startTime;
+                    
+                    showResult('network-result', `
+                        <strong>✅ Сеть работает</strong><br>
+                        <strong>Время ответа:</strong> ${responseTime}ms<br>
+                        <strong>Статус:</strong> ${response.status}<br>
+                        <strong>Тип:</strong> ${response.type}<br>
+                        <strong>URL:</strong> ${response.url}
+                    `, 'success');
+                    
+                    log(`✅ Сеть: время ответа ${responseTime}ms, статус ${response.status}`);
+                })
+                .catch(error => {
+                    showResult('network-result', `❌ Ошибка сети: ${error.message}`, 'error');
+                    log(`❌ Ошибка сети: ${error.message}`, 'error');
+                });
+        }
+
+        async function testAll() {
+            log('🚀 Начинаем полное тестирование фронтенда...');
+            
+            testConfiguration();
+            testNetwork();
+            await testDataLoading();
+            
+            log('✅ Тестирование завершено!');
+        }
+
+        function clearResults() {
+            document.getElementById('data-loading-result').innerHTML = '';
+            document.getElementById('teachers-display').innerHTML = '';
+            document.getElementById('config-result').innerHTML = '';
+            document.getElementById('network-result').innerHTML = '';
+            logs = [];
+            document.getElementById('logs').innerHTML = '';
+            log('🗑️ Результаты очищены');
+        }
+
+        function openMainApp() {
+            log('Открытие основного приложения...');
+            window.open('https://na-uchi.onrender.com/', '_blank');
+        }
+
+        // Автоматический запуск тестов при загрузке страницы
+        window.onload = function() {
+            log('🌐 Страница загружена, начинаем тестирование...');
+            testAll();
+        };
+    </script>
+</body>
+</html>
