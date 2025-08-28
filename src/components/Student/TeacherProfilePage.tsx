@@ -31,7 +31,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useData } from '../../contexts/DataContext';
 import { TeacherProfile, TimeSlot } from '../../types';
 import BookingModal from '../Shared/BookingModal';
-import PostsFeed from '../Shared/PostsFeed';
 
 interface TeacherProfilePageProps {
   teacher: any;
@@ -48,7 +47,7 @@ const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClos
   const [showSlots, setShowSlots] = useState(false);
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
-  const [activeTab, setActiveTab] = useState<'posts' | 'about' | 'slots' | 'reviews'>('posts');
+  const [activeTab, setActiveTab] = useState<'about' | 'slots' | 'reviews'>('about');
   const [showReactions, setShowReactions] = useState<string | null>(null);
   const [newComment, setNewComment] = useState<{ [key: string]: string }>({});
 
@@ -61,15 +60,6 @@ const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClos
 
   // Получаем посты преподавателя
   const teacherPosts = posts.filter(post => post.userId === teacher.id);
-  
-  // Отладочная информация
-  console.log('TeacherProfilePage Debug:', {
-    teacherId: teacher.id,
-    allPosts: posts,
-    teacherPosts: teacherPosts,
-    postsCount: posts.length,
-    teacherPostsCount: teacherPosts.length
-  });
 
   const getExperienceLabel = (exp: string) => {
     switch (exp) {
@@ -349,11 +339,104 @@ const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClos
             </div>
           </div>
 
+          {/* Teacher Posts Section */}
+          {teacherPosts.length > 0 && (
+            <div className="mb-8 mt-8">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold text-gray-900 flex items-center">
+                  <FileText className="w-5 h-5 mr-2 text-blue-600" />
+                  Записи {profile?.name || teacher.name}
+                  <span className="ml-2 bg-blue-100 text-blue-800 py-0.5 px-2 rounded-full text-sm">
+                    {teacherPosts.length}
+                  </span>
+                </h3>
+              </div>
+              
+              <div className="space-y-4">
+                {teacherPosts.slice(0, 3).map((post) => (
+                  <div key={post.id} className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="flex items-start space-x-4">
+                      <div className="flex-shrink-0">
+                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                          <span className="text-white font-semibold text-sm">
+                            {(profile?.name || teacher.name).charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <span className="font-semibold text-gray-900">{profile?.name || teacher.name}</span>
+                          <span className="text-gray-500 text-sm">
+                            {new Date(post.date).toLocaleDateString('ru-RU', {
+                              day: 'numeric',
+                              month: 'long',
+                              year: 'numeric'
+                            })}
+                          </span>
+                        </div>
+                        
+                        <div className="text-gray-700 mb-3 whitespace-pre-line">
+                          {post.text.length > 200 
+                            ? `${post.text.substring(0, 200)}...` 
+                            : post.text
+                          }
+                        </div>
+                        
+                        {/* Tags */}
+                        {post.tags && post.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mb-3">
+                            {post.tags.slice(0, 3).map((tag, index) => (
+                              <span
+                                key={index}
+                                className="bg-blue-50 text-blue-700 px-2 py-1 rounded-md text-xs font-medium"
+                              >
+                                #{tag}
+                              </span>
+                            ))}
+                            {post.tags.length > 3 && (
+                              <span className="text-gray-500 text-xs">
+                                +{post.tags.length - 3} еще
+                              </span>
+                            )}
+                          </div>
+                        )}
+                        
+                        {/* Post Stats */}
+                        <div className="flex items-center space-x-4 text-sm text-gray-500">
+                          <div className="flex items-center space-x-1">
+                            <Heart className="w-4 h-4" />
+                            <span>{post.likes || post.reactions.length}</span>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <MessageCircle className="w-4 h-4" />
+                            <span>{post.comments.length}</span>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <Eye className="w-4 h-4" />
+                            <span>{post.views || 0}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                
+                {teacherPosts.length > 3 && (
+                  <div className="text-center">
+                    <button className="text-blue-600 hover:text-blue-800 font-medium">
+                      Показать все записи ({teacherPosts.length})
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Navigation Tabs */}
           <div className="border-b border-gray-200 mb-8 mt-8">
             <nav className="flex space-x-8">
               {[
-                { id: 'posts', label: 'Записи', count: teacherPosts.length },
                 { id: 'about', label: 'О преподавателе', count: null },
                 { id: 'slots', label: 'Расписание', count: availableSlots.length },
                 { id: 'reviews', label: 'Отзывы', count: 0 }
@@ -380,31 +463,6 @@ const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClos
 
           {/* Tab Content */}
           <div className="min-h-[400px]">
-            {/* Posts Tab */}
-            {activeTab === 'posts' && (
-              <div className="space-y-6">
-                <PostsFeed
-                  posts={teacherPosts}
-                  currentUserId={user?.id || ''}
-                  currentUserName={user?.name || ''}
-                  currentUserAvatar={user?.avatar}
-                  onCreatePost={createPost}
-                  onReaction={addReaction}
-                  onComment={addComment}
-                  onShare={sharePost}
-                  onBookmark={bookmarkPost}
-                  onEdit={editPost}
-                  onDelete={deletePost}
-                  showCreateButton={user?.id === teacher.id} // Только автор может создавать записи
-                  title={`Записи ${profile?.name || teacher.name}`}
-                  showSearch={true}
-                  showNotifications={false} // Уведомления уже есть в навигации
-                  showTrending={false}
-                  showBookmarks={true}
-                />
-              </div>
-            )}
-
             {/* About Tab */}
             {activeTab === 'about' && (
               <div className="space-y-3">
