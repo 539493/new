@@ -83,48 +83,35 @@ const io = new Server(server, {
 
 // Функции для работы с данными
 const DATA_FILE = path.join(__dirname, 'server_data.json');
-const INITIAL_DATA_FILE = path.join(__dirname, 'initial-data.json');
 
 function loadServerData() {
   try {
     if (fs.existsSync(DATA_FILE)) {
       const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
       console.log('Loaded server data from file');
-      
-      // Если нет преподавателей в сохраненных данных, загружаем из initial-data.json
-      if (!data.teacherProfiles || Object.keys(data.teacherProfiles).length === 0) {
-        console.log('No teacher profiles found in server data, loading from initial-data.json');
-        if (fs.existsSync(INITIAL_DATA_FILE)) {
-          const initialData = JSON.parse(fs.readFileSync(INITIAL_DATA_FILE, 'utf8'));
-          data.teacherProfiles = initialData.teacherProfiles || {};
-          data.studentProfiles = initialData.studentProfiles || {};
-          data.timeSlots = initialData.timeSlots || [];
-          console.log('Loaded initial data:', {
-            teachers: Object.keys(data.teacherProfiles).length,
-            students: Object.keys(data.studentProfiles).length,
-            slots: data.timeSlots.length
-          });
-        }
-      }
-      
       return data;
     } else {
       console.log('No server data file found, creating new one');
-      const initialData = JSON.parse(fs.readFileSync(INITIAL_DATA_FILE, 'utf8'));
-      saveServerData(initialData);
-      return initialData;
+      return {
+        teacherProfiles: {},
+        studentProfiles: {},
+        overbookingRequests: [],
+        timeSlots: [],
+        lessons: [],
+        chats: [],
+        posts: []
+      };
     }
   } catch (error) {
     console.error('Error loading server data:', error);
     return {
       teacherProfiles: {},
       studentProfiles: {},
+      overbookingRequests: [],
       timeSlots: [],
       lessons: [],
       chats: [],
-      overbookingRequests: [],
-      posts: [],
-      notifications: []
+      posts: []
     };
   }
 }
@@ -146,8 +133,7 @@ let {
   lessons,
   chats,
   overbookingRequests,
-  posts,
-  notifications
+  posts
 } = loadServerData();
 
 // Обслуживание статических файлов фронтенда (если они есть)
