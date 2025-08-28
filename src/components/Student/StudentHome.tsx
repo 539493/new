@@ -296,14 +296,15 @@ const StudentHome: React.FC = () => {
 
     const result = Array.from(allTeachersMap.values());
     
-    // Отладочная информация для аватаров
-    result.forEach(teacher => {
-      if (teacher.avatar && teacher.avatar.trim() !== '') {
-        console.log(`Teacher ${teacher.name} has avatar: ${teacher.avatar}`);
-      } else {
-        console.log(`Teacher ${teacher.name} has no avatar`);
-      }
-    });
+    // Отладочная информация
+    console.log('=== DEBUG TEACHERS ===');
+    console.log('serverTeachers:', serverTeachers.length, serverTeachers);
+    console.log('allUsers teachers:', allUsers?.filter((u: any) => u.role === 'teacher').length);
+    console.log('teachersFromServer:', teachersFromServer.length, teachersFromServer);
+    console.log('teachersFromUsers:', teachersFromUsers.length, teachersFromUsers);
+    console.log('teachersFromSlots:', teachersFromSlots.length, teachersFromSlots);
+    console.log('Final allTeachers:', result.length, result);
+    console.log('=== END DEBUG ===');
     
     return result;
   }, [serverTeachers, allUsers, timeSlots]);
