@@ -65,10 +65,24 @@ const StudentHome: React.FC = () => {
 
   // Загружаем преподавателей с сервера при монтировании
   useEffect(() => {
+    // Загружаем преподавателей через API /api/teachers
     fetch(`${SERVER_URL}/api/teachers`)
       .then(res => res.json())
       .then(data => setServerTeachers(Array.isArray(data) ? data : []))
       .catch(() => setServerTeachers([]));
+      
+    // Также загружаем всех пользователей через API /api/users
+    fetch(`${SERVER_URL}/api/users`)
+      .then(res => res.json())
+      .then(data => {
+        const teachers = data.filter((user: any) => user.role === 'teacher');
+        console.log('Loaded teachers from /api/users:', teachers.length);
+        // Обновляем allUsers в контексте
+        refreshUsers();
+      })
+      .catch(() => {
+        console.log('Failed to load users from server, using local data');
+      });
   }, []);
 
   const socket = React.useRef<Socket | null>(null);

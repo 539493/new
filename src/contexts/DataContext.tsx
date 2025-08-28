@@ -194,6 +194,45 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     console.log('Initial data loaded with saved slots:', uniqueTimeSlots.length);
   };
 
+  // Функция для загрузки пользователей с сервера
+  const loadUsersFromServer = async () => {
+    try {
+      const response = await fetch(`${SERVER_URL}/api/users`);
+      if (response.ok) {
+        const serverUsers = await response.json();
+        console.log('Loaded users from server:', serverUsers.length);
+        
+        // Объединяем с локальными пользователями
+        const localUsers = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
+        const allUsers = [...localUsers, ...serverUsers];
+        
+        // Убираем дубликаты по ID, приоритет у серверных данных
+        const uniqueUsers = allUsers.filter((user, index, self) => 
+          index === self.findIndex(u => u.id === user.id)
+        );
+        
+        setAllUsers(uniqueUsers);
+        localStorage.setItem('tutoring_users', JSON.stringify(uniqueUsers));
+        return uniqueUsers;
+      }
+    } catch (error) {
+      console.error('Failed to load users from server:', error);
+    }
+    return [];
+  };
+
+  // Функция для принудительного обновления списка пользователей
+  const refreshUsers = () => {
+    try {
+      const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
+      console.log('Refreshing users list:', users.length, 'users');
+      setAllUsers(users);
+    } catch (error) {
+      console.error('Error refreshing users:', error);
+      setAllUsers([]);
+    }
+  };
+
   // Инициализация WebSocket соединения
   useEffect(() => {
     console.log('Connecting to WebSocket:', SERVER_URL);
@@ -210,6 +249,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     newSocket.on('connect', () => {
       console.log('WebSocket connected');
       setIsConnected(true);
+      
+      // Загружаем пользователей с сервера при подключении
+      loadUsersFromServer();
       
       // Синхронизируем локальные слоты с сервером при восстановлении соединения
       const localSlots = loadFromStorage('tutoring_timeSlots', []);
@@ -436,6 +478,31 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       }
     });
 
+    // --- Обработка регистрации нового пользователя ---
+    newSocket.on('userRegistered', (newUser: User) => {
+      try {
+        console.log('[SOCKET] New user registered:', newUser);
+        const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
+        
+        // Проверяем, есть ли уже такой пользователь
+        const existingUserIndex = users.findIndex((u: User) => u.id === newUser.id);
+        
+        if (existingUserIndex >= 0) {
+          // Обновляем существующего пользователя
+          users[existingUserIndex] = newUser;
+        } else {
+          // Добавляем нового пользователя
+          users.push(newUser);
+        }
+        
+        localStorage.setItem('tutoring_users', JSON.stringify(users));
+        setAllUsers(users);
+        console.log('[SOCKET] userRegistered: updated users list with', users.length, 'users');
+      } catch (e) {
+        console.error('[SOCKET] userRegistered error:', e);
+      }
+    });
+
     // ===== ОБРАБОТЧИКИ ДЛЯ ПОСТОВ =====
     
     // Получение всех постов
@@ -565,18 +632,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       socketRef.current = null;
     };
   }, []);
-
-  // Функция для принудительного обновления списка пользователей
-  const refreshUsers = () => {
-    try {
-      const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
-      console.log('Refreshing users list:', users.length, 'users');
-      setAllUsers(users);
-    } catch (error) {
-      console.error('Error refreshing users:', error);
-      setAllUsers([]);
-    }
-  };
 
   // Слушатель изменений localStorage для синхронизации между вкладками
   useEffect(() => {

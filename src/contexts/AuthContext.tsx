@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { User, StudentProfile, TeacherProfile } from '../types';
+import { SERVER_URL } from '../config';
 
 interface AuthContextType {
   user: User | null;
@@ -165,41 +166,79 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     role: 'student' | 'teacher',
     phone: string
   ): Promise<boolean> => {
-    // Симуляция API вызова
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const users = loadUsersFromStorage();
-    
-    // Проверяем уникальность email и nickname
-    const emailExists = users.some(u => u.email === email);
-    const nicknameExists = users.some(u => u.nickname === nickname);
-    
-    if (emailExists) {
-      alert('Пользователь с таким email уже существует');
-      return false;
+    try {
+      // Сначала регистрируем на сервере
+      const response = await fetch(`${SERVER_URL}/api/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          password,
+          name,
+          nickname,
+          role,
+          phone
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        alert(errorData.error || 'Ошибка регистрации');
+        return false;
+      }
+
+      const serverUser = await response.json();
+      
+      // Сохраняем локально
+      const users = loadUsersFromStorage();
+      const updatedUsers = [...users, serverUser];
+      saveUsersToStorage(updatedUsers);
+      setUser(serverUser);
+      saveUserToStorage(serverUser);
+      
+      console.log('New user registered on server:', serverUser);
+      return true;
+    } catch (error) {
+      console.error('Registration error:', error);
+      
+      // Fallback к локальной регистрации, если сервер недоступен
+      console.log('Server unavailable, using local registration');
+      
+      const users = loadUsersFromStorage();
+      
+      // Проверяем уникальность email и nickname
+      const emailExists = users.some(u => u.email === email);
+      const nicknameExists = users.some(u => u.nickname === nickname);
+      
+      if (emailExists) {
+        alert('Пользователь с таким email уже существует');
+        return false;
+      }
+      
+      if (nicknameExists) {
+        alert('Пользователь с таким никнеймом уже существует');
+        return false;
+      }
+      
+      const newUser: User = {
+        id: uuidv4(),
+        email,
+        name,
+        nickname,
+        role,
+        phone,
+      };
+      
+      const updatedUsers = [...users, newUser];
+      saveUsersToStorage(updatedUsers);
+      setUser(newUser);
+      saveUserToStorage(newUser);
+      
+      console.log('New user registered locally:', newUser);
+      return true;
     }
-    
-    if (nicknameExists) {
-      alert('Пользователь с таким никнеймом уже существует');
-      return false;
-    }
-    
-    const newUser: User = {
-      id: uuidv4(),
-      email,
-      name,
-      nickname,
-      role,
-      phone,
-    };
-    
-    const updatedUsers = [...users, newUser];
-    saveUsersToStorage(updatedUsers);
-    setUser(newUser);
-    saveUserToStorage(newUser);
-    
-    console.log('New user registered:', newUser);
-    return true;
   };
 
   const logout = () => {
