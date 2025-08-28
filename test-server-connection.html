@@ -73,7 +73,7 @@
     </div>
 
     <script>
-        const SERVER_URL = 'https://tutoring-platform-0gvk.onrender.com';
+        const SERVER_URL = 'https://na-uchi.onrender.com';
         
         function updateResult(elementId, content, type = 'info') {
             const element = document.getElementById(elementId);
@@ -184,7 +184,7 @@
             try {
                 updateResult('websocketResult', 'Подключение к WebSocket...', 'warning');
                 
-                const socket = new WebSocket(`wss://tutoring-platform-0gvk.onrender.com`);
+                const socket = new WebSocket(`wss://na-uchi.onrender.com`);
                 
                 socket.onopen = function(event) {
                     updateResult('websocketResult', 
