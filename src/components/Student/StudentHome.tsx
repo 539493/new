@@ -67,21 +67,37 @@ const StudentHome: React.FC = () => {
   useEffect(() => {
     // Загружаем преподавателей через API /api/teachers
     fetch(`${SERVER_URL}/api/teachers`)
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) {
+          console.warn('Failed to load teachers from /api/teachers:', res.status);
+          return [];
+        }
+        return res.json();
+      })
       .then(data => setServerTeachers(Array.isArray(data) ? data : []))
-      .catch(() => setServerTeachers([]));
+      .catch((error) => {
+        console.error('Error loading teachers from /api/teachers:', error);
+        setServerTeachers([]);
+      });
       
     // Также загружаем всех пользователей через API /api/users
     fetch(`${SERVER_URL}/api/users`)
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) {
+          console.warn('Failed to load users from /api/users:', res.status);
+          return [];
+        }
+        return res.json();
+      })
       .then(data => {
         const teachers = data.filter((user: any) => user.role === 'teacher');
         console.log('Loaded teachers from /api/users:', teachers.length);
         // Обновляем allUsers в контексте
         refreshUsers();
       })
-      .catch(() => {
-        console.log('Failed to load users from server, using local data');
+      .catch((error) => {
+        console.error('Error loading users from /api/users:', error);
+        console.log('Using local data only');
       });
   }, []);
 

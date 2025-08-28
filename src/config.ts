@@ -1,11 +1,9 @@
 // Конфигурация для подключения к серверу
 const getServerUrl = () => {
-  // В продакшене используем тот же домен, что и фронтенд
+  // В продакшене используем внешний сервер
   if (import.meta.env.PROD) {
-    // На Render используем тот же домен
-    const hostname = window.location.hostname;
-    const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
-    return `${protocol}//${hostname}`;
+    // На Render используем внешний сервер для API
+    return 'https://tutoring-platform-0gvk.onrender.com';
   }
   
   // В разработке используем локальный сервер, но доступный из других сетей
@@ -15,11 +13,10 @@ const getServerUrl = () => {
 };
 
 const getWebSocketUrl = () => {
-  // В продакшене используем тот же домен, что и фронтенд
+  // В продакшене используем внешний сервер
   if (import.meta.env.PROD) {
-    const hostname = window.location.hostname;
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    return `${protocol}//${hostname}`;
+    // На Render используем внешний сервер для WebSocket
+    return 'https://tutoring-platform-0gvk.onrender.com';
   }
   
   // В разработке используем локальный сервер, но доступный из других сетей

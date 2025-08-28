@@ -167,6 +167,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     phone: string
   ): Promise<boolean> => {
     try {
+      console.log('Attempting to register on server:', SERVER_URL);
+      
       // Сначала регистрируем на сервере
       const response = await fetch(`${SERVER_URL}/api/register`, {
         method: 'POST',
@@ -184,9 +186,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        alert(errorData.error || 'Ошибка регистрации');
-        return false;
+        const errorText = await response.text();
+        console.warn('Server registration failed:', response.status, errorText);
+        
+        // Пытаемся парсить JSON ошибки
+        try {
+          const errorData = JSON.parse(errorText);
+          alert(errorData.error || 'Ошибка регистрации на сервере');
+        } catch {
+          alert('Ошибка регистрации на сервере. Используется локальная регистрация.');
+        }
+        
+        // Переходим к локальной регистрации
+        throw new Error('Server registration failed');
       }
 
       const serverUser = await response.json();
@@ -237,6 +249,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       saveUserToStorage(newUser);
       
       console.log('New user registered locally:', newUser);
+      alert('Регистрация выполнена локально. Данные будут синхронизированы при подключении к серверу.');
       return true;
     }
   };

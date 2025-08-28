@@ -197,28 +197,34 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   // Функция для загрузки пользователей с сервера
   const loadUsersFromServer = async () => {
     try {
+      console.log('Loading users from server:', SERVER_URL);
       const response = await fetch(`${SERVER_URL}/api/users`);
-      if (response.ok) {
-        const serverUsers = await response.json();
-        console.log('Loaded users from server:', serverUsers.length);
-        
-        // Объединяем с локальными пользователями
-        const localUsers = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
-        const allUsers = [...localUsers, ...serverUsers];
-        
-        // Убираем дубликаты по ID, приоритет у серверных данных
-        const uniqueUsers = allUsers.filter((user, index, self) => 
-          index === self.findIndex(u => u.id === user.id)
-        );
-        
-        setAllUsers(uniqueUsers);
-        localStorage.setItem('tutoring_users', JSON.stringify(uniqueUsers));
-        return uniqueUsers;
+      
+      if (!response.ok) {
+        console.warn('Server responded with status:', response.status);
+        return [];
       }
+      
+      const serverUsers = await response.json();
+      console.log('Loaded users from server:', serverUsers.length);
+      
+      // Объединяем с локальными пользователями
+      const localUsers = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
+      const allUsers = [...localUsers, ...serverUsers];
+      
+      // Убираем дубликаты по ID, приоритет у серверных данных
+      const uniqueUsers = allUsers.filter((user, index, self) => 
+        index === self.findIndex(u => u.id === user.id)
+      );
+      
+      setAllUsers(uniqueUsers);
+      localStorage.setItem('tutoring_users', JSON.stringify(uniqueUsers));
+      return uniqueUsers;
     } catch (error) {
       console.error('Failed to load users from server:', error);
+      console.log('Using local users only');
+      return [];
     }
-    return [];
   };
 
   // Функция для принудительного обновления списка пользователей
