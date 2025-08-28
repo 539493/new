@@ -150,6 +150,13 @@ let {
   notifications
 } = loadServerData();
 
+// Обслуживание статических файлов фронтенда (если они есть)
+const distPath = path.join(__dirname, '..', 'dist');
+if (fs.existsSync(distPath)) {
+  console.log('📁 Serving static files from:', distPath);
+  app.use(express.static(distPath));
+}
+
 // API endpoints
 app.get('/api/teachers', (req, res) => {
   // Собираем преподавателей из teacherProfiles
@@ -333,8 +340,8 @@ app.get('/api/users/:id', (req, res) => {
   }
 });
 
-// Простой endpoint для проверки работы сервера
-app.get('/', (req, res) => {
+// API endpoint для проверки работы сервера
+app.get('/api/status', (req, res) => {
   res.json({ 
     message: 'Nauchi API Server',
     status: 'running',
@@ -355,14 +362,25 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Обслуживание статических файлов фронтенда (если они есть)
-const distPath = path.join(__dirname, '..', 'dist');
+// Fallback для SPA - должен быть последним
 if (fs.existsSync(distPath)) {
-  app.use(express.static(distPath));
-  
-  // Fallback для SPA
   app.get('*', (req, res) => {
+    console.log('📄 Serving index.html for route:', req.path);
     res.sendFile(path.join(distPath, 'index.html'));
+  });
+} else {
+  // Если нет статических файлов, показываем API статус
+  app.get('/', (req, res) => {
+    res.json({ 
+      message: 'Nauchi API Server',
+      status: 'running',
+      note: 'Frontend files not found, serving API only',
+      connectedClients: io.engine.clientsCount,
+      timeSlots: timeSlots.length,
+      lessons: lessons.length,
+      teachers: Object.keys(teacherProfiles).length,
+      students: Object.keys(studentProfiles).length
+    });
   });
 }
 
