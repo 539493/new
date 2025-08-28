@@ -61,6 +61,15 @@ const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClos
 
   // Получаем посты преподавателя
   const teacherPosts = posts.filter(post => post.userId === teacher.id);
+  
+  // Отладочная информация
+  console.log('TeacherProfilePage Debug:', {
+    teacherId: teacher.id,
+    allPosts: posts,
+    teacherPosts: teacherPosts,
+    postsCount: posts.length,
+    teacherPostsCount: teacherPosts.length
+  });
 
   const getExperienceLabel = (exp: string) => {
     switch (exp) {

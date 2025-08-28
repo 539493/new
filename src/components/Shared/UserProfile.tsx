@@ -97,16 +97,16 @@ const UserProfile: React.FC<UserProfileProps> = ({
   };
 
   if (!user) {
-    return (
+  return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <UserIcon className="w-12 h-12 text-gray-400" />
-          </div>
+              </div>
           <h3 className="text-xl font-semibold text-gray-900 mb-2">Пользователь не найден</h3>
           <p className="text-gray-500">Пользователь с таким ID не существует</p>
-        </div>
-      </div>
+            </div>
+          </div>
     );
   }
 
@@ -197,9 +197,9 @@ const UserProfile: React.FC<UserProfileProps> = ({
                           <span className="font-semibold text-xs">{profile.city}</span>
                         </div>
                       )}
-                    </div>
-                  </div>
-                  
+        </div>
+      </div>
+
                   {/* Right Side - Quick Stats */}
                   <div className="text-right text-white/90 flex-shrink-0">
                     <div className="text-2xl font-bold mb-1">{userPosts.length}</div>
@@ -232,8 +232,8 @@ const UserProfile: React.FC<UserProfileProps> = ({
                   <div className={`w-36 h-36 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center ${profile?.avatar && profile.avatar.trim() !== '' ? 'hidden' : ''}`}>
                     <UserIcon className="h-20 w-20 text-white" />
                   </div>
-                </div>
-                
+          </div>
+
                 {/* Floating Action Buttons */}
                 {!isOwnProfile && (
                   <div className="absolute -bottom-2 -right-2 flex space-x-2">
@@ -250,9 +250,9 @@ const UserProfile: React.FC<UserProfileProps> = ({
                     <button className="w-10 h-10 rounded-full bg-white text-gray-600 hover:bg-gray-50 shadow-lg transition-all duration-200 flex items-center justify-center">
                       <Share2 className="w-5 h-5" />
                     </button>
-                  </div>
+            </div>
                 )}
-              </div>
+          </div>
 
               {/* Quick Actions */}
               <div className="flex-1 flex flex-wrap gap-4 mt-12 lg:mt-0">
@@ -327,15 +327,15 @@ const UserProfile: React.FC<UserProfileProps> = ({
                 <div className="bg-gradient-to-br from-green-600 to-green-700 text-white rounded-lg p-3 text-center shadow-md">
                   <div className="text-xl font-bold mb-1">{profile?.lessonsCount || 0}</div>
                   <div className="text-green-100 text-xs">Проведено уроков</div>
-                </div>
+            </div>
                 <div className="bg-gradient-to-br from-purple-600 to-purple-700 text-white rounded-lg p-3 text-center shadow-md">
                   <div className="text-xl font-bold mb-1">{profile?.students?.length || 0}</div>
                   <div className="text-purple-100 text-xs">Учеников</div>
-                </div>
+            </div>
                 <div className="bg-gradient-to-br from-orange-600 to-orange-700 text-white rounded-lg p-3 text-center shadow-md">
                   <div className="text-xl font-bold mb-1">{profile?.rating || 0}</div>
                   <div className="text-orange-100 text-xs">Рейтинг</div>
-                </div>
+          </div>
               </>
             )}
             {!isTeacher && (
@@ -343,7 +343,7 @@ const UserProfile: React.FC<UserProfileProps> = ({
                 <div className="bg-gradient-to-br from-green-600 to-green-700 text-white rounded-lg p-3 text-center shadow-md">
                   <div className="text-xl font-bold mb-1">0</div>
                   <div className="text-green-100 text-xs">Посещено уроков</div>
-                </div>
+        </div>
                 <div className="bg-gradient-to-br from-purple-600 to-purple-700 text-white rounded-lg p-3 text-center shadow-md">
                   <div className="text-xl font-bold mb-1">0</div>
                   <div className="text-purple-100 text-xs">Преподавателей</div>
@@ -353,8 +353,8 @@ const UserProfile: React.FC<UserProfileProps> = ({
                   <div className="text-orange-100 text-xs">Дней в системе</div>
                 </div>
               </>
-            )}
-          </div>
+              )}
+            </div>
 
           {/* Navigation Tabs */}
           <div className="border-b border-gray-200 mb-8 mt-8">
@@ -389,7 +389,7 @@ const UserProfile: React.FC<UserProfileProps> = ({
           <div className="min-h-[400px]">
             {/* Posts Tab */}
             {activeTab === 'posts' && (
-              <div className="space-y-6">
+          <div className="space-y-6">
                 <PostsFeed
                   posts={userPosts}
                   currentUserId={currentUser?.id || ''}
@@ -423,7 +423,7 @@ const UserProfile: React.FC<UserProfileProps> = ({
                         <div className="w-2 h-2 bg-white rounded-sm"></div>
                       </div>
                       О пользователе
-                    </h3>
+                </h3>
                     <div className="bg-white/60 backdrop-blur-sm rounded-md p-2 border border-indigo-200/50">
                       <p className="text-indigo-800 leading-relaxed whitespace-pre-line text-xs">
                         {profile.bio}
@@ -447,13 +447,13 @@ const UserProfile: React.FC<UserProfileProps> = ({
                           </h3>
                           <div className="flex flex-wrap gap-1">
                             {profile.subjects.map((subject: string, index: number) => (
-                              <span
-                                key={index}
+                            <span
+                              key={index}
                                 className="bg-white/80 backdrop-blur-sm text-blue-800 px-2 py-0.5 rounded-md text-xs font-medium border border-blue-200/50 shadow-sm"
-                              >
-                                {subject}
-                              </span>
-                            ))}
+                            >
+                              {subject}
+                            </span>
+                          ))}
                           </div>
                         </div>
                       )}
@@ -476,7 +476,7 @@ const UserProfile: React.FC<UserProfileProps> = ({
                               </span>
                             ))}
                           </div>
-                        </div>
+                    </div>
                       )}
                     </div>
 
@@ -493,17 +493,17 @@ const UserProfile: React.FC<UserProfileProps> = ({
                           <div className="text-base font-bold text-purple-700 bg-white/60 backdrop-blur-sm rounded-md py-1 px-1.5 border border-purple-200/50">
                             {profile.hourlyRate} ₽/час
                           </div>
-                        </div>
-                      )}
+                    </div>
+                  )}
 
                       {profile?.formats && profile.formats.length > 0 && (
                         <div className="bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200 rounded-lg p-2.5 shadow-sm">
                           <h3 className="text-sm font-bold text-orange-900 mb-1.5 flex items-center">
                             <div className="w-4 h-4 bg-gradient-to-br from-orange-500 to-amber-600 rounded flex items-center justify-center mr-1.5">
                               <div className="w-2 h-2 bg-white rounded-sm"></div>
-                            </div>
+                </div>
                             Форматы
-                          </h3>
+                </h3>
                           <div className="space-y-1">
                             {profile.formats.map((format: string, index: number) => (
                               <div key={index} className="flex items-center space-x-1.5 p-1 bg-white/60 backdrop-blur-sm rounded border border-orange-200/50">
@@ -528,8 +528,8 @@ const UserProfile: React.FC<UserProfileProps> = ({
                               <div key={index} className="flex items-center space-x-1.5 p-1 bg-white/60 backdrop-blur-sm rounded border border-cyan-200/50">
                                 <Clock className="h-3 w-3 text-cyan-600" />
                                 <span className="text-cyan-800 text-xs font-medium">{duration} минут</span>
-                              </div>
-                            ))}
+                            </div>
+                          ))}
                           </div>
                         </div>
                       )}
@@ -558,8 +558,8 @@ const UserProfile: React.FC<UserProfileProps> = ({
                             </span>
                           ))}
                         </div>
-                      </div>
-                    )}
+                    </div>
+                  )}
 
                     {profile.grade && (
                       <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 rounded-lg p-2.5 shadow-sm">
@@ -573,10 +573,10 @@ const UserProfile: React.FC<UserProfileProps> = ({
                           {profile.grade}
                         </div>
                       </div>
-                    )}
-                  </div>
-                )}
-              </div>
+                      )}
+                    </div>
+                  )}
+                </div>
             )}
 
             {/* Lessons Tab */}
@@ -584,14 +584,14 @@ const UserProfile: React.FC<UserProfileProps> = ({
               <div className="text-center py-16">
                 <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Calendar className="w-12 h-12 text-gray-400" />
-                </div>
+          </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">
                   {isTeacher ? 'Расписание пока не настроено' : 'Уроки пока не запланированы'}
-                </h3>
+            </h3>
                 <p className="text-gray-500">
                   {isTeacher ? 'Настройте расписание для проведения уроков' : 'Запишитесь на уроки к преподавателям'}
                 </p>
-              </div>
+                    </div>
             )}
 
             {/* Reviews Tab */}
@@ -602,7 +602,7 @@ const UserProfile: React.FC<UserProfileProps> = ({
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">Пока нет отзывов</h3>
                 <p className="text-gray-500">Отзывы о пользователе появятся здесь</p>
-              </div>
+            </div>
             )}
           </div>
         </div>

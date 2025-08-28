@@ -14,9 +14,10 @@ import {
 import PostEditor from './PostEditor';
 
 interface Reaction {
+  id: string;
+  userId: string;
   type: 'like' | 'love' | 'smile' | 'thumbsup';
-  count: number;
-  userReacted: boolean;
+  date: string;
 }
 
 interface Comment {
@@ -45,6 +46,9 @@ interface Post {
   views?: number;
   editedAt?: string;
   bookmarks?: string[];
+  isModerated?: boolean;
+  moderationStatus?: 'pending' | 'approved' | 'rejected';
+  moderationReason?: string;
 }
 
 interface PostCardProps {

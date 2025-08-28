@@ -106,40 +106,40 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({ className = '' 
   return (
     <div className={`relative ${className}`} ref={dropdownRef}>
       {/* Кнопка уведомлений */}
-      <button
+        <button
         onClick={() => setIsOpen(!isOpen)}
         className="relative p-2 rounded-full hover:bg-gray-100 transition-colors"
-      >
+        >
         <Bell className="w-6 h-6 text-gray-600" />
-        {unreadCount > 0 && (
+          {unreadCount > 0 && (
           <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
             {unreadCount > 99 ? '99+' : unreadCount}
-          </span>
-        )}
-      </button>
+            </span>
+          )}
+        </button>
 
       {/* Выпадающее меню */}
       {isOpen && (
         <div className="absolute right-0 top-full mt-2 w-96 bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 max-h-[600px] overflow-hidden">
           {/* Заголовок */}
           <div className="p-4 border-b border-gray-100">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">Уведомления</h3>
-              <div className="flex items-center space-x-2">
-                {unreadCount > 0 && (
-                  <button
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-900">Уведомления</h3>
+                <div className="flex items-center space-x-2">
+                  {unreadCount > 0 && (
+                    <button
                     onClick={handleMarkAllAsRead}
-                    className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-                  >
+                      className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                    >
                     Отметить все как прочитанные
-                  </button>
-                )}
-                <button
+                    </button>
+                  )}
+                  <button
                   onClick={() => setIsOpen(false)}
                   className="p-1 rounded-full hover:bg-gray-100 transition-colors"
-                >
+                  >
                   <X className="w-4 h-4 text-gray-500" />
-                </button>
+                  </button>
               </div>
             </div>
 
@@ -175,26 +175,26 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({ className = '' 
                   {filter === 'unread' && 'Нет непрочитанных уведомлений'}
                   {filter === 'read' && 'Нет прочитанных уведомлений'}
                 </p>
-              </div>
-            ) : (
+                </div>
+              ) : (
               <div className="divide-y divide-gray-100">
                 {displayedNotifications.map((notification) => (
-                  <div
-                    key={notification.id}
+                    <div
+                      key={notification.id}
                     className={`p-4 hover:bg-gray-50 transition-colors cursor-pointer ${
                       !notification.isRead ? 'bg-blue-50' : ''
                     }`}
                     onClick={() => handleNotificationClick(notification)}
-                  >
-                    <div className="flex items-start space-x-3">
+                    >
+                      <div className="flex items-start space-x-3">
                       {/* Иконка */}
                       <div className="flex-shrink-0 mt-1">
-                        {getNotificationIcon(notification.type)}
-                      </div>
-
+                          {getNotificationIcon(notification.type)}
+                        </div>
+                        
                       {/* Контент */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <p className="text-sm font-medium text-gray-900">
                               {notification.title}
@@ -206,7 +206,7 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({ className = '' 
                               {formatTime(notification.createdAt)}
                             </p>
                           </div>
-
+                          
                           {/* Индикатор непрочитанного */}
                           {!notification.isRead && (
                             <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-2"></div>
@@ -238,18 +238,18 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({ className = '' 
                         >
                           <Trash2 className="w-4 h-4 text-red-600" />
                         </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
           {/* Показать больше/меньше */}
           {filteredNotifications.length > 5 && (
             <div className="p-4 border-t border-gray-100">
-              <button
+                <button
                 onClick={() => setShowAll(!showAll)}
                 className="w-full flex items-center justify-center space-x-2 text-sm text-blue-600 hover:text-blue-700 font-medium"
               >
@@ -264,12 +264,12 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({ className = '' 
                     <span>Показать все ({filteredNotifications.length})</span>
                   </>
                 )}
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
   );
 };
 
