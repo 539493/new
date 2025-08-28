@@ -28,6 +28,7 @@ interface DataContextType {
   createSlot: (slot: Omit<TimeSlot, 'id' | 'isBooked'>, studentId?: string, studentName?: string, options?: { mode?: string }) => Promise<TimeSlot>;
   allUsers: User[];
   setAllUsers: (users: User[]) => void;
+  refreshUsers: () => void; // Добавляем функцию для обновления пользователей
   updateTeacherProfile: (teacherId: string, profile: TeacherProfile) => void;
   socketRef: React.MutableRefObject<Socket | null>;
   loadInitialData: () => void;
@@ -565,19 +566,54 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     };
   }, []);
 
+  // Функция для принудительного обновления списка пользователей
+  const refreshUsers = () => {
+    try {
+      const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
+      console.log('Refreshing users list:', users.length, 'users');
+      setAllUsers(users);
+    } catch (error) {
+      console.error('Error refreshing users:', error);
+      setAllUsers([]);
+    }
+  };
+
+  // Слушатель изменений localStorage для синхронизации между вкладками
   useEffect(() => {
-    // Слушаем обновления пользователей (например, при изменении профиля)
     const handleStorage = (e: StorageEvent) => {
       if (e.key === 'tutoring_users') {
         try {
-          setAllUsers(JSON.parse(e.newValue || '[]'));
-        } catch {
+          const newUsers = JSON.parse(e.newValue || '[]');
+          console.log('Storage event: updating allUsers with', newUsers.length, 'users');
+          setAllUsers(newUsers);
+        } catch (error) {
+          console.error('Error parsing users from storage event:', error);
           setAllUsers([]);
         }
       }
     };
+    
+    // Также слушаем кастомные события для обновления в рамках одной вкладки
+    const handleCustomStorage = (e: CustomEvent) => {
+      if (e.detail?.key === 'tutoring_users') {
+        try {
+          const newUsers = JSON.parse(e.detail.newValue || '[]');
+          console.log('Custom storage event: updating allUsers with', newUsers.length, 'users');
+          setAllUsers(newUsers);
+        } catch (error) {
+          console.error('Error parsing users from custom storage event:', error);
+          setAllUsers([]);
+        }
+      }
+    };
+
     window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
+    window.addEventListener('customStorage', handleCustomStorage as EventListener);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('customStorage', handleCustomStorage as EventListener);
+    };
   }, []);
 
   // Сохранение в localStorage при изменении состояния
@@ -1276,6 +1312,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           setAllUsers(users);
           localStorage.setItem('tutoring_users', JSON.stringify(users));
         },
+        refreshUsers, // Добавляем функцию для обновления пользователей
         teacherProfiles: {},
         updateTeacherProfile, // добавлено
         socketRef,

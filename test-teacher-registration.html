@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест регистрации преподавателя</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Тест регистрации преподавателя</h1>
+    
+    <div class="test-section">
+        <h3>1. Проверка localStorage</h3>
+        <button onclick="checkLocalStorage()">Проверить localStorage</button>
+        <div id="localStorageResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>2. Симуляция регистрации преподавателя</h3>
+        <button onclick="simulateTeacherRegistration()">Зарегистрировать тестового преподавателя</button>
+        <div id="registrationResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>3. Проверка API преподавателей</h3>
+        <button onclick="checkTeachersAPI()">Проверить API /api/teachers</button>
+        <div id="apiResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>4. Проверка событий storage</h3>
+        <button onclick="testStorageEvents()">Тестировать события storage</button>
+        <div id="storageResult" class="result"></div>
+    </div>
+
+    <script>
+        // Слушатель событий storage
+        window.addEventListener('storage', function(e) {
+            console.log('Storage event:', e);
+            document.getElementById('storageResult').innerHTML = `
+                <strong>Storage event detected:</strong><br>
+                Key: ${e.key}<br>
+                New value: ${e.newValue}<br>
+                Old value: ${e.oldValue}
+            `;
+        });
+
+        // Слушатель кастомных событий
+        window.addEventListener('customStorage', function(e) {
+            console.log('Custom storage event:', e);
+            document.getElementById('storageResult').innerHTML = `
+                <strong>Custom storage event detected:</strong><br>
+                Key: ${e.detail?.key}<br>
+                New value: ${e.detail?.newValue}<br>
+                Old value: ${e.detail?.oldValue}
+            `;
+        });
+
+        function checkLocalStorage() {
+            try {
+                const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
+                const teachers = users.filter(u => u.role === 'teacher');
+                document.getElementById('localStorageResult').innerHTML = `
+                    <strong>Пользователи в localStorage:</strong><br>
+                    Всего пользователей: ${users.length}<br>
+                    Преподавателей: ${teachers.length}<br>
+                    <pre>${JSON.stringify(users, null, 2)}</pre>
+                `;
+            } catch (error) {
+                document.getElementById('localStorageResult').innerHTML = `
+                    <strong>Ошибка:</strong> ${error.message}
+                `;
+            }
+        }
+
+        function simulateTeacherRegistration() {
+            try {
+                const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
+                
+                const newTeacher = {
+                    id: `teacher_${Date.now()}`,
+                    email: `test_teacher_${Date.now()}@example.com`,
+                    name: `Тестовый преподаватель ${Date.now()}`,
+                    nickname: `teacher_${Date.now()}`,
+                    role: 'teacher',
+                    phone: '+7 (999) 123-45-67',
+                    profile: {
+                        subjects: ['Математика', 'Физика'],
+                        grades: ['9 класс', '10 класс', '11 класс'],
+                        experience: 'experienced',
+                        hourlyRate: 1500,
+                        country: 'Россия',
+                        city: 'Москва',
+                        bio: 'Опытный преподаватель с многолетним стажем'
+                    }
+                };
+
+                const updatedUsers = [...users, newTeacher];
+                localStorage.setItem('tutoring_users', JSON.stringify(updatedUsers));
+
+                // Генерируем события для обновления DataContext
+                window.dispatchEvent(new StorageEvent('storage', {
+                    key: 'tutoring_users',
+                    newValue: JSON.stringify(updatedUsers),
+                    oldValue: JSON.stringify(users),
+                    storageArea: localStorage
+                }));
+
+                window.dispatchEvent(new CustomEvent('customStorage', {
+                    detail: {
+                        key: 'tutoring_users',
+                        newValue: JSON.stringify(updatedUsers),
+                        oldValue: JSON.stringify(users)
+                    }
+                }));
+
+                document.getElementById('registrationResult').innerHTML = `
+                    <strong>Преподаватель зарегистрирован:</strong><br>
+                    ID: ${newTeacher.id}<br>
+                    Имя: ${newTeacher.name}<br>
+                    Email: ${newTeacher.email}<br>
+                    <pre>${JSON.stringify(newTeacher, null, 2)}</pre>
+                `;
+            } catch (error) {
+                document.getElementById('registrationResult').innerHTML = `
+                    <strong>Ошибка:</strong> ${error.message}
+                `;
+            }
+        }
+
+        async function checkTeachersAPI() {
+            try {
+                const response = await fetch('http://localhost:3001/api/teachers');
+                const teachers = await response.json();
+                document.getElementById('apiResult').innerHTML = `
+                    <strong>API /api/teachers:</strong><br>
+                    Количество преподавателей: ${teachers.length}<br>
+                    <pre>${JSON.stringify(teachers, null, 2)}</pre>
+                `;
+            } catch (error) {
+                document.getElementById('apiResult').innerHTML = `
+                    <strong>Ошибка API:</strong> ${error.message}<br>
+                    Убедитесь, что сервер запущен на порту 3001
+                `;
+            }
+        }
+
+        function testStorageEvents() {
+            const testData = { test: 'data', timestamp: Date.now() };
+            localStorage.setItem('test_key', JSON.stringify(testData));
+            
+            // Генерируем кастомное событие
+            window.dispatchEvent(new CustomEvent('customStorage', {
+                detail: {
+                    key: 'test_key',
+                    newValue: JSON.stringify(testData),
+                    oldValue: null
+                }
+            }));
+
+            document.getElementById('storageResult').innerHTML = `
+                <strong>Тестовые события сгенерированы</strong><br>
+                Проверьте консоль браузера для деталей
+            `;
+        }
+
+        // Автоматическая проверка при загрузке
+        window.addEventListener('load', function() {
+            checkLocalStorage();
+        });
+    </script>
+</body>
+</html>

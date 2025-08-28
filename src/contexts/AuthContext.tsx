@@ -39,6 +39,22 @@ const loadUsersFromStorage = (): User[] => {
 const saveUsersToStorage = (users: User[]) => {
   try {
     localStorage.setItem('tutoring_users', JSON.stringify(users));
+    // Генерируем событие storage для обновления DataContext
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: 'tutoring_users',
+      newValue: JSON.stringify(users),
+      oldValue: localStorage.getItem('tutoring_users'),
+      storageArea: localStorage
+    }));
+    
+    // Также генерируем кастомное событие для обновления в рамках одной вкладки
+    window.dispatchEvent(new CustomEvent('customStorage', {
+      detail: {
+        key: 'tutoring_users',
+        newValue: JSON.stringify(users),
+        oldValue: localStorage.getItem('tutoring_users')
+      }
+    }));
   } catch (e) {
     console.error('Error saving users to localStorage:', e);
   }
@@ -80,25 +96,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       try {
         // Проверяем, есть ли пользователи в системе
         const users = loadUsersFromStorage();
-        if (users.length === 0) {
-          // Создаем тестового пользователя для демонстрации
-          const demoUser: User = {
-            id: 'demo_user_1',
-            email: 'demo@example.com',
-            name: 'Демо Ученик',
-            nickname: 'demo_student',
-            role: 'student',
-            phone: '+7 (999) 123-45-67',
-            avatar: 'https://via.placeholder.com/150',
-            profile: {
-              name: 'Демо Ученик',
-              email: 'demo@example.com',
-              phone: '+7 (999) 123-45-67',
-              grade: '10',
-              preferredSubjects: ['Математика', 'Физика'],
-              goals: ['подготовка к экзаменам'],
-              learningStyle: 'mixed',
-              availability: 'flexible'
+        if (users.length === 0) 
             }
           };
           

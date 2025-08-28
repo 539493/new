@@ -16,7 +16,7 @@ import EmptyState from '../Shared/EmptyState';
 import { User as UserIcon } from 'lucide-react';
 
 const StudentHome: React.FC = () => {
-  const { getFilteredSlots, bookLesson, timeSlots, isConnected } = useData();
+  const { getFilteredSlots, bookLesson, timeSlots, isConnected, allUsers, refreshUsers } = useData();
   const { user } = useAuth();
   
   const [filters, setFilters] = useState<FilterOptions>({});
@@ -61,7 +61,6 @@ const StudentHome: React.FC = () => {
   const locales = { 'ru': ru };
   const localizer = dateFnsLocalizer({ format, parse, startOfWeek, getDay, locales });
 
-  const { allUsers } = useData();
   const [serverTeachers, setServerTeachers] = useState<User[]>([]);
 
   // Загружаем преподавателей с сервера при монтировании
@@ -344,7 +343,40 @@ const StudentHome: React.FC = () => {
     }
   }, [filters, selectedDate, selectedTimeRange]);
 
+  // Обновление списка преподавателей при изменении пользователей
+  React.useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'tutoring_users') {
+        // Принудительно обновляем компонент при изменении пользователей
+        console.log('Users changed in localStorage, updating teachers list');
+        // Перезагружаем страницу или обновляем состояние
+        window.location.reload();
+      }
+    };
 
+    const handleCustomStorageChange = (e: CustomEvent) => {
+      if (e.detail?.key === 'tutoring_users') {
+        console.log('Custom storage event: users changed, updating teachers list');
+        // Используем функцию refreshUsers из контекста для обновления списка пользователей
+        refreshUsers();
+        // Также обновляем серверных преподавателей
+        setServerTeachers([]); // Сбрасываем серверных преподавателей
+        // Перезагружаем преподавателей с сервера
+        fetch(`${SERVER_URL}/api/teachers`)
+          .then(res => res.json())
+          .then(data => setServerTeachers(Array.isArray(data) ? data : []))
+          .catch(() => setServerTeachers([]));
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('customStorage', handleCustomStorageChange as EventListener);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('customStorage', handleCustomStorageChange as EventListener);
+    };
+  }, []);
 
   // Первоначальная загрузка слотов при монтировании компонента
   React.useEffect(() => {
