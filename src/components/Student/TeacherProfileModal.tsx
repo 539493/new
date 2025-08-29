@@ -37,8 +37,6 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { useData } from '../../contexts/DataContext';
 import { TeacherProfile, TimeSlot } from '../../types';
-import Avatar from '../Shared/Avatar';
-import AvatarUpload from '../Shared/AvatarUpload';
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001';
 
@@ -255,14 +253,45 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
           <div className="flex items-start gap-6 mb-6">
             {/* Avatar */}
             <div className="relative">
-              <Avatar 
-                src={profile?.avatar || teacher.avatar}
-                alt={teacher.name}
-                size="lg"
-                className="w-24 h-24 border-4 border-white shadow-lg"
-                showOnlineStatus={true}
-                isOnline={true}
-              />
+              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center overflow-hidden border-4 border-white shadow-lg relative">
+                {/* Online Status */}
+                <div className="absolute top-1 right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full shadow-sm"></div>
+                
+                {(() => {
+                  const avatarUrl = profile?.avatar || teacher.avatar;
+                  const hasAvatar = avatarUrl && avatarUrl.trim() !== '' && avatarUrl !== 'undefined' && avatarUrl !== 'null';
+                  
+                  if (hasAvatar) {
+                    return (
+                      <img 
+                        src={avatarUrl} 
+                        alt={teacher.name} 
+                        className="w-24 h-24 object-cover rounded-full"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          const fallback = target.nextElementSibling as HTMLElement;
+                          if (fallback) fallback.classList.remove('hidden');
+                        }}
+                        onLoad={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          const fallback = target.nextElementSibling as HTMLElement;
+                          if (fallback) fallback.classList.add('hidden');
+                        }}
+                      />
+                    );
+                  }
+                  return null;
+                })()}
+                
+                <div className={`w-24 h-24 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center ${(() => {
+                  const avatarUrl = profile?.avatar || teacher.avatar;
+                  const hasAvatar = avatarUrl && avatarUrl.trim() !== '' && avatarUrl !== 'undefined' && avatarUrl !== 'null';
+                  return hasAvatar ? 'hidden' : '';
+                })()}`}>
+                  <UserIcon className="h-12 w-12 text-white" />
+                </div>
+              </div>
             </div>
 
             {/* Name and Actions */}
@@ -405,7 +434,7 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
                   </div>
                 </div>
                 
-                <div>
+              <div>
                   <span className="text-sm font-semibold text-gray-500 flex items-center">
                     <Target className="w-4 h-4 mr-2" />
                     Цели обучения:
@@ -466,7 +495,7 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
                   </div>
                 </div>
                 
-                <div>
+              <div>
                   <span className="text-sm font-semibold text-gray-500 flex items-center">
                     <Globe className="w-4 h-4 mr-2" />
                     Форматы обучения:
@@ -499,7 +528,7 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Основная стоимость */}
               <div className="space-y-4">
-                <div>
+              <div>
                   <span className="text-sm font-semibold text-gray-500">Базовая стоимость:</span>
                   <div className="text-2xl font-bold text-blue-600 mt-1">
                     {profile?.hourlyRate ? `${profile.hourlyRate} ₽/час` : 'Не указана'}
@@ -556,9 +585,9 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
                 )}
                 
                 {/* Овербукинг */}
-                <div>
+              <div>
                   <span className="text-sm font-semibold text-gray-500">Автоподбор:</span>
-                  <div className="text-base text-gray-900 mt-1">
+                <div className="text-base text-gray-900 mt-1">
                     {profile?.overbookingEnabled ? (
                       <span className="text-green-600 font-medium">✓ Доступен</span>
                     ) : (
@@ -617,24 +646,24 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
                 </div>
                 
                 {/* Слоты */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {availableSlots.slice(0, 6).map((slot) => (
-                    <div key={slot.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {availableSlots.slice(0, 6).map((slot) => (
+                  <div key={slot.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
                       <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center space-x-2">
-                          <BookOpen className="w-4 h-4 text-blue-600" />
-                          <span className="font-semibold text-gray-900">{slot.subject}</span>
-                        </div>
-                        <span className="text-lg font-bold text-green-600">{slot.price} ₽</span>
+                      <div className="flex items-center space-x-2">
+                        <BookOpen className="w-4 h-4 text-blue-600" />
+                        <span className="font-semibold text-gray-900">{slot.subject}</span>
                       </div>
+                        <span className="text-lg font-bold text-green-600">{slot.price} ₽</span>
+                    </div>
                       <div className="space-y-2 mb-3">
                         <div className="flex items-center space-x-2 text-sm text-gray-600">
-                          <Clock className="w-3 h-3" />
-                          <span>{formatSlotDate(slot.date)} • {slot.startTime}-{slot.endTime}</span>
-                        </div>
+                        <Clock className="w-3 h-3" />
+                        <span>{formatSlotDate(slot.date)} • {slot.startTime}-{slot.endTime}</span>
+                      </div>
                         <div className="flex items-center space-x-2 text-sm text-gray-600">
-                          <MapPin className="w-3 h-3" />
-                          <span>{getFormatLabel(slot.format)} • {slot.duration} мин</span>
+                        <MapPin className="w-3 h-3" />
+                        <span>{getFormatLabel(slot.format)} • {slot.duration} мин</span>
                         </div>
                         {slot.experience && (
                           <div className="flex items-center space-x-2 text-sm text-gray-600">
@@ -642,15 +671,15 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
                             <span>Опыт: {getExperienceLabel(slot.experience)}</span>
                           </div>
                         )}
-                      </div>
-                      <button
-                        onClick={() => onBookLesson(teacher.id)}
-                        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-2 px-4 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 text-sm font-semibold"
-                      >
-                        Записаться за {slot.price} ₽
-                      </button>
                     </div>
-                  ))}
+                    <button
+                      onClick={() => onBookLesson(teacher.id)}
+                        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-2 px-4 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 text-sm font-semibold"
+                    >
+                        Записаться за {slot.price} ₽
+                    </button>
+                  </div>
+                ))}
                 </div>
                 
                 {availableSlots.length > 6 && (
