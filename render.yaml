@@ -15,4 +15,10 @@ services:
     healthCheckPath: /
     autoDeploy: true
     branch: main
-    plan: starter 
+    plan: starter
+    region: oregon
+    numInstances: 1
+    disk:
+      name: data
+      mountPath: /opt/render/project/src/backend
+      sizeGB: 1 

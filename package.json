@@ -13,6 +13,7 @@
     "build:server": "echo 'Server is already built'",
     "deploy:check": "./scripts/check-deploy-status.sh",
     "deploy:test": "echo 'Testing deployment...' && git add . && git commit -m 'Test auto-deploy' && git push origin main",
+    "deploy:render": "./scripts/deploy-to-render.sh",
     "sync:render": "node scripts/sync-data-to-render.js"
   },
   "dependencies": {
