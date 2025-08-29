@@ -2,8 +2,8 @@
 const getServerUrl = () => {
   // В продакшене используем внешний сервер
   if (import.meta.env.PROD) {
-    // На Render используем новый внешний сервер для API
-    return 'https://na-uchi.onrender.com';
+    // На Render используем развернутый сервер
+    return 'https://tutoring-platform-am88.onrender.com';
   }
   
   // В разработке используем локальный сервер, но доступный из других сетей
@@ -15,8 +15,8 @@ const getServerUrl = () => {
 const getWebSocketUrl = () => {
   // В продакшене используем внешний сервер
   if (import.meta.env.PROD) {
-    // На Render используем новый внешний сервер для WebSocket
-    return 'https://na-uchi.onrender.com';
+    // На Render используем развернутый сервер для WebSocket
+    return 'https://tutoring-platform-am88.onrender.com';
   }
   
   // В разработке используем локальный сервер, но доступный из других сетей

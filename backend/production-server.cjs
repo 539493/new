@@ -21,7 +21,8 @@ const allowedOrigins = [
   "https://na-uchi.onrender.com",
   "https://tutoring-platform.vercel.app",
   "https://tutoring-platform.onrender.com",
-  "https://tutoring-platform-*.onrender.com"
+  "https://tutoring-platform-*.onrender.com",
+  "https://tutoring-platform-am88.onrender.com"
 ];
 
 app.use(cors({

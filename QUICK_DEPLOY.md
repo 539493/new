@@ -42,7 +42,7 @@ git push origin main
 
 ## 🔗 URL после развертывания
 ```
-https://tutoring-platform-xxxxx.onrender.com
+https://tutoring-platform-am88.onrender.com
 ```
 
 ## ✅ Проверка работоспособности

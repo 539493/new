@@ -82,7 +82,7 @@ HOST=0.0.0.0
 ### 5.1 Получите URL
 После успешного развертывания вы получите URL вида:
 ```
-https://tutoring-platform-xxxxx.onrender.com
+https://tutoring-platform-am88.onrender.com
 ```
 
 ### 5.2 Обновите конфигурацию (если нужно)
@@ -174,7 +174,7 @@ const socket = io('https://your-app.onrender.com');
 
 После успешного развертывания ваш проект будет доступен по URL:
 ```
-https://your-app-name.onrender.com
+https://tutoring-platform-am88.onrender.com
 ```
 
 Все функции должны работать:
