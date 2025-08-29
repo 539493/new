@@ -141,6 +141,16 @@ const StudentHome: React.FC = () => {
           loadAvailableSlots();
         }, 100);
       });
+      
+      // Слушаем обновление профиля пользователя
+      socket.current.on('profileUpdated', (updatedUser: any) => {
+        console.log('Profile updated via WebSocket:', updatedUser);
+        // Обновляем данные при изменении профиля
+        setTimeout(() => {
+          refreshAllData();
+          loadAvailableSlots();
+        }, 100);
+      });
     }
   }, []);
 
@@ -468,11 +478,51 @@ const StudentHome: React.FC = () => {
     loadAvailableSlots();
   }, [timeSlots]);
 
-  const handleTeacherClick = (teacher: any) => {
-    // Сначала пытаемся найти преподавателя в localStorage
+  const handleTeacherClick = async (teacher: any) => {
+    // Принудительно обновляем данные учителя с сервера
+    try {
+      const response = await fetch(`${SERVER_URL}/api/users/${teacher.id}`);
+      if (response.ok) {
+        const freshTeacherData = await response.json();
+        console.log('Fresh teacher data from server:', freshTeacherData);
+        
+        // Обновляем данные в контексте
+        if (freshTeacherData) {
+          // Обновляем пользователя в localStorage
+          const existingUsers = JSON.parse(localStorage.getItem('allUsers') || '[]');
+          const updatedUsers = existingUsers.map((user: any) => 
+            user.id === freshTeacherData.id ? freshTeacherData : user
+          );
+          localStorage.setItem('allUsers', JSON.stringify(updatedUsers));
+          
+          // Используем свежие данные
+          const teacherUser = {
+            id: freshTeacherData.id,
+            name: freshTeacherData.name,
+            email: freshTeacherData.email,
+            avatar: freshTeacherData.profile?.avatar || freshTeacherData.avatar,
+            role: 'teacher',
+            profile: {
+              ...freshTeacherData.profile,
+              avatar: freshTeacherData.profile?.avatar || freshTeacherData.avatar,
+              name: freshTeacherData.name,
+              email: freshTeacherData.email
+            }
+          };
+          
+          console.log('Updated teacher data for modal:', teacherUser);
+          setSelectedTeacher(teacherUser);
+          setShowTeacherModal(true);
+          return;
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching fresh teacher data:', error);
+    }
+    
+    // Fallback к старому методу, если не удалось получить свежие данные
     let teacherUser = getUserById(teacher.id);
     
-    // Если не найден в localStorage, используем данные с сервера
     if (!teacherUser) {
       teacherUser = {
         id: teacher.id,
@@ -488,7 +538,6 @@ const StudentHome: React.FC = () => {
         }
       };
     } else {
-      // Обновляем данные из teacher, если они есть
       teacherUser = {
         ...teacherUser,
         name: teacher.name || teacherUser.name,
@@ -504,7 +553,7 @@ const StudentHome: React.FC = () => {
       };
     }
     
-    console.log('Teacher data for modal:', teacherUser); // Для отладки
+    console.log('Fallback teacher data for modal:', teacherUser);
     setSelectedTeacher(teacherUser);
     setShowTeacherModal(true);
   };

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   User as UserIcon, 
   Star, 
@@ -31,11 +31,14 @@ import {
   Book,
   Globe,
   Heart,
-  Share2
+  Share2,
+  RefreshCw
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useData } from '../../contexts/DataContext';
 import { TeacherProfile, TimeSlot } from '../../types';
+
+const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001';
 
 interface TeacherProfileModalProps {
   teacher: any;
@@ -51,16 +54,72 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
   onMessage 
 }) => {
   const { user } = useAuth();
-  const { timeSlots, posts, lessons } = useData();
+  const { timeSlots, posts, lessons, refreshUsers } = useData();
   const [isLiked, setIsLiked] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [activeTab, setActiveTab] = useState<'about' | 'posts' | 'lessons' | 'reviews'>('about');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const refreshTeacherData = async () => {
+    setIsRefreshing(true);
+    try {
+      const response = await fetch(`${SERVER_URL}/api/users/${teacher.id}`);
+      if (response.ok) {
+        const freshData = await response.json();
+        console.log('Fresh teacher data from refresh button:', freshData);
+        
+        // Обновляем данные в контексте
+        const existingUsers = JSON.parse(localStorage.getItem('allUsers') || '[]');
+        const updatedUsers = existingUsers.map((user: any) => 
+          user.id === freshData.id ? freshData : user
+        );
+        localStorage.setItem('allUsers', JSON.stringify(updatedUsers));
+        
+        // Обновляем данные в контексте приложения
+        refreshUsers();
+        
+        // Обновляем данные в модальном окне
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error('Error refreshing teacher data:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const profile = teacher.profile as TeacherProfile;
   
   // Отладочная информация
   console.log('Teacher in modal:', teacher);
   console.log('Profile in modal:', profile);
+
+  // Принудительно обновляем данные при открытии модального окна
+  useEffect(() => {
+    const refreshTeacherData = async () => {
+      try {
+        const response = await fetch(`${SERVER_URL}/api/users/${teacher.id}`);
+        if (response.ok) {
+          const freshData = await response.json();
+          console.log('Fresh teacher data in modal:', freshData);
+          
+          // Обновляем данные в контексте
+          const existingUsers = JSON.parse(localStorage.getItem('allUsers') || '[]');
+          const updatedUsers = existingUsers.map((user: any) => 
+            user.id === freshData.id ? freshData : user
+          );
+          localStorage.setItem('allUsers', JSON.stringify(updatedUsers));
+          
+          // Обновляем данные в контексте приложения
+          refreshUsers();
+        }
+      } catch (error) {
+        console.error('Error refreshing teacher data in modal:', error);
+      }
+    };
+
+    refreshTeacherData();
+  }, [teacher.id]);
 
   // Получаем статистику
   const teacherSlots = timeSlots.filter(slot => slot.teacherId === teacher.id);
@@ -198,11 +257,19 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
                   <h1 className="text-2xl font-bold text-gray-900">{teacher.name}</h1>
                   <p className="text-gray-500">@{teacher.id}</p>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
-                    <Share2 className="w-5 h-5" />
-                  </button>
-                </div>
+                            <div className="flex items-center space-x-2">
+              <button 
+                onClick={refreshTeacherData}
+                disabled={isRefreshing}
+                className="p-2 text-gray-400 hover:text-blue-600 transition-colors disabled:opacity-50"
+                title="Обновить данные"
+              >
+                <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+              </button>
+              <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
+                <Share2 className="w-5 h-5" />
+              </button>
+            </div>
               </div>
 
               {/* Quick Stats */}
