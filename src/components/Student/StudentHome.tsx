@@ -10,6 +10,7 @@ import { FilterOptions, TimeSlot, User } from '../../types';
 import { io, Socket } from 'socket.io-client';
 import { SERVER_URL, WEBSOCKET_URL } from '../../config';
 import TeacherProfilePage from './TeacherProfilePage';
+import TeacherProfileModal from './TeacherProfileModal';
 import StudentCalendar from './StudentCalendar';
 import BookingModal from '../Shared/BookingModal';
 import EmptyState from '../Shared/EmptyState';
@@ -1145,93 +1146,22 @@ const StudentHome: React.FC = () => {
         </div>
       )}
 
-      {/* Модальное окно с полной страницей преподавателя */}
+            {/* Модальное окно с полной страницей преподавателя */}
       {showTeacherModal && selectedTeacher && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-8 relative overflow-y-auto max-h-[90vh]">
-            <button className="absolute top-4 right-4 text-gray-400 hover:text-gray-700" onClick={() => setShowTeacherModal(false)} title="Закрыть">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            <div className="flex flex-col items-center mb-6">
-              {selectedTeacher.avatar ? (
-                <img src={selectedTeacher.avatar} alt="avatar" className="w-24 h-24 rounded-full object-cover mb-2" />
-              ) : (
-                <div className="w-24 h-24 rounded-full bg-gradient-to-r from-blue-400 to-indigo-500 flex items-center justify-center mb-2">
-                  <UserIcon className="h-12 w-12 text-white" />
-                </div>
-              )}
-              <h2 className="text-2xl font-bold text-gray-900">{selectedTeacher.name}</h2>
-              <div className="text-gray-500">{selectedTeacher.email}</div>
-            </div>
-            {(() => {
-              const profile = selectedTeacher.profile || {};
-              const fieldMap: { key: string; label: string; icon: React.ReactNode }[] = [
-                { key: 'bio', label: 'О себе', icon: <UserIcon className="inline-block w-5 h-5 mr-2 text-blue-500" /> },
-                { key: 'country', label: 'Страна', icon: <span className="inline-block w-5 h-5 mr-2">🌍</span> },
-                { key: 'city', label: 'Город', icon: <span className="inline-block w-5 h-5 mr-2">🏙️</span> },
-                { key: 'experience', label: 'Опыт', icon: <span className="inline-block w-5 h-5 mr-2">🎓</span> },
-                { key: 'rating', label: 'Рейтинг', icon: <span className="inline-block w-5 h-5 mr-2">⭐</span> },
-                { key: 'hourlyRate', label: 'Цена за час', icon: <span className="inline-block w-5 h-5 mr-2">💸</span> },
-                { key: 'subjects', label: 'Предметы', icon: <span className="inline-block w-5 h-5 mr-2">📚</span> },
-                { key: 'grades', label: 'Классы', icon: <span className="inline-block w-5 h-5 mr-2">🏫</span> },
-                { key: 'format', label: 'Формат', icon: <span className="inline-block w-5 h-5 mr-2">💻</span> },
-                { key: 'duration', label: 'Длительность', icon: <span className="inline-block w-5 h-5 mr-2">⏱️</span> },
-                { key: 'comment', label: 'Комментарий', icon: <span className="inline-block w-5 h-5 mr-2">💬</span> },
-                { key: 'status', label: 'Статус', icon: <span className="inline-block w-5 h-5 mr-2">📋</span> },
-              ];
-              return (
-                <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {fieldMap.map(({ key, label, icon }) => {
-                    const value = profile[key];
-                    if (value === undefined || value === null || value === '' || (Array.isArray(value) && value.length === 0)) return null;
-                    return (
-                      <div key={key} className="flex items-start bg-gray-50 rounded-lg p-4 shadow-sm">
-                        <div className="mt-1">{icon}</div>
-                        <div>
-                          <div className="text-sm font-semibold text-gray-700 mb-1">{label}</div>
-                          {Array.isArray(value) ? (
-                            <div className="flex flex-wrap gap-1">
-                              {value.map((v: string, i: number) => (
-                                <span key={i} className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-xs mr-1 mb-1">{v}</span>
-                              ))}
-            </div>
-                          ) : (
-                            <div className="text-gray-900 text-sm break-all">{String(value)}</div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              );
-            })()}
-            <div className="mb-4">
-              <h3 className="text-lg font-bold mb-2">Записи преподавателя</h3>
-              {teacherPosts.length === 0 ? (
-                <div className="text-gray-400 text-sm">Пока нет записей</div>
-              ) : (
-                <div className="flex flex-col gap-4">
-                  {teacherPosts.map(post => (
-                    <div key={post.id} className="bg-gray-50 rounded-lg p-3 shadow-sm">
-                      <div className="flex items-center gap-2 mb-1">
-                        {selectedTeacher.avatar ? (
-                          <img src={selectedTeacher.avatar} alt="avatar" className="h-7 w-7 rounded-full object-cover" />
-                        ) : (
-                          <UserIcon className="h-5 w-5 text-gray-400" />
-                        )}
-                        <span className="font-medium text-gray-900 text-sm">{selectedTeacher.name}</span>
-                        <span className="text-xs text-gray-400 ml-2">{post.date}</span>
-                      </div>
-                      <div className="text-gray-800 text-sm whitespace-pre-line">{post.text}</div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        <TeacherProfileModal
+          teacher={selectedTeacher}
+          onClose={() => setShowTeacherModal(false)}
+          onBookLesson={(teacherId) => {
+            setShowTeacherModal(false);
+            // Здесь можно добавить логику для бронирования урока
+            console.log('Booking lesson for teacher:', teacherId);
+          }}
+          onMessage={(teacherId) => {
+            setShowTeacherModal(false);
+            // Здесь можно добавить логику для отправки сообщения
+            console.log('Sending message to teacher:', teacherId);
+          }}
+        />
       )}
 
       {/* Модальное окно для бронирования урока */}

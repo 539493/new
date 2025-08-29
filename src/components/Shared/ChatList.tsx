@@ -4,6 +4,8 @@ import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
+import TeacherProfileModal from '../Student/TeacherProfileModal';
+import StudentProfileModal from '../Student/StudentProfileModal';
 
 const ChatList: React.FC = () => {
   const { 
@@ -459,14 +461,53 @@ const ChatList: React.FC = () => {
         </div>
       </div>
       {/* Модальное окно с полной страницей пользователя (преподавателя или ученика): */}
-      {showProfileModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-8 relative overflow-y-auto max-h-[90vh]">
-            <button className="absolute top-4 right-4 text-gray-400 hover:text-gray-700" onClick={() => setShowProfileModal(false)} title="Закрыть">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+      {showProfileModal && (() => {
+        const profileUser = profileUserId ? getUserProfileById(profileUserId) : null;
+        
+        // Если это учитель, используем новый компонент
+        if (profileUser && profileUser.role === 'teacher') {
+          return (
+            <TeacherProfileModal
+              teacher={profileUser}
+              onClose={() => setShowProfileModal(false)}
+              onBookLesson={(teacherId) => {
+                setShowProfileModal(false);
+                // Здесь можно добавить логику для бронирования урока
+                console.log('Booking lesson for teacher:', teacherId);
+              }}
+              onMessage={(teacherId) => {
+                setShowProfileModal(false);
+                // Здесь можно добавить логику для отправки сообщения
+                console.log('Sending message to teacher:', teacherId);
+              }}
+            />
+          );
+        }
+        
+        // Если это ученик, используем новый компонент для учеников
+        if (profileUser && profileUser.role === 'student') {
+          return (
+            <StudentProfileModal
+              student={profileUser}
+              onClose={() => setShowProfileModal(false)}
+              onMessage={(studentId) => {
+                setShowProfileModal(false);
+                // Здесь можно добавить логику для отправки сообщения
+                console.log('Sending message to student:', studentId);
+              }}
+            />
+          );
+        }
+        
+        // Для остальных случаев используем старый модальный компонент
+        return (
+          <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-8 relative overflow-y-auto max-h-[90vh]">
+              <button className="absolute top-4 right-4 text-gray-400 hover:text-gray-700" onClick={() => setShowProfileModal(false)} title="Закрыть">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             {(() => {
               const profileUser = profileUserId ? getUserProfileById(profileUserId) : null;
               const profile = profileUser?.profile || {};
