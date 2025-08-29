@@ -18,6 +18,10 @@ build/
 .env.test.local
 .env.production.local
 
+# Uploaded files
+backend/uploads/
+uploads/
+
 # IDE files
 .vscode/
 .idea/

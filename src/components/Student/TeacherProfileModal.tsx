@@ -37,6 +37,8 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { useData } from '../../contexts/DataContext';
 import { TeacherProfile, TimeSlot } from '../../types';
+import Avatar from '../Shared/Avatar';
+import AvatarUpload from '../Shared/AvatarUpload';
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001';
 
@@ -253,45 +255,14 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
           <div className="flex items-start gap-6 mb-6">
             {/* Avatar */}
             <div className="relative">
-              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center overflow-hidden border-4 border-white shadow-lg relative">
-                {/* Online Status */}
-                <div className="absolute top-1 right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full shadow-sm"></div>
-                
-                {(() => {
-                  const avatarUrl = profile?.avatar || teacher.avatar;
-                  const hasAvatar = avatarUrl && avatarUrl.trim() !== '' && avatarUrl !== 'undefined' && avatarUrl !== 'null';
-                  
-                  if (hasAvatar) {
-                    return (
-                      <img 
-                        src={avatarUrl} 
-                        alt={teacher.name} 
-                        className="w-24 h-24 object-cover rounded-full"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
-                          const fallback = target.nextElementSibling as HTMLElement;
-                          if (fallback) fallback.classList.remove('hidden');
-                        }}
-                        onLoad={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          const fallback = target.nextElementSibling as HTMLElement;
-                          if (fallback) fallback.classList.add('hidden');
-                        }}
-                      />
-                    );
-                  }
-                  return null;
-                })()}
-                
-                <div className={`w-24 h-24 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center ${(() => {
-                  const avatarUrl = profile?.avatar || teacher.avatar;
-                  const hasAvatar = avatarUrl && avatarUrl.trim() !== '' && avatarUrl !== 'undefined' && avatarUrl !== 'null';
-                  return hasAvatar ? 'hidden' : '';
-                })()}`}>
-                  <UserIcon className="h-12 w-12 text-white" />
-                </div>
-              </div>
+              <Avatar 
+                src={profile?.avatar || teacher.avatar}
+                alt={teacher.name}
+                size="lg"
+                className="w-24 h-24 border-4 border-white shadow-lg"
+                showOnlineStatus={true}
+                isOnline={true}
+              />
             </div>
 
             {/* Name and Actions */}

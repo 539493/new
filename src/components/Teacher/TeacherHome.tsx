@@ -1,8 +1,15 @@
 import React, { useState } from 'react';
-import { BookOpen, Users, Calendar, TrendingUp, Clock, Star, Plus } from 'lucide-react';
+import { BookOpen, Users, Calendar, TrendingUp, Clock, Star, Plus, Settings } from 'lucide-react';
+import ProfileEditModal from './ProfileEditModal';
 
 const TeacherHome: React.FC = () => {
   const [showCreateSlot, setShowCreateSlot] = useState(false);
+  const [showProfileEdit, setShowProfileEdit] = useState(false);
+
+  const handleProfileSave = (profile: any) => {
+    console.log('Profile saved:', profile);
+    // Здесь можно добавить логику обновления профиля
+  };
 
   return (
     <div className="space-y-8 animate-fade-in-up">
@@ -62,7 +69,7 @@ const TeacherHome: React.FC = () => {
       {/* Быстрые действия */}
       <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6">
         <h2 className="text-2xl font-bold text-gray-900 mb-6">Быстрые действия</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <button
             onClick={() => setShowCreateSlot(!showCreateSlot)}
             className="flex items-center space-x-3 p-4 bg-blue-50 text-blue-700 rounded-2xl hover:bg-blue-100 transition-all duration-200 hover:scale-105"
@@ -79,6 +86,14 @@ const TeacherHome: React.FC = () => {
           <button className="flex items-center space-x-3 p-4 bg-purple-50 text-purple-700 rounded-2xl hover:bg-purple-100 transition-all duration-200 hover:scale-105">
             <Calendar className="h-6 w-6" />
             <span className="font-medium">Расписание</span>
+          </button>
+
+          <button
+            onClick={() => setShowProfileEdit(true)}
+            className="flex items-center space-x-3 p-4 bg-orange-50 text-orange-700 rounded-2xl hover:bg-orange-100 transition-all duration-200 hover:scale-105"
+          >
+            <Settings className="h-6 w-6" />
+            <span className="font-medium">Редактировать профиль</span>
           </button>
         </div>
       </div>
@@ -148,6 +163,13 @@ const TeacherHome: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Profile Edit Modal */}
+      <ProfileEditModal
+        isOpen={showProfileEdit}
+        onClose={() => setShowProfileEdit(false)}
+        onSave={handleProfileSave}
+      />
     </div>
   );
 };

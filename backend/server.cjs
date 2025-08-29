@@ -4,9 +4,43 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+const multer = require('multer');
 
 const app = express();
 const server = http.createServer(app);
+
+// Настройка multer для загрузки файлов
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, path.join(__dirname, 'uploads', 'avatars'));
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, 'avatar-' + uniqueSuffix + ext);
+  }
+});
+
+const upload = multer({ 
+  storage: storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB limit
+  },
+  fileFilter: function (req, file, cb) {
+    // Проверяем тип файла
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed!'), false);
+    }
+  }
+});
+
+// Создаем папку для загрузок, если её нет
+const uploadsDir = path.join(__dirname, 'uploads', 'avatars');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
 
 // Настройка CORS для всех доменов
 const allowedOrigins = [
@@ -48,6 +82,9 @@ app.use(cors({
 // Middleware для парсинга JSON
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Статические файлы для загруженных изображений
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Создание Socket.IO сервера
 const io = new Server(server, {
@@ -1279,6 +1316,44 @@ app.get('/api/users/:id', (req, res) => {
     console.error('Error getting user:', error);
     res.status(500).json({ error: 'Failed to get user' });
   }
+});
+
+// Endpoint для загрузки аватара пользователя
+app.post('/api/uploadAvatar', upload.single('avatar'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file uploaded.' });
+  }
+
+  const userId = req.body.userId;
+  if (!userId) {
+    fs.unlink(req.file.path, (unlinkErr) => {
+      if (unlinkErr) {
+        console.error('Error deleting uploaded file:', unlinkErr);
+      }
+      res.status(400).json({ error: 'User ID is missing.' });
+    });
+    return;
+  }
+
+  const userProfile = teacherProfiles[userId] || studentProfiles[userId];
+  if (!userProfile) {
+    fs.unlink(req.file.path, (unlinkErr) => {
+      if (unlinkErr) {
+        console.error('Error deleting uploaded file:', unlinkErr);
+      }
+      res.status(404).json({ error: 'User profile not found.' });
+    });
+    return;
+  }
+
+  userProfile.avatar = req.file.path.replace('uploads/avatars/', ''); // Сохраняем относительный путь
+  saveServerData();
+
+  res.json({
+    success: true,
+    message: 'Avatar uploaded successfully',
+    avatarUrl: userProfile.avatar
+  });
 });
 
 // Простой endpoint для проверки работы сервера

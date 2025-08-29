@@ -14,7 +14,7 @@ import TeacherProfileModal from './TeacherProfileModal';
 import StudentCalendar from './StudentCalendar';
 import BookingModal from '../Shared/BookingModal';
 import EmptyState from '../Shared/EmptyState';
-import { User as UserIcon } from 'lucide-react';
+import Avatar from '../Shared/Avatar';
 
 
 const StudentHome: React.FC = () => {
@@ -937,47 +937,14 @@ const StudentHome: React.FC = () => {
                 
                 {/* Avatar - Centered on background, Bigger */}
                 <div className="relative -mt-12 flex justify-center">
-                  <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center overflow-hidden border-4 border-white shadow-2xl relative">
-                    {/* Online Status */}
-                    <div className="absolute top-2 right-2 w-5 h-5 bg-green-500 border-2 border-white rounded-full shadow-lg"></div>
-                    
-                    {/* Avatar Image */}
-                    {(() => {
-                      const avatarUrl = profile?.avatar || teacher.avatar;
-                      const hasAvatar = avatarUrl && avatarUrl.trim() !== '' && avatarUrl !== 'undefined' && avatarUrl !== 'null';
-                      
-                      if (hasAvatar) {
-                        return (
-                          <img 
-                            src={avatarUrl} 
-                            alt={teacher.name} 
-                            className="w-32 h-32 object-cover rounded-full"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.style.display = 'none';
-                              const fallback = target.nextElementSibling as HTMLElement;
-                              if (fallback) fallback.classList.remove('hidden');
-                            }}
-                            onLoad={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              const fallback = target.nextElementSibling as HTMLElement;
-                              if (fallback) fallback.classList.add('hidden');
-                            }}
-                          />
-                        );
-                      }
-                      return null;
-                    })()}
-                    
-                    {/* Fallback Avatar */}
-                    <div className={`w-32 h-32 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center ${(() => {
-                      const avatarUrl = profile?.avatar || teacher.avatar;
-                      const hasAvatar = avatarUrl && avatarUrl.trim() !== '' && avatarUrl !== 'undefined' && avatarUrl !== 'null';
-                      return hasAvatar ? 'hidden' : '';
-                    })()}`}>
-                      <UserIcon className="h-16 w-16 text-white" />
-                    </div>
-                  </div>
+                  <Avatar 
+                    src={profile?.avatar || teacher.avatar}
+                    alt={teacher.name}
+                    size="xl"
+                    className="w-32 h-32 border-4 border-white shadow-2xl"
+                    showOnlineStatus={true}
+                    isOnline={true}
+                  />
                 </div>
                 
                 {/* Content - Below avatar */}
@@ -1286,7 +1253,7 @@ const StudentHome: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
                   <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center">
-                    <UserIcon className="h-6 w-6 text-white" />
+                    <Avatar className="h-6 w-6 text-white" />
                   </div>
                   <div>
                     <h2 className="text-xl font-bold text-gray-900">
