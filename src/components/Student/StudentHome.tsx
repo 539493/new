@@ -477,15 +477,36 @@ const StudentHome: React.FC = () => {
       teacherUser = {
         id: teacher.id,
         name: teacher.name,
-        email: teacher.profile?.email || '',
-        avatar: teacher.avatar,
+        email: teacher.profile?.email || teacher.email || '',
+        avatar: teacher.profile?.avatar || teacher.avatar,
         role: 'teacher',
-        profile: teacher.profile
+        profile: {
+          ...teacher.profile,
+          avatar: teacher.profile?.avatar || teacher.avatar,
+          name: teacher.name,
+          email: teacher.profile?.email || teacher.email
+        }
+      };
+    } else {
+      // Обновляем данные из teacher, если они есть
+      teacherUser = {
+        ...teacherUser,
+        name: teacher.name || teacherUser.name,
+        email: teacher.profile?.email || teacher.email || teacherUser.email,
+        avatar: teacher.profile?.avatar || teacher.avatar || teacherUser.avatar,
+        profile: {
+          ...teacherUser.profile,
+          ...teacher.profile,
+          avatar: teacher.profile?.avatar || teacher.avatar || teacherUser.avatar,
+          name: teacher.name || teacherUser.name,
+          email: teacher.profile?.email || teacher.email || teacherUser.email
+        }
       };
     }
     
+    console.log('Teacher data for modal:', teacherUser); // Для отладки
     setSelectedTeacher(teacherUser);
-    setShowTeacherModal(true); // Используем новое модальное окно вместо полной страницы
+    setShowTeacherModal(true);
   };
 
   const handleBookLesson = (teacherId: string) => {

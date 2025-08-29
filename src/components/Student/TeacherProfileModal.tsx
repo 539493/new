@@ -57,6 +57,10 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
   const [activeTab, setActiveTab] = useState<'about' | 'posts' | 'lessons' | 'reviews'>('about');
 
   const profile = teacher.profile as TeacherProfile;
+  
+  // Отладочная информация
+  console.log('Teacher in modal:', teacher);
+  console.log('Profile in modal:', profile);
 
   // Получаем статистику
   const teacherSlots = timeSlots.filter(slot => slot.teacherId === teacher.id);
@@ -64,6 +68,12 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
   const teacherPosts = posts.filter(post => post.userId === teacher.id);
   const teacherLessons = lessons.filter(lesson => lesson.teacherId === teacher.id);
   const completedLessons = teacherLessons.filter(lesson => lesson.status === 'completed');
+
+  // Отладочная информация для слотов
+  console.log('Teacher ID:', teacher.id);
+  console.log('All timeSlots:', timeSlots);
+  console.log('Teacher slots:', teacherSlots);
+  console.log('Available slots:', availableSlots);
 
   const getExperienceLabel = (exp: string) => {
     switch (exp) {
@@ -149,21 +159,33 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
                 {/* Online Status */}
                 <div className="absolute top-1 right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full shadow-sm"></div>
                 
-                {profile?.avatar && profile.avatar.trim() !== '' && profile.avatar !== 'undefined' && profile.avatar !== 'null' ? (
-                  <img 
-                    src={profile.avatar} 
-                    alt={teacher.name} 
-                    className="w-24 h-24 object-cover rounded-full"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.style.display = 'none';
-                      const fallback = target.nextElementSibling as HTMLElement;
-                      if (fallback) fallback.classList.remove('hidden');
-                    }}
-                  />
-                ) : null}
+                {(() => {
+                  const avatarUrl = profile?.avatar || teacher.avatar;
+                  const hasAvatar = avatarUrl && avatarUrl.trim() !== '' && avatarUrl !== 'undefined' && avatarUrl !== 'null';
+                  
+                  if (hasAvatar) {
+                    return (
+                      <img 
+                        src={avatarUrl} 
+                        alt={teacher.name} 
+                        className="w-24 h-24 object-cover rounded-full"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          const fallback = target.nextElementSibling as HTMLElement;
+                          if (fallback) fallback.classList.remove('hidden');
+                        }}
+                      />
+                    );
+                  }
+                  return null;
+                })()}
                 
-                <div className={`w-24 h-24 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center ${profile?.avatar && profile.avatar.trim() !== '' && profile.avatar !== 'undefined' && profile.avatar !== 'null' ? 'hidden' : ''}`}>
+                <div className={`w-24 h-24 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center ${(() => {
+                  const avatarUrl = profile?.avatar || teacher.avatar;
+                  const hasAvatar = avatarUrl && avatarUrl.trim() !== '' && avatarUrl !== 'undefined' && avatarUrl !== 'null';
+                  return hasAvatar ? 'hidden' : '';
+                })()}`}>
                   <UserIcon className="h-12 w-12 text-white" />
                 </div>
               </div>
