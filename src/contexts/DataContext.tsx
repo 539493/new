@@ -521,31 +521,40 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     });
 
     // --- Универсальная синхронизация профиля между устройствами ---
-    newSocket.on('profileUpdated', (data: { type: string; userId: string; profile: StudentProfile | TeacherProfile }) => {
+    newSocket.on('profileUpdated', (data: { type: string; userId: string; profile: StudentProfile | TeacherProfile } | { id: string; role: string; profile: StudentProfile | TeacherProfile }) => {
       try {
         const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
         let found = false;
+        
+        // Обрабатываем оба формата данных
+        const userId = 'userId' in data ? data.userId : data.id;
+        const role = 'type' in data ? data.type : data.role;
+        const profile = data.profile;
+        
         const updatedUsers = users.map((u: User) => {
-          if (u.id === data.userId) {
+          if (u.id === userId) {
             found = true;
-            return { ...u, profile: data.profile, avatar: data.profile.avatar, name: data.profile.name || u.name, email: data.profile.email || u.email };
+            return { ...u, profile: profile, avatar: profile.avatar, name: profile.name || u.name, email: profile.email || u.email };
           }
           return u;
         });
         if (!found) {
           // Добавляем нового пользователя, если его не было
           updatedUsers.push({
-            id: data.userId,
-            role: data.type,
-            profile: data.profile,
-            avatar: data.profile.avatar,
-            name: data.profile.name || '',
-            email: data.profile.email || ''
+            id: userId,
+            role: role,
+            profile: profile,
+            avatar: profile.avatar,
+            name: profile.name || '',
+            email: profile.email || ''
           });
         }
         localStorage.setItem('tutoring_users', JSON.stringify(updatedUsers));
         setAllUsers(updatedUsers);
+        
+        console.log('Profile updated via WebSocket:', { userId, role, profile });
       } catch (e) {
+        console.error('Error processing profileUpdated event:', e);
       }
     });
 

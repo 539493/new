@@ -299,11 +299,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           },
           body: JSON.stringify({
             userId: user.id,
-            profile: profile,
+            profileData: profile,
             role: user.role
           })
+        }).then(response => {
+          if (response.ok) {
+            console.log('Profile updated successfully on server');
+            // Отправляем WebSocket уведомление
+            const socket = (window as any).socket;
+            if (socket) {
+              socket.emit('profileUpdated', {
+                userId: user.id,
+                profileData: profile,
+                role: user.role
+              });
+            }
+          } else {
+            console.error('Failed to update profile on server:', response.status);
+          }
         }).catch(error => {
-          console.log('Failed to update profile on server:', error);
+          console.error('Failed to update profile on server:', error);
         });
       }
     }
