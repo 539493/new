@@ -29,7 +29,6 @@ const PostEditor: React.FC<PostEditorProps> = ({
 
   const handleMediaUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
-    console.log('Selected files:', files);
     
     if (files.length === 0) return;
     
@@ -39,7 +38,6 @@ const PostEditor: React.FC<PostEditorProps> = ({
     // Создаем URL для предпросмотра
     const newUrls = files.map(file => {
       const url = URL.createObjectURL(file);
-      console.log('Created URL for file:', file.name, url);
       return url;
     });
     setMediaUrls([...mediaUrls, ...newUrls]);
@@ -58,12 +56,8 @@ const PostEditor: React.FC<PostEditorProps> = ({
   };
 
   const handleSubmit = () => {
-    console.log('PostEditor: handleSubmit called');
-    console.log('Text:', text);
-    console.log('Media files:', media);
     
     if (!text.trim() && media.length === 0) {
-      console.log('PostEditor: Submit blocked - no text and no media');
       return;
     }
     
@@ -77,7 +71,6 @@ const PostEditor: React.FC<PostEditorProps> = ({
       type: postType
     };
     
-    console.log('PostEditor: Submitting post data:', postData);
     onSubmit(postData);
     
     // Очищаем URL объекты

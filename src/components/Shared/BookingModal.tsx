@@ -27,7 +27,6 @@ const BookingModal: React.FC<BookingModalProps> = ({
       await onConfirm(comment);
       onClose();
     } catch (error) {
-      console.error('Error booking lesson:', error);
     } finally {
       setIsSubmitting(false);
     }

@@ -102,14 +102,12 @@ const StudentCalendar: React.FC<StudentCalendarProps> = ({ onClose }) => {
   const handleConfirmBooking = async (comment: string) => {
     if (user && selectedSlot) {
       try {
-        console.log('Booking lesson:', selectedSlot.id, 'for user:', user.name, 'with comment:', comment);
         await bookLesson(selectedSlot.id, user.id, user.name, comment);
         setShowBookingModal(false);
         setSelectedSlot(null);
         // Обновляем события после бронирования
         window.location.reload();
       } catch (error) {
-        console.error('Error booking lesson:', error);
         alert('Произошла ошибка при бронировании. Попробуйте еще раз.');
       }
     }

@@ -26,7 +26,6 @@ const StudentLessons: React.FC = () => {
     if (user) {
       const chatId = getOrCreateChat(user.id, teacherId, user.name, teacherName);
       // В реальном приложении здесь бы был переход к чату
-      console.log('Opening chat:', chatId);
     }
   };
 

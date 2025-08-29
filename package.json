@@ -10,7 +10,10 @@
     "preview": "vite preview",
     "start": "node backend/production-server.cjs",
     "server": "node backend/server.cjs",
-    "build:server": "echo 'Server is already built'"
+    "build:server": "echo 'Server is already built'",
+    "deploy:check": "./scripts/check-deploy-status.sh",
+    "deploy:test": "echo 'Testing deployment...' && git add . && git commit -m 'Test auto-deploy' && git push origin main",
+    "sync:render": "node scripts/sync-data-to-render.js"
   },
   "dependencies": {
     "@tailwindcss/aspect-ratio": "^0.4.2",

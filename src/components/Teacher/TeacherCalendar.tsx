@@ -239,7 +239,6 @@ const TeacherCalendar: React.FC<AssignProps> = ({ mode, student, onAssign }) => 
       });
       alert('Слот успешно создан!');
     } catch (error) {
-      console.error('Ошибка при создании слота:', error);
       alert('Ошибка при создании слота');
     } finally {
       setIsCreatingSlot(false);

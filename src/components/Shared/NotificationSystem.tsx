@@ -99,7 +99,6 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({ className = '' 
     // Здесь можно добавить навигацию к соответствующему контенту
     if (notification.data?.postId) {
       // Навигация к посту
-      console.log('Navigate to post:', notification.data.postId);
     }
   };
 

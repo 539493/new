@@ -34,12 +34,8 @@ const TeacherSlots: React.FC = () => {
   // Автоматическая подписка при подключении сокета и наличии user.id
   React.useEffect(() => {
     if (socketRef.current && user?.id && isConnected) {
-      console.log('[CLIENT][AUTO] subscribeOverbooking emit', user.id);
       socketRef.current.emit('subscribeOverbooking', user.id);
     } else {
-      if (!socketRef.current) console.warn('[CLIENT][AUTO] socketRef.current is null!');
-      if (!user?.id) console.warn('[CLIENT][AUTO] user.id is missing!');
-      if (!isConnected) console.warn('[CLIENT][AUTO] socket is not connected!');
     }
   }, [socketRef.current, user?.id, isConnected]);
 
@@ -48,7 +44,6 @@ const TeacherSlots: React.FC = () => {
     // Подписка на событие connect сокета
     const subscribe = () => {
       if (user?.id && user?.profile && isConnected) {
-        console.log('[CLIENT] subscribeOverbooking emit', user.id);
         socketRef.current.emit('subscribeOverbooking', user.id);
       }
     };
@@ -56,29 +51,22 @@ const TeacherSlots: React.FC = () => {
     socketRef.current.on('connect', subscribe);
     // Подписка при изменении user.id
     if (user?.id && user?.profile) {
-      console.log('[CLIENT] subscribeOverbooking emit (user.id changed)', user.id);
       socketRef.current.emit('subscribeOverbooking', user.id);
       socketRef.current.on('overbookingRequests', (requests: any[]) => {
-        console.log('[SOCKET] overbookingRequests received:', requests);
         setOverbookingRequests(requests);
         setTimeout(() => {
-          console.log('[STATE] overbookingRequests after set:', requests);
         }, 100);
       });
       socketRef.current.on('newOverbookingRequest', (request: any) => {
-        console.log('[SOCKET] newOverbookingRequest received:', request);
         setOverbookingRequests(prev => {
           const updated = [...prev, request];
-          console.log('[STATE] overbookingRequests after push:', updated);
           return updated;
         });
       });
       socketRef.current.on('overbookingRequestAccepted', (request: any) => {
-        console.log('Overbooking request accepted:', request);
         setOverbookingRequests((prev) => prev.filter((r: any) => r.id !== request.id));
       });
     } else {
-      console.log('Teacher not subscribing to overbooking - no user ID or profile', user);
     }
 
     return () => {

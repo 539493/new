@@ -41,7 +41,6 @@ app.use(cors({
     if (isAllowed) {
       callback(null, true);
     } else {
-      console.log('Blocked origin:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -72,7 +71,6 @@ const io = new Server(server, {
       if (isAllowed) {
         callback(null, true);
       } else {
-        console.log('Socket.IO blocked origin:', origin);
         callback(new Error('Not allowed by CORS'));
       }
     },
@@ -88,10 +86,8 @@ function loadServerData() {
   try {
     if (fs.existsSync(DATA_FILE)) {
       const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
-      console.log('Loaded server data from file');
       return data;
     } else {
-      console.log('No server data file found, creating new one');
       return {
         teacherProfiles: {},
         studentProfiles: {},
@@ -118,8 +114,17 @@ function loadServerData() {
 
 function saveServerData(data) {
   try {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
-    console.log('Server data saved to file');
+    const dataToSave = data || {
+      teacherProfiles,
+      studentProfiles,
+      timeSlots,
+      lessons,
+      chats,
+      overbookingRequests,
+      posts
+    };
+    
+    fs.writeFileSync(DATA_FILE, JSON.stringify(dataToSave, null, 2));
   } catch (error) {
     console.error('Error saving server data:', error);
   }
@@ -139,7 +144,6 @@ let {
 // Обслуживание статических файлов фронтенда (если они есть)
 const distPath = path.join(__dirname, '..', 'dist');
 if (fs.existsSync(distPath)) {
-  console.log('📁 Serving static files from:', distPath);
   app.use(express.static(distPath));
 }
 
@@ -152,6 +156,7 @@ app.get('/api/teachers', (req, res) => {
     avatar: profile.avatar || '',
     profile
   }));
+  
   res.json(teachers);
 });
 
@@ -272,14 +277,19 @@ app.post('/api/register', (req, res) => {
       lessons,
       chats,
       overbookingRequests,
-      posts,
-      notifications
+      posts
     });
     
     // Отправляем уведомление всем подключенным клиентам
     io.emit('userRegistered', newUser);
     
-    console.log('New user registered:', newUser);
+    // Также отправляем обновленные профили в зависимости от роли
+    if (role === 'teacher') {
+      io.emit('teacherProfiles', teacherProfiles);
+    } else if (role === 'student') {
+      io.emit('studentProfiles', studentProfiles);
+    }
+    
     res.status(201).json(newUser);
     
   } catch (error) {
@@ -351,7 +361,6 @@ app.get('/health', (req, res) => {
 // Fallback для SPA - должен быть последним
 if (fs.existsSync(distPath)) {
   app.get('*', (req, res) => {
-    console.log('📄 Serving index.html for route:', req.path);
     res.sendFile(path.join(distPath, 'index.html'));
   });
 } else {
@@ -372,10 +381,14 @@ if (fs.existsSync(distPath)) {
 
 // WebSocket обработчики
 io.on('connection', (socket) => {
-  console.log('Client connected:', socket.id);
+  // Отправляем все профили преподавателей новому клиенту
+  socket.emit('teacherProfiles', teacherProfiles);
+  
+  // Отправляем все профили студентов новому клиенту
+  socket.emit('studentProfiles', studentProfiles);
   
   socket.on('disconnect', () => {
-    console.log('Client disconnected:', socket.id);
+    // Клиент отключился
   });
   
   // Обработка регистрации пользователя
@@ -390,11 +403,5 @@ const HOST = process.env.HOST || '0.0.0.0';
 
 server.listen(PORT, HOST, () => {
   console.log(`🚀 Nauchi API server running on port ${PORT}`);
-  console.log(`📡 Server accessible at:`);
-  console.log(`  - Local: http://localhost:${PORT}`);
-  console.log(`  - Network: http://${HOST}:${PORT}`);
-  console.log(`  - Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`  - CORS enabled for: ${allowedOrigins.join(', ')}`);
-  console.log(`  - Teachers: ${Object.keys(teacherProfiles).length}`);
-  console.log(`  - Students: ${Object.keys(studentProfiles).length}`);
-}); 
+  console.log(`📡 Environment: ${process.env.NODE_ENV || 'development'}`);
+});

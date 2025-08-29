@@ -44,7 +44,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onBackToLogin })
         onSuccess();
       }
     } catch (error) {
-      console.error('Auth error:', error);
     } finally {
       setLoading(false);
     }

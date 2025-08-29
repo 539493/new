@@ -126,15 +126,12 @@ const ProfileForm: React.FC = () => {
   }, [user]);
 
   const handleSave = () => {
-    console.log('[ProfileForm] handleSave called');
     if (!user) return;
     const profile = user.role === 'student' ? studentProfile : teacherProfile;
     updateProfile(profile);
     if (user.role === 'student') {
       updateStudentProfile(user.id, studentProfile);
     } else if (user.role === 'teacher') {
-      console.log('[ProfileForm] updateTeacherProfile in context:', updateTeacherProfile);
-      console.log('[ProfileForm] Calling updateTeacherProfile', user.id, { ...teacherProfile, name: user.name, email: user.email });
       updateTeacherProfile(user.id, { ...teacherProfile, name: user.name, email: user.email });
     }
     setEditMode(false);
@@ -454,7 +451,6 @@ const ProfileForm: React.FC = () => {
           <div className="mb-6">
             <PostEditor
               onSubmit={(postData) => {
-                console.log('ProfileForm: Creating post:', postData);
                 createPost(postData);
                 setShowPostEditor(false);
               }}
@@ -563,7 +559,6 @@ const ProfileForm: React.FC = () => {
                         localStorage.setItem('tutoring_users', JSON.stringify(users));
                       }
                     } catch (error) {
-                      console.error('Error updating phone:', error);
                     }
                   }
                 }}

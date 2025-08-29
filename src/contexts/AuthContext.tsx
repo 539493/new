@@ -32,7 +32,6 @@ const loadUsersFromStorage = (): User[] => {
     const saved = localStorage.getItem('tutoring_users');
     return saved ? JSON.parse(saved) : [];
   } catch (e) {
-    console.error('Error loading users from localStorage:', e);
     return [];
   }
 };
@@ -57,7 +56,7 @@ const saveUsersToStorage = (users: User[]) => {
       }
     }));
   } catch (e) {
-    console.error('Error saving users to localStorage:', e);
+    // Error saving users to localStorage
   }
 };
 
@@ -65,7 +64,7 @@ const saveUserToStorage = (user: User) => {
   try {
     localStorage.setItem('tutoring_currentUser', JSON.stringify(user));
   } catch (e) {
-    console.error('Error saving current user to localStorage:', e);
+    // Error saving current user to localStorage
   }
 };
 
@@ -74,7 +73,6 @@ const loadUserFromStorage = (): User | null => {
     const saved = localStorage.getItem('tutoring_currentUser');
     return saved ? JSON.parse(saved) : null;
   } catch (e) {
-    console.error('Error loading current user from localStorage:', e);
     return null;
   }
 };
@@ -84,7 +82,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       return loadUserFromStorage();
     } catch (error) {
-      console.warn('Failed to load user from storage:', error);
       return null;
     }
   });
@@ -97,27 +94,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       try {
         // Проверяем, есть ли пользователи в системе
         const users = loadUsersFromStorage();
-        if (users.length === 0) {
-          // Создаем демо-пользователя, если система пустая
-          const demoUser: User = {
-            id: uuidv4(),
-            email: 'demo@example.com',
-            name: 'Демо пользователь',
-            nickname: 'demo',
-            role: 'student',
-            phone: '+7 (999) 123-45-67'
-          };
-          
-          saveUsersToStorage([demoUser]);
-          setUser(demoUser);
-          saveUserToStorage(demoUser);
-          console.log('Demo user created and logged in');
-        }
+        // Система готова к работе с реальными пользователями
         
         setIsInitialized(true);
-        console.log('AuthContext initialized successfully');
       } catch (error) {
-        console.error('Failed to initialize AuthContext:', error);
         setIsInitialized(true); // Все равно помечаем как инициализированный
       }
     };
@@ -149,7 +129,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (foundUser) {
       setUser(foundUser);
       saveUserToStorage(foundUser);
-      console.log('User logged in:', foundUser);
       return true;
     }
     
@@ -167,7 +146,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     phone: string
   ): Promise<boolean> => {
     try {
-      console.log('Attempting to register on server:', SERVER_URL);
       
       // Сначала регистрируем на сервере
       const response = await fetch(`${SERVER_URL}/api/register`, {
@@ -187,7 +165,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.warn('Server registration failed:', response.status, errorText);
+        // Server registration failed
         
         // Пытаемся парсить JSON ошибки
         try {
@@ -210,13 +188,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(serverUser);
       saveUserToStorage(serverUser);
       
-      console.log('New user registered on server:', serverUser);
       return true;
     } catch (error) {
-      console.error('Registration error:', error);
-      
       // Fallback к локальной регистрации, если сервер недоступен
-      console.log('Server unavailable, using local registration');
       
       const users = loadUsersFromStorage();
       
@@ -248,7 +222,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(newUser);
       saveUserToStorage(newUser);
       
-      console.log('New user registered locally:', newUser);
       alert('Регистрация выполнена локально. Данные будут синхронизированы при подключении к серверу.');
       return true;
     }
@@ -273,16 +246,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const clearAllUsers = () => {
-    console.log('Clearing all users from system...');
-    
     // Очищаем состояние
     setUser(null);
     
     // Очищаем localStorage
     localStorage.removeItem('tutoring_users');
     localStorage.removeItem('tutoring_currentUser');
-    
-    console.log('All users cleared successfully');
   };
 
   return (

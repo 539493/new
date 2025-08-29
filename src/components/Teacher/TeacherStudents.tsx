@@ -122,9 +122,6 @@ const TeacherStudents: React.FC = () => {
   // Получить профиль выбранного ученика
   const selectedProfile = selectedStudent ? studentProfiles[selectedStudent.studentId] : undefined;
   if (modalOpen && selectedStudent) {
-    console.log('studentProfiles:', studentProfiles);
-    console.log('selectedStudent:', selectedStudent);
-    console.log('selectedProfile:', selectedProfile);
   }
 
   return (
@@ -319,11 +316,9 @@ const TeacherStudents: React.FC = () => {
           userId={selectedUserProfile}
           onClose={() => setSelectedUserProfile(null)}
           onMessage={(userId) => {
-            console.log('Open chat with user:', userId);
             setSelectedUserProfile(null);
           }}
           onBookLesson={(teacherId) => {
-            console.log('Book lesson with teacher:', teacherId);
             setSelectedUserProfile(null);
           }}
           isModal={true}

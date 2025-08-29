@@ -38,7 +38,6 @@ app.use(cors({
     if (isAllowed) {
       callback(null, true);
     } else {
-      console.log('Blocked origin:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -69,7 +68,6 @@ const io = new Server(server, {
       if (isAllowed) {
         callback(null, true);
       } else {
-        console.log('Socket.IO blocked origin:', origin);
         callback(new Error('Not allowed by CORS'));
       }
     },
@@ -85,10 +83,8 @@ function loadServerData() {
   try {
     if (fs.existsSync(DATA_FILE)) {
       const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
-      console.log('Loaded server data from file');
       return data;
     } else {
-      console.log('No server data file found, creating new one');
       return {
         teacherProfiles: {},
         studentProfiles: {},
@@ -124,19 +120,8 @@ function saveServerData() {
       chats,
       posts
     };
-    console.log('=== SAVING SERVER DATA ===');
-    console.log('Data file path:', DATA_FILE);
-    console.log('Teacher profiles count:', Object.keys(teacherProfiles).length);
-    console.log('Student profiles count:', Object.keys(studentProfiles).length);
-    console.log('Overbooking requests count:', overbookingRequests.length);
-    console.log('Time slots count:', timeSlots.length);
-    console.log('Lessons count:', lessons.length);
-    console.log('Chats count:', chats.length);
-    console.log('Posts count:', posts.length);
     
     fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
-    console.log('Server data saved to file successfully');
-    console.log('=== SAVE COMPLETED ===');
   } catch (error) {
     console.error('Error saving server data:', error);
     console.error('Error details:', error.message);
@@ -165,9 +150,7 @@ let pendingOverbookingForTeacher = {};
 let posts = Array.isArray(serverData.posts) ? serverData.posts : [];
 
 // Тестовое сохранение при запуске для проверки работы функции
-console.log('=== TESTING SAVE FUNCTION ===');
 saveServerData();
-console.log('=== TEST COMPLETED ===');
 
 // Очищаем старые слоты при запуске сервера
 cleanupOldSlots();
@@ -177,29 +160,22 @@ let teacherSocketMap = {};
 
 // Обработка подключений
 io.on('connection', (socket) => {
-  console.log('=== CLIENT CONNECTED ===');
-  console.log('Socket ID:', socket.id);
-  console.log('Total connected clients:', io.engine.clientsCount);
   
   // Отладочная информация для всех событий
-  console.log('Socket event handlers registered for:', socket.id);
-  console.log('Current teacherSocketMap:', teacherSocketMap);
   
   // Логируем все события для отладки
   const originalEmit = socket.emit;
   socket.emit = function(event, ...args) {
-    console.log(`[SOCKET EMIT] ${event}:`, args);
     return originalEmit.apply(this, arguments);
   };
   
   const originalOn = socket.on;
   socket.on = function(event, handler) {
-    console.log(`[SOCKET ON] ${event} registered`);
     return originalOn.apply(this, arguments);
   };
 
   // Отправляем текущие данные новому клиенту
-  console.log('Sending initial data to client:', {
+  socket.emit('stats', {
     timeSlotsCount: timeSlots.length,
     lessonsCount: lessons.length,
     chatsCount: chats.length,
@@ -218,41 +194,65 @@ io.on('connection', (socket) => {
   
   // Обработка запроса всех слотов
   socket.on('requestAllSlots', () => {
-    console.log('Client requested all slots');
     socket.emit('allSlots', timeSlots);
+  });
+
+  // Обработка запроса всех пользователей
+  socket.on('requestAllUsers', () => {
+    const users = [];
+    
+    // Добавляем преподавателей
+    Object.entries(teacherProfiles).forEach(([id, profile]) => {
+      users.push({
+        id,
+        email: profile.email || '',
+        name: profile.name || '',
+        nickname: profile.nickname || '',
+        role: 'teacher',
+        phone: profile.phone || '',
+        profile: profile
+      });
+    });
+    
+    // Добавляем студентов
+    Object.entries(studentProfiles).forEach(([id, profile]) => {
+      users.push({
+        id,
+        email: profile.email || '',
+        name: profile.name || '',
+        nickname: profile.nickname || '',
+        role: 'student',
+        phone: profile.phone || '',
+        profile: profile
+      });
+    });
+    
+    socket.emit('allUsers', users);
   });
 
   // Обработка создания нового слота
   socket.on('createSlot', (newSlot) => {
-    console.log('=== NEW SLOT CREATED ===');
-    console.log('Slot data:', newSlot);
     
     // Проверяем, не существует ли уже слот с таким ID
     const existingSlotIndex = timeSlots.findIndex(slot => slot.id === newSlot.id);
     if (existingSlotIndex !== -1) {
       // Обновляем существующий слот
       timeSlots[existingSlotIndex] = { ...timeSlots[existingSlotIndex], ...newSlot };
-      console.log('Updated existing slot:', newSlot.id);
     } else {
       // Добавляем новый слот
       timeSlots.push(newSlot);
-      console.log('Added new slot:', newSlot.id);
     }
     
-    console.log('Total slots on server:', timeSlots.length);
     
     // Сохраняем данные в файл
     saveServerData();
     
     // Отправляем новый слот всем подключенным клиентам
     io.emit('slotCreated', newSlot);
-    console.log('Slot broadcasted to all clients');
-    console.log('=== SLOT CREATION COMPLETED ===');
   });
 
   // Обработка создания нового чата
   socket.on('createChat', (newChat) => {
-    console.log('New chat created:', newChat);
     chats.push(newChat);
     
     // Отправляем новый чат всем подключенным клиентам
@@ -261,7 +261,6 @@ io.on('connection', (socket) => {
 
   // Обработка бронирования слота
   socket.on('bookSlot', (data) => {
-    console.log('Slot booked:', data);
     const { slotId, lesson, bookedStudentId } = data;
     
     // Обновляем статус слота и устанавливаем bookedStudentId
@@ -283,7 +282,6 @@ io.on('connection', (socket) => {
 
   // Обработка отмены бронирования
   socket.on('cancelSlot', (data) => {
-    console.log('Slot cancelled:', data);
     const { slotId, lessonId } = data;
     
     // Обновляем статус слота и очищаем bookedStudentId
@@ -308,14 +306,12 @@ io.on('connection', (socket) => {
 
   // Обработка отправки сообщений в чате
   socket.on('sendMessage', (data) => {
-    console.log('Message received:', data);
     // data: { chatId, message }
     io.emit('receiveMessage', data);
   });
 
   // Обработка завершения урока
   socket.on('lessonCompleted', (data) => {
-    console.log('Lesson completed:', data);
     const { lessonId } = data;
     // Обновляем статус урока на сервере
     const lessonIndex = lessons.findIndex(lesson => lesson.id === lessonId);
@@ -323,19 +319,16 @@ io.on('connection', (socket) => {
     if (lessonIndex !== -1) {
       lessons[lessonIndex].status = 'completed';
       updatedLesson = lessons[lessonIndex];
-      console.log('Updated lesson on server:', updatedLesson);
     }
     // Отправляем обновление всем клиентам
     if (updatedLesson) {
       io.emit('lessonCompleted', { lesson: updatedLesson });
-      console.log('Sent lessonCompleted to all clients:', updatedLesson);
     }
   });
 
   // Обработка обновления профиля ученика
   socket.on('updateStudentProfile', (data) => {
     // data: { studentId, profile }
-    console.log('Сервер получил updateStudentProfile:', data);
     if (data && data.studentId && data.profile) {
       studentProfiles[data.studentId] = data.profile;
       saveServerData(); // Сохраняем данные в файл
@@ -354,15 +347,12 @@ io.on('connection', (socket) => {
         createdAt: data.profile.createdAt || new Date().toISOString()
       };
       io.emit('userRegistered', userData);
-      console.log('Сервер рассылает profileUpdated (student):', { userId: data.studentId, profile: data.profile });
     }
   });
 
   // Обработка обновления профиля преподавателя
   socket.on('updateTeacherProfile', (data) => {
     // data: { teacherId, profile }
-    console.log('=== TEACHER PROFILE UPDATE ===');
-    console.log('Received data:', data);
     if (data && data.teacherId && data.profile) {
       teacherProfiles[data.teacherId] = data.profile;
       saveServerData(); // Сохраняем данные в файл
@@ -381,11 +371,8 @@ io.on('connection', (socket) => {
         createdAt: data.profile.createdAt || new Date().toISOString()
       };
       io.emit('userRegistered', userData);
-      console.log('Сервер рассылает profileUpdated (teacher):', { userId: data.teacherId, profile: data.profile });
     } else {
-      console.log('Invalid profile data received');
     }
-    console.log('=== PROFILE UPDATE COMPLETED ===');
   });
 
   // Обработка удаления слота
@@ -395,78 +382,59 @@ io.on('connection', (socket) => {
       timeSlots = timeSlots.filter(slot => slot.id !== slotId);
       saveServerData(); // Сохраняем данные в файл
       io.emit('slotDeleted', { slotId });
-      console.log('Slot deleted:', slotId);
     }
   });
 
   // Обработка новой заявки на овербукинг
   socket.on('overbookingRequest', (request) => {
-    console.log('=== OVERBOOKING REQUEST RECEIVED ===');
-    console.log('Request data:', request);
     // Гарантируем, что поле date присутствует
     if (!request.date || typeof request.date !== 'string' || request.date.length < 8) {
       request.date = new Date().toISOString().slice(0, 10);
-      console.log('[SERVER] date was missing in overbookingRequest, set to today:', request.date);
     }
     request.id = `overbooking_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     request.status = 'pending';
     request.createdAt = new Date().toISOString();
     overbookingRequests.push(request);
-    console.log('Request saved to server. Total requests:', overbookingRequests.length);
     
     // Находим преподавателей с подходящим временем
     const availableTeachers = findAvailableTeachers(request);
-    console.log('Available teachers for this request:', availableTeachers);
     
     // Отправляем заявку только преподавателям с подходящим временем
     if (availableTeachers.length > 0) {
       availableTeachers.forEach(teacherId => {
         const teacherSocketId = teacherSocketMap[teacherId];
         const teacherProfile = teacherProfiles[teacherId];
-        console.log('[SERVER] Trying to send overbooking request:', { teacherId, teacherSocketId, teacherProfile, teacherSocketMap });
         if (teacherSocketId) {
           const teacherSocket = io.sockets.sockets.get(teacherSocketId);
           if (teacherSocket) {
-            console.log(`Sending overbooking request to teacher ${teacherId} (socketId=${teacherSocketId})`);
             teacherSocket.emit('newOverbookingRequest', request);
           } else {
-            console.log(`Teacher ${teacherId} is not connected (no socket found, teacherSocketId=${teacherSocketId})`);
-            console.log('[SERVER] teacherSocketMap at fail:', teacherSocketMap);
             // Сохраняем заявку для отправки при следующем подключении
             if (!pendingOverbookingForTeacher[teacherId]) pendingOverbookingForTeacher[teacherId] = [];
             pendingOverbookingForTeacher[teacherId].push(request);
           }
         } else {
-          console.log(`Teacher ${teacherId} is not connected (no socketId found)`);
-          console.log('[SERVER] teacherSocketMap at fail:', teacherSocketMap);
           // Сохраняем заявку для отправки при следующем подключении
           if (!pendingOverbookingForTeacher[teacherId]) pendingOverbookingForTeacher[teacherId] = [];
           pendingOverbookingForTeacher[teacherId].push(request);
         }
       });
     } else {
-      console.log('No available teachers found for this request');
     }
     
-    console.log('=== OVERBOOKING REQUEST PROCESSED ===');
   });
 
   // Отправка всех актуальных заявок преподавателю при подключении
   socket.on('subscribeOverbooking', (teacherId) => {
-    console.log('[SERVER] subscribeOverbooking received:', teacherId, 'socket.id:', socket.id);
     if (teacherId) {
       teacherSocketMap[teacherId] = socket.id;
-      console.log('[SERVER] teacherSocketMap after subscribe:', teacherSocketMap);
       // 1. Отправляем все отложенные заявки, если есть
       if (pendingOverbookingForTeacher[teacherId] && pendingOverbookingForTeacher[teacherId].length > 0) {
         pendingOverbookingForTeacher[teacherId].forEach(request => {
-          console.log(`[SERVER] EMIT pending newOverbookingRequest to teacherId=${teacherId} socket.id=${socket.id}`, request);
           socket.emit('newOverbookingRequest', request);
         });
-        console.log(`[SERVER] Sent ${pendingOverbookingForTeacher[teacherId].length} pending overbooking requests to teacher ${teacherId}`);
         pendingOverbookingForTeacher[teacherId] = [];
       } else {
-        console.log(`[SERVER] No pending overbooking requests for teacher ${teacherId}`);
       }
       // 2. Отправляем все актуальные заявки из overbookingRequests, которые подходят этому педагогу и не были приняты
       const activeRequests = overbookingRequests.filter(req => {
@@ -488,7 +456,6 @@ io.on('connection', (socket) => {
         activeRequests.forEach(request => {
           socket.emit('newOverbookingRequest', request);
         });
-        console.log(`[SERVER] Sent ${activeRequests.length} active overbooking requests to teacher ${teacherId}`);
       }
     } else {
       console.warn('[SERVER] subscribeOverbooking: teacherId is missing!');
@@ -499,9 +466,7 @@ io.on('connection', (socket) => {
   socket.on('unsubscribeOverbooking', (teacherId) => {
     if (teacherSocketMap[teacherId] === socket.id) {
       delete teacherSocketMap[teacherId];
-      console.log(`[SERVER] UNSUBSCRIBE: removed teacherId ${teacherId} from teacherSocketMap`);
     }
-    console.log('[SERVER] teacherSocketMap after unsubscribe:', teacherSocketMap);
   });
 
   // Принятие заявки преподавателем
@@ -511,7 +476,6 @@ io.on('connection', (socket) => {
       overbookingRequests[idx].status = 'accepted';
       overbookingRequests[idx].acceptedBy = teacherId;
       io.emit('overbookingRequestAccepted', overbookingRequests[idx]);
-      console.log('Overbooking request accepted:', overbookingRequests[idx]);
     }
   });
 
@@ -525,7 +489,6 @@ io.on('connection', (socket) => {
     if (!rooms[roomId]) rooms[roomId] = new Set();
     rooms[roomId].add(socket.id);
     socket.join(roomId);
-    console.log(`[Video] ${userName} (${userRole}) joined video room ${roomId}`);
     
     // Уведомляем пользователя о успешном подключении
     socket.emit('video-connected', { roomId });
@@ -537,21 +500,18 @@ io.on('connection', (socket) => {
   // Обработка WebRTC offer
   socket.on('video-offer', (data) => {
     const { roomId, offer } = data;
-    console.log(`[Video] Forwarding offer in room ${roomId}`);
     socket.to(roomId).emit('video-offer', { offer });
   });
 
   // Обработка WebRTC answer
   socket.on('video-answer', (data) => {
     const { roomId, answer } = data;
-    console.log(`[Video] Forwarding answer in room ${roomId}`);
     socket.to(roomId).emit('video-answer', { answer });
   });
 
   // Обработка ICE кандидатов
   socket.on('video-ice-candidate', (data) => {
     const { roomId, candidate } = data;
-    console.log(`[Video] Forwarding ICE candidate in room ${roomId}`);
     socket.to(roomId).emit('video-ice-candidate', { candidate });
   });
 
@@ -564,7 +524,6 @@ io.on('connection', (socket) => {
     }
     socket.leave(roomId);
     socket.to(roomId).emit('video-user-left', { userName });
-    console.log(`[Video] ${userName} left video room ${roomId}`);
   });
 
   // Старые события для обратной совместимости
@@ -572,7 +531,6 @@ io.on('connection', (socket) => {
     if (!rooms[roomId]) rooms[roomId] = new Set();
     rooms[roomId].add(socket.id);
     socket.join(roomId);
-    console.log(`[WebRTC] ${socket.id} joined room ${roomId}`);
     socket.to(roomId).emit('peer-joined', { socketId: socket.id });
   });
 
@@ -587,14 +545,12 @@ io.on('connection', (socket) => {
     }
     socket.leave(roomId);
     socket.to(roomId).emit('peer-left', { socketId: socket.id });
-    console.log(`[WebRTC] ${socket.id} left room ${roomId}`);
   });
 
   // ===== ОБРАБОТЧИКИ ДЛЯ ПОСТОВ =====
   
   // Создание поста
   socket.on('createPost', (postData) => {
-    console.log('[POSTS] Creating new post:', postData);
     
     const newPost = {
       ...postData,
@@ -617,18 +573,15 @@ io.on('connection', (socket) => {
     // Создаем уведомления для подписчиков
     createPostNotifications(newPost);
     
-    console.log('[POSTS] Post created successfully, total posts:', posts.length);
   });
 
   // Добавление реакции
   socket.on('addReaction', (data) => {
-    console.log('[POSTS] Adding reaction:', data);
     
     const { postId, reactionType, userId } = data;
     const post = posts.find(p => p.id === postId);
     
     if (!post) {
-      console.log('[POSTS] Post not found:', postId);
       return;
     }
     
@@ -668,13 +621,11 @@ io.on('connection', (socket) => {
 
   // Добавление комментария
   socket.on('addComment', (data) => {
-    console.log('[POSTS] Adding comment:', data);
     
     const { postId, comment } = data;
     const post = posts.find(p => p.id === postId);
     
     if (!post) {
-      console.log('[POSTS] Post not found:', postId);
       return;
     }
     
@@ -693,18 +644,15 @@ io.on('connection', (socket) => {
     // Создаем уведомление о комментарии
     createCommentNotification(post, newComment);
     
-    console.log('[POSTS] Comment added successfully');
   });
 
   // Редактирование поста
   socket.on('editPost', (data) => {
-    console.log('[POSTS] Editing post:', data);
     
     const { postId, newText } = data;
     const post = posts.find(p => p.id === postId);
     
     if (!post) {
-      console.log('[POSTS] Post not found:', postId);
       return;
     }
     
@@ -716,18 +664,15 @@ io.on('connection', (socket) => {
     // Отправляем обновление всем клиентам
     io.emit('postEdited', { postId, text: newText, tags: post.tags, editedAt: post.editedAt });
     
-    console.log('[POSTS] Post edited successfully');
   });
 
   // Удаление поста
   socket.on('deletePost', (data) => {
-    console.log('[POSTS] Deleting post:', data);
     
     const { postId } = data;
     const postIndex = posts.findIndex(p => p.id === postId);
     
     if (postIndex === -1) {
-      console.log('[POSTS] Post not found:', postId);
       return;
     }
     
@@ -737,18 +682,15 @@ io.on('connection', (socket) => {
     // Отправляем всем клиентам
     io.emit('postDeleted', { postId });
     
-    console.log('[POSTS] Post deleted successfully');
   });
 
   // Закладка поста
   socket.on('bookmarkPost', (data) => {
-    console.log('[POSTS] Bookmarking post:', data);
     
     const { postId, userId } = data;
     const post = posts.find(p => p.id === postId);
     
     if (!post) {
-      console.log('[POSTS] Post not found:', postId);
       return;
     }
     
@@ -766,18 +708,15 @@ io.on('connection', (socket) => {
     // Отправляем обновление клиенту
     socket.emit('postBookmarkUpdated', { postId, bookmarks: post.bookmarks });
     
-    console.log('[POSTS] Post bookmark updated');
   });
 
   // Запрос всех постов
   socket.on('requestAllPosts', () => {
-    console.log('[POSTS] Requesting all posts');
     socket.emit('allPosts', posts);
   });
 
   // Поиск постов
   socket.on('searchPosts', (searchData) => {
-    console.log('[POSTS] Searching posts:', searchData);
     
     const { query, tags, userId, limit = 20 } = searchData;
     let filteredPosts = [...posts];
@@ -807,31 +746,26 @@ io.on('connection', (socket) => {
     filteredPosts = filteredPosts.slice(0, limit);
     
     socket.emit('searchResults', filteredPosts);
-    console.log('[POSTS] Search completed, found:', filteredPosts.length, 'posts');
   });
 
   // Подписка на уведомления
   socket.on('subscribeNotifications', (userId) => {
-    console.log('[NOTIFICATIONS] User subscribing to notifications:', userId);
     socket.join(`notifications_${userId}`);
   });
 
   // Отписка от уведомлений
   socket.on('unsubscribeNotifications', (userId) => {
-    console.log('[NOTIFICATIONS] User unsubscribing from notifications:', userId);
     socket.leave(`notifications_${userId}`);
   });
 
   // Запрос уведомлений пользователя
   socket.on('requestUserNotifications', (userId) => {
-    console.log('[NOTIFICATIONS] Requesting notifications for user:', userId);
     const userNotifications = notifications.filter(n => n.userId === userId);
     socket.emit('userNotifications', userNotifications);
   });
 
   // Отметка уведомления как прочитанного
   socket.on('markNotificationAsRead', (notificationId) => {
-    console.log('[NOTIFICATIONS] Marking notification as read:', notificationId);
     
     const notification = notifications.find(n => n.id === notificationId);
     if (notification) {
@@ -857,13 +791,10 @@ io.on('connection', (socket) => {
       if (sockId === socket.id) {
         delete teacherSocketMap[teacherId];
         removed = true;
-        console.log(`[SERVER] Removed teacherId=${teacherId} from teacherSocketMap on disconnect`);
       }
     }
     if (!removed) {
-      console.log(`[SERVER] No teacher mapping found for socket.id=${socket.id} on disconnect`);
     }
-    console.log('[SERVER] teacherSocketMap after disconnect:', teacherSocketMap);
   });
 });
 
@@ -883,7 +814,6 @@ function cleanupOldSlots() {
       return slotDate >= thirtyDaysAgo;
     });
     
-    console.log(`Cleaned up ${oldSlots.length} old slots`);
     saveServerData();
   }
 }
@@ -1220,7 +1150,6 @@ app.post('/api/register', (req, res) => {
     // Отправляем уведомление всем подключенным клиентам
     io.emit('userRegistered', newUser);
     
-    console.log('New user registered:', newUser);
     res.status(201).json(newUser);
     
   } catch (error) {
@@ -1284,10 +1213,4 @@ const PORT = process.env.PORT || 3001;
 const HOST = process.env.HOST || '0.0.0.0';
 
 server.listen(PORT, HOST, () => {
-  console.log(`🚀 WebSocket server running on port ${PORT}`);
-  console.log(`📡 Server accessible at:`);
-  console.log(`  - Local: http://localhost:${PORT}`);
-  console.log(`  - Network: http://${HOST}:${PORT}`);
-  console.log(`  - Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`  - CORS enabled for: ${allowedOrigins.join(', ')}`);
 }); 

@@ -4,33 +4,6 @@ import { BookOpen, Users, Calendar, TrendingUp, Clock, Star, Plus } from 'lucide
 const TeacherHome: React.FC = () => {
   const [showCreateSlot, setShowCreateSlot] = useState(false);
 
-  // Демо-данные
-  const demoStats = {
-    totalStudents: 12,
-    totalLessons: 45,
-    averageRating: 4.8,
-    thisMonthLessons: 8
-  };
-
-  const demoRecentLessons = [
-    {
-      id: '1',
-      studentName: 'Анна Иванова',
-      subject: 'Математика',
-      date: '2024-01-15',
-      time: '14:00',
-      status: 'completed'
-    },
-    {
-      id: '2',
-      studentName: 'Михаил Петров',
-      subject: 'Физика',
-      date: '2024-01-16',
-      time: '16:00',
-      status: 'scheduled'
-    }
-  ];
-
   return (
     <div className="space-y-8 animate-fade-in-up">
       {/* Заголовок */}
@@ -48,7 +21,7 @@ const TeacherHome: React.FC = () => {
         <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-3xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-3xl font-bold">{demoStats.totalStudents}</div>
+              <div className="text-3xl font-bold">0</div>
               <div className="text-blue-100">Учеников</div>
             </div>
             <Users className="h-12 w-12 text-blue-200" />
@@ -58,7 +31,7 @@ const TeacherHome: React.FC = () => {
         <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-3xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-3xl font-bold">{demoStats.totalLessons}</div>
+              <div className="text-3xl font-bold">0</div>
               <div className="text-green-100">Всего уроков</div>
             </div>
             <BookOpen className="h-12 w-12 text-green-200" />
@@ -68,7 +41,7 @@ const TeacherHome: React.FC = () => {
         <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-3xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-3xl font-bold">{demoStats.averageRating}</div>
+              <div className="text-3xl font-bold">0</div>
               <div className="text-purple-100">Средний рейтинг</div>
             </div>
             <Star className="h-12 w-12 text-purple-200" />
@@ -78,7 +51,7 @@ const TeacherHome: React.FC = () => {
         <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-3xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-3xl font-bold">{demoStats.thisMonthLessons}</div>
+              <div className="text-3xl font-bold">0</div>
               <div className="text-orange-100">Уроков в этом месяце</div>
             </div>
             <TrendingUp className="h-12 w-12 text-orange-200" />
@@ -126,42 +99,38 @@ const TeacherHome: React.FC = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Дата</label>
-              <input type="date" className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+              <input
+                type="date"
+                className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Время начала</label>
-              <input type="time" className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+              <input
+                type="time"
+                className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Длительность (мин)</label>
-              <select className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                <option>45</option>
-                <option>60</option>
-                <option>90</option>
-                <option>120</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Формат</label>
-              <select className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                <option>online</option>
-                <option>offline</option>
-                <option>mini-group</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Цена (₽)</label>
-              <input type="number" placeholder="1500" className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+              <label className="block text-sm font-medium text-gray-700 mb-2">Длительность (минуты)</label>
+              <input
+                type="number"
+                min="30"
+                max="180"
+                step="30"
+                defaultValue="60"
+                className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
             </div>
           </div>
-          <div className="flex justify-end space-x-3 mt-6">
+          <div className="mt-6 flex justify-end space-x-4">
             <button
               onClick={() => setShowCreateSlot(false)}
-              className="px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-xl transition-all duration-200"
+              className="px-6 py-2 text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
             >
               Отмена
             </button>
-            <button className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 hover:scale-105">
+            <button className="px-6 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors">
               Создать слот
             </button>
           </div>
@@ -172,32 +141,11 @@ const TeacherHome: React.FC = () => {
       <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6">
         <h2 className="text-2xl font-bold text-gray-900 mb-6">Последние уроки</h2>
         <div className="space-y-4">
-          {demoRecentLessons.map(lesson => (
-            <div key={lesson.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl">
-              <div className="flex items-center space-x-4">
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
-                  lesson.status === 'completed' ? 'bg-green-500' : 'bg-blue-500'
-                }`}>
-                  <BookOpen className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-900">{lesson.studentName}</h4>
-                  <p className="text-sm text-gray-600">{lesson.subject}</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="font-semibold text-gray-900">{lesson.date}</p>
-                <p className="text-sm text-gray-600">{lesson.time}</p>
-                <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
-                  lesson.status === 'completed' 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-blue-100 text-blue-800'
-                }`}>
-                  {lesson.status === 'completed' ? 'Завершен' : 'Запланирован'}
-                </span>
-              </div>
-            </div>
-          ))}
+          <div className="text-center text-gray-500 py-8">
+            <BookOpen className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+            <p>У вас пока нет уроков</p>
+            <p className="text-sm">Создайте слоты для начала работы</p>
+          </div>
         </div>
       </div>
     </div>

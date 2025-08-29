@@ -29,6 +29,7 @@ interface DataContextType {
   allUsers: User[];
   setAllUsers: (users: User[]) => void;
   refreshUsers: () => void; // Добавляем функцию для обновления пользователей
+  refreshAllData: () => void; // Функция для принудительного обновления всех данных
   updateTeacherProfile: (teacherId: string, profile: TeacherProfile) => void;
   socketRef: React.MutableRefObject<Socket | null>;
   loadInitialData: () => void;
@@ -78,7 +79,7 @@ const loadFromStorage = (key: string, defaultValue: any) => {
       return Array.isArray(parsed) ? parsed : defaultValue;
     }
   } catch (e) {
-    console.error(`Error loading ${key} from localStorage:`, e);
+    // Error loading from localStorage
   }
   return defaultValue;
 };
@@ -86,9 +87,9 @@ const loadFromStorage = (key: string, defaultValue: any) => {
 const saveToStorage = (key: string, data: any) => {
   try {
     localStorage.setItem(key, JSON.stringify(data));
-    console.log(`Saved ${key} to localStorage:`, data.length, 'items');
+    // Saved to localStorage
   } catch (e) {
-    console.error(`Error saving ${key} to localStorage:`, e);
+    // Error saving to localStorage
   }
 };
 
@@ -191,45 +192,35 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     saveToStorage('tutoring_chats', savedChats);
     saveToStorage('tutoring_studentProfiles', initialData.studentProfiles);
     
-    console.log('Initial data loaded with saved slots:', uniqueTimeSlots.length);
   };
 
   // Функция для загрузки пользователей с сервера
   const loadUsersFromServer = async () => {
     try {
-      console.log('🔄 DataContext: Loading users from server:', SERVER_URL);
       const response = await fetch(`${SERVER_URL}/api/users`);
       
-      console.log('🔄 DataContext: Response status:', response.status, response.ok);
       
       if (!response.ok) {
-        console.warn('🔄 DataContext: Server responded with status:', response.status);
         return [];
       }
       
       const serverUsers = await response.json();
-      console.log('🔄 DataContext: Loaded users from server:', serverUsers.length, serverUsers);
       
       // Объединяем с локальными пользователями
       const localUsers = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
-      console.log('🔄 DataContext: Local users:', localUsers.length, localUsers);
       
       const allUsers = [...localUsers, ...serverUsers];
-      console.log('🔄 DataContext: Combined users:', allUsers.length);
       
       // Убираем дубликаты по ID, приоритет у серверных данных
       const uniqueUsers = allUsers.filter((user, index, self) => 
         index === self.findIndex(u => u.id === user.id)
       );
       
-      console.log('🔄 DataContext: Unique users after deduplication:', uniqueUsers.length, uniqueUsers);
       
       setAllUsers(uniqueUsers);
       localStorage.setItem('tutoring_users', JSON.stringify(uniqueUsers));
       return uniqueUsers;
     } catch (error) {
-      console.error('🔄 DataContext: Failed to load users from server:', error);
-      console.log('🔄 DataContext: Using local users only');
       return [];
     }
   };
@@ -238,17 +229,26 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   const refreshUsers = () => {
     try {
       const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
-      console.log('Refreshing users list:', users.length, 'users');
       setAllUsers(users);
     } catch (error) {
-      console.error('Error refreshing users:', error);
       setAllUsers([]);
+    }
+  };
+
+  // Функция для принудительного обновления всех данных
+  const refreshAllData = () => {
+    // Обновляем пользователей
+    loadUsersFromServer();
+    
+    // Запрашиваем все слоты и пользователей с сервера
+    if (socketRef.current && isConnected) {
+      socketRef.current.emit('requestAllSlots');
+      socketRef.current.emit('requestAllUsers');
     }
   };
 
   // Инициализация WebSocket соединения
   useEffect(() => {
-    console.log('Connecting to WebSocket:', SERVER_URL);
     
     const newSocket = io(SERVER_URL, {
       ...SOCKET_CONFIG,
@@ -260,7 +260,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     socketRef.current = newSocket;
 
     newSocket.on('connect', () => {
-      console.log('WebSocket connected');
       setIsConnected(true);
       
       // Загружаем пользователей с сервера при подключении
@@ -269,7 +268,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       // Синхронизируем локальные слоты с сервером при восстановлении соединения
       const localSlots = loadFromStorage('tutoring_timeSlots', []);
       if (localSlots.length > 0) {
-        console.log('Syncing local slots with server:', localSlots.length, 'slots');
         localSlots.forEach((slot: TimeSlot) => {
           if (socketRef.current) {
             socketRef.current.emit('createSlot', slot);
@@ -288,23 +286,19 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     });
 
     newSocket.on('disconnect', () => {
-      console.log('WebSocket disconnected');
       setIsConnected(false);
     });
 
     // Добавляем обработку ошибок подключения
     newSocket.on('connect_error', (error) => {
-      console.error('WebSocket connection error:', error);
       setIsConnected(false);
       
       // При ошибке подключения загружаем начальные данные
-      console.log('Loading initial data for offline mode...');
       loadInitialData();
     });
 
     // Получаем все актуальные данные при подключении
     newSocket.on('initialData', (data: { timeSlots: TimeSlot[]; lessons: Lesson[]; chats: Chat[] }) => {
-      console.log('Received initialData from server:', data);
       
       // Объединяем серверные данные с локальными
       const currentTimeSlots = loadFromStorage('tutoring_timeSlots', []);
@@ -327,30 +321,42 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
     // Слушаем все слоты при подключении для синхронизации
     newSocket.on('allSlots', (allSlots: TimeSlot[]) => {
-      console.log('DEBUG: allSlots received on client:', allSlots.length, 'slots');
       setTimeSlots(allSlots);
       saveToStorage('tutoring_timeSlots', allSlots);
-      console.log('All slots synchronized and saved to localStorage');
     });
+
+    // Слушаем всех пользователей при подключении для синхронизации
+    newSocket.on('allUsers', (allUsers: User[]) => {
+      setAllUsers(allUsers);
+      saveToStorage('tutoring_users', allUsers);
+    });
+
+    // Запрашиваем все слоты при подключении
+    if (socketRef.current && isConnected) {
+      socketRef.current.emit('requestAllSlots');
+      socketRef.current.emit('requestAllUsers');
+    }
 
     // Слушаем обновления слотов от других клиентов
     newSocket.on('slotCreated', (newSlot: TimeSlot) => {
-      console.log('DEBUG: slotCreated received on client:', newSlot);
       setTimeSlots(prev => {
         const exists = prev.find(slot => slot.id === newSlot.id);
         if (!exists) {
           const updated = [...prev, newSlot];
           saveToStorage('tutoring_timeSlots', updated);
-          console.log('Slot saved to localStorage:', newSlot.id);
           return updated;
         }
         return prev;
       });
+      
+      // Принудительно обновляем данные для всех клиентов
+      if (socketRef.current && isConnected) {
+        socketRef.current.emit('requestAllSlots');
+      }
     });
 
     // Слушаем обновления бронирования
     newSocket.on('slotBooked', (data: { slotId: string; lesson: Lesson; bookedStudentId?: string }) => {
-      console.log('Received slot booking from server:', data);
       setTimeSlots(prev => 
         prev.map(slot => 
           slot.id === data.slotId ? { ...slot, isBooked: true, bookedStudentId: data.bookedStudentId || data.lesson.studentId } : slot
@@ -369,7 +375,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
     // Слушаем отмены бронирования
     newSocket.on('slotCancelled', (data: { slotId: string; lessonId: string }) => {
-      console.log('Received slot cancellation from server:', data);
       setTimeSlots(prev => 
         prev.map(slot => 
           slot.id === data.slotId ? { ...slot, isBooked: false, bookedStudentId: undefined } : slot
@@ -380,7 +385,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
     // Слушаем новые чаты
     newSocket.on('chatCreated', (newChat: Chat) => {
-      console.log('Received new chat from server:', newChat);
       setChats(prev => {
         const exists = prev.find(chat => chat.id === newChat.id);
         if (!exists) {
@@ -393,7 +397,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     });
 
     newSocket.on('receiveMessage', (data: { chatId: string, message: any }) => {
-      console.log('Received message from server:', data);
       setChats(prev => prev.map(chat => {
         if (chat.id === data.chatId) {
           const updatedChat = {
@@ -417,13 +420,24 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       });
     });
 
+    // Слушаем регистрацию новых пользователей
+    newSocket.on('userRegistered', (newUser: User) => {
+      setAllUsers(prev => {
+        const exists = prev.find(user => user.id === newUser.id);
+        if (!exists) {
+          const updated = [...prev, newUser];
+          saveToStorage('tutoring_users', updated);
+          return updated;
+        }
+        return prev;
+      });
+    });
+
     // Добавляем обработку события завершения урока
     if (socketRef.current) {
       socketRef.current.on('lessonCompleted', (data: { lesson: any }) => {
-        console.log('Received lessonCompleted from server (raw):', data.lesson);
         setLessons(prev => {
           const updated = prev.map(l => l.id === data.lesson.id ? data.lesson : l);
-          console.log('Updated lessons after lessonCompleted:', updated);
           saveToStorage('tutoring_lessons', updated);
           return updated;
         });
@@ -439,7 +453,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
     newSocket.on('studentProfiles', (profiles: Record<string, StudentProfile>) => {
       setStudentProfiles(profiles || {});
-      console.log('[SOCKET] Received student profiles:', Object.keys(profiles).length);
       // Обновляем список всех пользователей с профилями студентов
       const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
       const updatedUsers = [...users];
@@ -466,7 +479,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     });
     
     newSocket.on('teacherProfiles', (profiles: Record<string, TeacherProfile>) => {
-      console.log('[SOCKET] Received teacher profiles:', Object.keys(profiles).length);
       // Обновляем список всех пользователей с профилями преподавателей
       const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
       const updatedUsers = [...users];
@@ -492,7 +504,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       setAllUsers(updatedUsers);
     });
     newSocket.on('studentProfileUpdated', (data: { studentId: string; profile: StudentProfile }) => {
-      console.log('Получено обновление профиля:', data);
       setStudentProfiles(prev => ({ ...prev, [data.studentId]: data.profile }));
     });
 
@@ -505,9 +516,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         );
         localStorage.setItem('tutoring_users', JSON.stringify(updatedUsers));
         setAllUsers(updatedUsers);
-        console.log('[SOCKET] teacherProfileUpdated: updated tutoring_users in localStorage and allUsers');
       } catch (e) {
-        console.error('[SOCKET] teacherProfileUpdated: failed to update tutoring_users:', e);
       }
     });
 
@@ -536,16 +545,13 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         }
         localStorage.setItem('tutoring_users', JSON.stringify(updatedUsers));
         setAllUsers(updatedUsers);
-        console.log('[SOCKET] profileUpdated:', data.type, data.userId, data.profile);
       } catch (e) {
-        console.warn('[SOCKET] profileUpdated error:', e);
       }
     });
 
     // --- Обработка регистрации нового пользователя ---
     newSocket.on('userRegistered', (newUser: User) => {
       try {
-        console.log('[SOCKET] New user registered:', newUser);
         const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
         
         // Проверяем, есть ли уже такой пользователь
@@ -561,9 +567,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         
         localStorage.setItem('tutoring_users', JSON.stringify(users));
         setAllUsers(users);
-        console.log('[SOCKET] userRegistered: updated users list with', users.length, 'users');
       } catch (e) {
-        console.error('[SOCKET] userRegistered error:', e);
       }
     });
 
@@ -571,14 +575,12 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     
     // Получение всех постов
     newSocket.on('allPosts', (allPosts: Post[]) => {
-      console.log('[SOCKET] Received all posts:', allPosts.length);
       setPosts(allPosts);
       saveToStorage('tutoring_posts', allPosts);
     });
 
     // Новый пост создан
     newSocket.on('postCreated', (newPost: Post) => {
-      console.log('[SOCKET] New post created:', newPost);
       setPosts(prev => {
         const updated = [newPost, ...prev];
         saveToStorage('tutoring_posts', updated);
@@ -588,7 +590,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
     // Обновление реакции на пост
     newSocket.on('postReactionUpdated', (data: { postId: string; reactions: any[]; likes: number }) => {
-      console.log('[SOCKET] Post reaction updated:', data);
       setPosts(prev => {
         const updated = prev.map(post => 
           post.id === data.postId 
@@ -602,7 +603,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
     // Добавлен комментарий к посту
     newSocket.on('postCommentAdded', (data: { postId: string; comment: Comment }) => {
-      console.log('[SOCKET] Comment added to post:', data);
       setPosts(prev => {
         const updated = prev.map(post => 
           post.id === data.postId 
@@ -616,7 +616,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
     // Пост отредактирован
     newSocket.on('postEdited', (data: { postId: string; text: string; tags: string[]; editedAt: string }) => {
-      console.log('[SOCKET] Post edited:', data);
       setPosts(prev => {
         const updated = prev.map(post => 
           post.id === data.postId 
@@ -630,7 +629,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
     // Пост удален
     newSocket.on('postDeleted', (data: { postId: string }) => {
-      console.log('[SOCKET] Post deleted:', data);
       setPosts(prev => {
         const updated = prev.filter(post => post.id !== data.postId);
         saveToStorage('tutoring_posts', updated);
@@ -640,7 +638,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
     // Обновление закладки поста
     newSocket.on('postBookmarkUpdated', (data: { postId: string; bookmarks: string[] }) => {
-      console.log('[SOCKET] Post bookmark updated:', data);
       setPosts(prev => {
         const updated = prev.map(post => 
           post.id === data.postId 
@@ -654,7 +651,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
     // Результаты поиска постов
     newSocket.on('searchResults', (results: Post[]) => {
-      console.log('[SOCKET] Search results received:', results.length);
       // Здесь можно добавить состояние для результатов поиска
     });
 
@@ -662,14 +658,12 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     
     // Получение уведомлений пользователя
     newSocket.on('userNotifications', (userNotifications: Notification[]) => {
-      console.log('[SOCKET] Received user notifications:', userNotifications.length);
       setNotifications(userNotifications);
       saveToStorage('tutoring_notifications', userNotifications);
     });
 
     // Новое уведомление
     newSocket.on('newNotification', (notification: Notification) => {
-      console.log('[SOCKET] New notification received:', notification);
       setNotifications(prev => {
         const updated = [notification, ...prev];
         saveToStorage('tutoring_notifications', updated);
@@ -679,7 +673,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
     // Уведомление отмечено как прочитанное
     newSocket.on('notificationMarkedAsRead', (data: { notificationId: string }) => {
-      console.log('[SOCKET] Notification marked as read:', data);
       setNotifications(prev => {
         const updated = prev.map(n => 
           n.id === data.notificationId 
@@ -703,10 +696,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       if (e.key === 'tutoring_users') {
         try {
           const newUsers = JSON.parse(e.newValue || '[]');
-          console.log('Storage event: updating allUsers with', newUsers.length, 'users');
           setAllUsers(newUsers);
         } catch (error) {
-          console.error('Error parsing users from storage event:', error);
           setAllUsers([]);
         }
       }
@@ -717,10 +708,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       if (e.detail?.key === 'tutoring_users') {
         try {
           const newUsers = JSON.parse(e.detail.newValue || '[]');
-          console.log('Custom storage event: updating allUsers with', newUsers.length, 'users');
           setAllUsers(newUsers);
         } catch (error) {
-          console.error('Error parsing users from custom storage event:', error);
           setAllUsers([]);
         }
       }
@@ -738,7 +727,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   // Сохранение в localStorage при изменении состояния
   useEffect(() => {
     saveToStorage('tutoring_timeSlots', timeSlots);
-    console.log('DEBUG: timeSlots changed:', timeSlots);
   }, [timeSlots]);
 
   useEffect(() => {
@@ -766,17 +754,14 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   }, [user, isConnected]);
 
   const createTimeSlot = (slot: Omit<TimeSlot, 'id'>) => {
-    console.log('DEBUG: createTimeSlot called, isConnected:', isConnected, 'socketRef:', !!socketRef.current);
     const newSlot: TimeSlot = {
       ...slot,
       id: `slot_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     };
     
-    console.log('Creating new slot:', newSlot);
     
     setTimeSlots(prev => {
       const updated = [...prev, newSlot];
-      console.log('Updated timeSlots count:', updated.length);
       saveToStorage('tutoring_timeSlots', updated);
       return updated;
     });
@@ -784,7 +769,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     // Отправляем новый слот на сервер для других клиентов
     if (socketRef.current && isConnected) {
       socketRef.current.emit('createSlot', newSlot);
-      console.log('Sent new slot to server for real-time updates');
     }
   };
 
@@ -798,7 +782,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     return new Promise<TimeSlot>((resolve, reject) => {
       // Если режим назначения и не передан studentId/studentName — ошибка
       if (options?.mode === 'assign' && (!studentId || !studentName)) {
-        console.error('ERROR: createSlot called in assign mode without studentId/studentName!', { slot, studentId, studentName, options });
         alert('Ошибка: не выбран ученик для назначения урока!');
         reject(new Error('createSlot: assign mode without studentId/studentName'));
         return;
@@ -810,7 +793,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         isBooked,
         ...(isBooked ? { bookedStudentId: studentId } : {}),
       };
-      console.log('DEBUG: createSlot - newSlot:', newSlot);
       setTimeSlots(prev => {
         const updated = [...prev, newSlot];
         saveToStorage('tutoring_timeSlots', updated);
@@ -822,7 +804,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         socketRef.current.emit('createSlot', newSlot);
       } else {
         // Если нет соединения, сохраняем слот локально для последующей синхронизации
-        console.log('No connection, slot saved locally for later sync');
       }
       // Если слот сразу бронируется на ученика, создаём Lesson
       if (isBooked && studentId && studentName) {
@@ -864,7 +845,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   const bookLesson = (slotId: string, studentId: string, studentName: string, comment?: string) => {
     const slot = timeSlots.find(s => s.id === slotId);
     if (!slot || slot.isBooked) {
-      console.log('Slot not found or already booked:', slotId);
       return;
     }
 
@@ -877,7 +857,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     }
     // --- КОНЕЦ СТАТИСТИКИ ---
 
-    console.log('Booking lesson for slot:', slot);
 
     // Отмечаем слот как забронированный и сохраняем bookedStudentId
     setTimeSlots(prev => 
@@ -908,12 +887,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     // Создаем чат между учеником и преподавателем
     getOrCreateChat(studentId, slot.teacherId, studentName, slot.teacherName);
     
-    console.log('Lesson booked successfully:', newLesson);
 
     // Отправляем информацию о бронировании на сервер
     if (socketRef.current && isConnected) {
       socketRef.current.emit('bookSlot', { slotId, lesson: newLesson, bookedStudentId: studentId });
-      console.log('Sent booking info to server for real-time updates');
     }
   };
 
@@ -921,7 +898,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     const lesson = lessons.find(l => l.id === lessonId);
     if (!lesson) return;
 
-    console.log('Cancelling lesson:', lesson);
 
     // Находим соответствующий слот
     const slot = timeSlots.find(s => 
@@ -942,7 +918,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       // Отправляем информацию об отмене на сервер
       if (socketRef.current && isConnected) {
         socketRef.current.emit('cancelSlot', { slotId: slot.id, lessonId });
-        console.log('Sent cancellation info to server for real-time updates');
       }
     }
   };
@@ -951,7 +926,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     const lesson = lessons.find(l => l.id === lessonId);
     if (!lesson) return;
 
-    console.log('Rescheduling lesson:', lesson, 'to', newDate, newStartTime);
 
     // Вычисляем новое время окончания
     const endTime = new Date(`2000-01-01T${newStartTime}`);
@@ -984,19 +958,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   };
 
   const getFilteredSlots = (filters: FilterOptions): TimeSlot[] => {
-    console.log('getFilteredSlots called with filters:', filters);
-    console.log('Total timeSlots available:', timeSlots.length);
-    console.log('All timeSlots:', timeSlots.map(slot => ({
-      id: slot.id,
-      subject: slot.subject,
-      teacherName: slot.teacherName,
-      date: slot.date,
-      startTime: slot.startTime,
-      isBooked: slot.isBooked
-    })));
-    
     const filtered = timeSlots.filter(slot => {
-      console.log(`Checking slot ${slot.id}: isBooked=${slot.isBooked}`);
       if (slot.isBooked) return false;
       if (filters.grade && !slot.grades.includes(filters.grade)) return false;
       if (filters.subject && slot.subject !== filters.subject) return false;
@@ -1008,13 +970,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       return true;
     });
     
-    console.log('Filtered result:', filtered.length, 'slots:', filtered.map(slot => ({
-      id: slot.id,
-      subject: slot.subject,
-      teacherName: slot.teacherName,
-      date: slot.date,
-      startTime: slot.startTime
-    })));
     return filtered;
   };
 
@@ -1043,7 +998,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     // Отправляем новый чат на сервер для других клиентов
     if (socketRef.current && isConnected) {
       socketRef.current.emit('createChat', newChat);
-      console.log('Sent new chat to server for real-time updates');
     }
 
     return newChat.id;
@@ -1065,15 +1019,12 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     // Отправляем сообщение на сервер для других клиентов
     if (socketRef.current && isConnected) {
       socketRef.current.emit('sendMessage', { chatId, message: newMessage });
-      console.log('Sent message to server for real-time updates');
     }
   };
 
   const completeLesson = (lessonId: string) => {
-    console.log('Вызвана completeLesson для урока', lessonId, 'isConnected:', isConnected, 'socketRef:', !!socketRef.current);
     if (socketRef.current && isConnected) {
       socketRef.current.emit('lessonCompleted', { lessonId });
-      console.log('Sent lessonCompleted to server', lessonId);
     }
   };
 
@@ -1095,12 +1046,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     });
     if (socketRef.current && isConnected) {
       socketRef.current.emit('deleteSlot', { slotId });
-      console.log('Sent deleteSlot to server for real-time updates');
     }
   };
 
   const clearAllData = () => {
-    console.log('Clearing all data from system...');
     
     // Очищаем состояние
     setTimeSlots([]);
@@ -1114,12 +1063,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     localStorage.removeItem('tutoring_users');
     localStorage.removeItem('tutoring_currentUser');
     
-    console.log('All data cleared successfully');
   };
 
   // Функция для обновления профиля преподавателя на сервере
   const updateTeacherProfile = (teacherId: string, profile: TeacherProfile) => {
-    console.log('[updateTeacherProfile] called:', { teacherId, profile, isConnected, socket: !!socketRef.current });
     if (socketRef.current && isConnected) {
       socketRef.current.emit('updateTeacherProfile', { teacherId, profile });
     }
@@ -1130,9 +1077,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         u.id === teacherId ? { ...u, profile, avatar: profile.avatar } : u
       );
       localStorage.setItem('tutoring_users', JSON.stringify(updatedUsers));
-      console.log('[updateTeacherProfile] updated tutoring_users in localStorage');
     } catch (e) {
-      console.error('[updateTeacherProfile] failed to update tutoring_users:', e);
     }
   };
 
@@ -1140,7 +1085,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   const createPost = (postData: { text: string; media: File[]; type: 'text' | 'image' | 'video' }) => {
     if (!user) return;
 
-    console.log('Creating post with data:', postData);
 
     // Извлекаем теги из текста
     const extractTags = (text: string) => {
@@ -1153,7 +1097,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     // Создаем URL для медиафайлов
     const mediaUrls = postData.media.map(file => {
       const url = URL.createObjectURL(file);
-      console.log('Created URL for post media:', file.name, url);
       return url;
     });
 
@@ -1175,12 +1118,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       bookmarks: []
     };
 
-    console.log('Created new post:', newPost);
 
     setPosts(prev => {
       const updated = [newPost, ...prev];
       saveToStorage('tutoring_posts', updated);
-      console.log('Updated posts in state, total posts:', updated.length);
       return updated;
     });
 
@@ -1264,7 +1205,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
   const sharePost = (postId: string) => {
     // В реальном приложении здесь была бы логика шаринга
-    console.log('Sharing post:', postId);
   };
 
   const bookmarkPost = (postId: string) => {
@@ -1339,7 +1279,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
   // Функции для управления чатами
   const deleteChat = (chatId: string) => {
-    console.log('Deleting chat:', chatId);
     setChats(prev => {
       const updated = prev.filter(chat => chat.id !== chatId);
       saveToStorage('tutoring_chats', updated);
@@ -1352,7 +1291,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   };
 
   const markChatAsRead = (chatId: string) => {
-    console.log('DEBUG: markChatAsRead called with chatId:', chatId);
     setChats(prev => {
       const updated = prev.map(chat => 
         chat.id === chatId 
@@ -1360,7 +1298,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           : chat
       );
       saveToStorage('tutoring_chats', updated);
-      console.log('DEBUG: markChatAsRead - updated chats:', updated.length);
       return updated;
     });
 
@@ -1370,7 +1307,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   };
 
   const clearChatMessages = (chatId: string) => {
-    console.log('DEBUG: clearChatMessages called with chatId:', chatId);
     setChats(prev => {
       const updated = prev.map(chat => 
         chat.id === chatId 
@@ -1378,7 +1314,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           : chat
       );
       saveToStorage('tutoring_chats', updated);
-      console.log('DEBUG: clearChatMessages - updated chats:', updated.length);
       return updated;
     });
 
@@ -1388,7 +1323,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   };
 
   const archiveChat = (chatId: string) => {
-    console.log('DEBUG: archiveChat called with chatId:', chatId);
     setChats(prev => {
       const updated = prev.map(chat => 
         chat.id === chatId 
@@ -1396,7 +1330,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           : chat
       );
       saveToStorage('tutoring_chats', updated);
-      console.log('DEBUG: archiveChat - updated chats:', updated.length);
       return updated;
     });
 
@@ -1432,6 +1365,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           localStorage.setItem('tutoring_users', JSON.stringify(users));
         },
         refreshUsers, // Добавляем функцию для обновления пользователей
+        refreshAllData, // Функция для принудительного обновления всех данных
         teacherProfiles: {},
         updateTeacherProfile, // добавлено
         socketRef,

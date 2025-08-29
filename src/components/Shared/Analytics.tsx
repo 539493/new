@@ -73,7 +73,7 @@ const Analytics: React.FC<AnalyticsProps> = ({ userId, userRole }) => {
     }, 0);
 
     // Подсчитываем средний рейтинг (пока используем заглушку, так как рейтинг хранится в отдельной таблице)
-    const averageRating = 0; // TODO: Добавить логику для получения рейтинга из таблицы Review
+    const averageRating = 0; // Рейтинг будет добавлен в будущих версиях
 
     // Подсчитываем доходы (для преподавателей)
     const totalEarnings = userRole === 'teacher' 

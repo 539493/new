@@ -86,7 +86,6 @@ const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClos
 
   const handleConfirmBooking = async (comment: string) => {
     if (user && selectedSlot) {
-      console.log('Booking lesson:', selectedSlot.id, 'for user:', user.name, 'with comment:', comment);
       bookLesson(selectedSlot.id, user.id, user.name, comment);
       setShowBookingModal(false);
       setSelectedSlot(null);
@@ -118,26 +117,22 @@ const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClos
 
   const handleReaction = (postId: string, reactionType: string) => {
     // Здесь можно добавить логику для обработки реакций
-    console.log('Reaction:', reactionType, 'on post:', postId);
   };
 
   const handleComment = (postId: string) => {
     const comment = newComment[postId];
     if (comment && comment.trim()) {
       // Здесь можно добавить логику для добавления комментария
-      console.log('Adding comment to post:', postId, comment);
       setNewComment({ ...newComment, [postId]: '' });
     }
   };
 
   const handleShare = (postId: string) => {
     // Здесь можно добавить логику для шаринга
-    console.log('Sharing post:', postId);
   };
 
   const handleBookmark = (postId: string) => {
     // Здесь можно добавить логику для закладок
-    console.log('Bookmarking post:', postId);
   };
 
   return (

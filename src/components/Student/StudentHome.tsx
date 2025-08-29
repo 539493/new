@@ -13,11 +13,11 @@ import TeacherProfilePage from './TeacherProfilePage';
 import StudentCalendar from './StudentCalendar';
 import BookingModal from '../Shared/BookingModal';
 import EmptyState from '../Shared/EmptyState';
-import UsersList from '../Shared/UsersList';
 import { User as UserIcon } from 'lucide-react';
 
+
 const StudentHome: React.FC = () => {
-  const { getFilteredSlots, bookLesson, timeSlots, isConnected, allUsers, refreshUsers } = useData();
+  const { getFilteredSlots, bookLesson, timeSlots, isConnected, allUsers, refreshUsers, refreshAllData } = useData();
   const { user } = useAuth();
   
   const [filters, setFilters] = useState<FilterOptions>({});
@@ -42,7 +42,7 @@ const StudentHome: React.FC = () => {
   const [showCalendar, setShowCalendar] = useState(false);
   const [showTeacherCalendarModal, setShowTeacherCalendarModal] = useState(false);
   const [selectedTeacherForCalendar, setSelectedTeacherForCalendar] = useState<any>(null);
-  const [showUsersList, setShowUsersList] = useState(false);
+
   const [currentWeekStart, setCurrentWeekStart] = useState(() => {
     const now = new Date();
     const dayOfWeek = now.getDay();
@@ -67,59 +67,50 @@ const StudentHome: React.FC = () => {
 
   // Загружаем преподавателей с сервера при монтировании
   useEffect(() => {
-    console.log('🔄 StudentHome: Начинаем загрузку преподавателей...');
-    console.log('🔄 StudentHome: SERVER_URL =', SERVER_URL);
     
     const loadTeachers = () => {
       // Загружаем преподавателей через API /api/teachers
       fetch(`${SERVER_URL}/api/teachers`)
         .then(res => {
-          console.log('🔄 StudentHome: Ответ от /api/teachers:', res.status, res.ok);
           if (!res.ok) {
-            console.warn('Failed to load teachers from /api/teachers:', res.status);
             return [];
           }
           return res.json();
         })
         .then(data => {
-          console.log('🔄 StudentHome: Данные от /api/teachers:', data);
           setServerTeachers(Array.isArray(data) ? data : []);
         })
         .catch((error) => {
-          console.error('Error loading teachers from /api/teachers:', error);
           setServerTeachers([]);
         });
         
       // Также загружаем всех пользователей через API /api/users
       fetch(`${SERVER_URL}/api/users`)
         .then(res => {
-          console.log('🔄 StudentHome: Ответ от /api/users:', res.status, res.ok);
           if (!res.ok) {
-            console.warn('Failed to load users from /api/users:', res.status);
             return [];
           }
           return res.json();
         })
         .then(data => {
-          console.log('🔄 StudentHome: Данные от /api/users:', data);
           const teachers = data.filter((user: any) => user.role === 'teacher');
-          console.log('🔄 StudentHome: Преподаватели из /api/users:', teachers.length);
           // Обновляем allUsers в контексте
           refreshUsers();
         })
         .catch((error) => {
-          console.error('Error loading users from /api/users:', error);
-          console.log('Using local data only');
         });
     };
     
     // Первоначальная загрузка
     loadTeachers();
     
+    // Принудительно обновляем все данные при загрузке страницы
+    refreshAllData();
+    
     // Автоматическая синхронизация каждые 30 секунд
     const intervalId = setInterval(() => {
-      console.log('🔄 StudentHome: Автоматическая синхронизация данных...');
       loadTeachers();
+      refreshAllData(); // Также обновляем все данные каждые 30 секунд
     }, 30000);
     
     // Очистка интервала при размонтировании
@@ -132,13 +123,41 @@ const StudentHome: React.FC = () => {
   React.useEffect(() => {
     if (!socket.current) {
       socket.current = io(WEBSOCKET_URL);
+      
+      // Слушаем создание новых слотов
+      socket.current.on('slotCreated', (newSlot: any) => {
+        // Обновляем доступные слоты при получении нового слота
+        setTimeout(() => {
+          loadAvailableSlots();
+        }, 100);
+      });
+      
+      // Слушаем регистрацию новых пользователей
+      socket.current.on('userRegistered', (newUser: any) => {
+        // Обновляем данные при регистрации нового пользователя
+        setTimeout(() => {
+          refreshAllData();
+          loadAvailableSlots();
+        }, 100);
+      });
     }
   }, []);
 
   // Функция для загрузки всех доступных слотов
   const loadAvailableSlots = () => {
     // Показываем все незабронированные слоты, независимо от статуса преподавателя
-    const availableSlots = timeSlots.filter(slot => !slot.isBooked);
+    const availableSlots = timeSlots.filter(slot => {
+      // Проверяем, что слот не забронирован
+      if (slot.isBooked) return false;
+      
+      // Проверяем, что дата слота не в прошлом
+      const slotDate = new Date(slot.date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (slotDate < today) return false;
+      
+      return true;
+    });
     
     setFilteredSlots(availableSlots);
     
@@ -169,7 +188,6 @@ const StudentHome: React.FC = () => {
       setFilteredSlots(results);
       setShowFilters(false);
     } catch (error) {
-      console.error('Error applying filters:', error);
     } finally {
       setLoading(false);
     }
@@ -186,6 +204,9 @@ const StudentHome: React.FC = () => {
   const refreshSlots = () => {
     setLoading(true);
     
+    // Принудительно обновляем все данные
+    refreshAllData();
+    
     setTimeout(() => {
       if (Object.keys(filters).length === 0 && !selectedDate && !selectedTimeRange) {
         loadAvailableSlots();
@@ -193,7 +214,7 @@ const StudentHome: React.FC = () => {
         applyFilters();
       }
       setLoading(false);
-    }, 500);
+    }, 1000);
   };
 
   const handleBookSlot = (slotId: string) => {
@@ -230,7 +251,6 @@ const StudentHome: React.FC = () => {
       };
       (socket.current as Socket).emit('overbookingRequest', requestData);
     } else {
-      console.error('Socket not connected');
     }
     alert('Заявка на овербукинг отправлена! Мы подберем лучшего преподавателя за 5 часов до занятия.');
   };
@@ -324,14 +344,6 @@ const StudentHome: React.FC = () => {
     const result = Array.from(allTeachersMap.values());
     
     // Отладочная информация
-    console.log('=== DEBUG TEACHERS ===');
-    console.log('serverTeachers:', serverTeachers.length, serverTeachers);
-    console.log('allUsers teachers:', allUsers?.filter((u: any) => u.role === 'teacher').length);
-    console.log('teachersFromServer:', teachersFromServer.length, teachersFromServer);
-    console.log('teachersFromUsers:', teachersFromUsers.length, teachersFromUsers);
-    console.log('teachersFromSlots:', teachersFromSlots.length, teachersFromSlots);
-    console.log('Final allTeachers:', result.length, result);
-    console.log('=== END DEBUG ===');
     
     return result;
   }, [serverTeachers, allUsers, timeSlots]);
@@ -401,20 +413,15 @@ const StudentHome: React.FC = () => {
     }
   }, [filters, selectedDate, selectedTimeRange]);
 
+  // Обновление доступных слотов при изменении списка пользователей
+  React.useEffect(() => {
+    loadAvailableSlots();
+  }, [allUsers]);
+
   // Обновление списка преподавателей при изменении пользователей
   React.useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'tutoring_users') {
-        // Принудительно обновляем компонент при изменении пользователей
-        console.log('Users changed in localStorage, updating teachers list');
-        // Перезагружаем страницу или обновляем состояние
-        window.location.reload();
-      }
-    };
-
-    const handleCustomStorageChange = (e: CustomEvent) => {
-      if (e.detail?.key === 'tutoring_users') {
-        console.log('Custom storage event: users changed, updating teachers list');
         // Используем функцию refreshUsers из контекста для обновления списка пользователей
         refreshUsers();
         // Также обновляем серверных преподавателей
@@ -424,6 +431,24 @@ const StudentHome: React.FC = () => {
           .then(res => res.json())
           .then(data => setServerTeachers(Array.isArray(data) ? data : []))
           .catch(() => setServerTeachers([]));
+        // Обновляем доступные слоты
+        loadAvailableSlots();
+      }
+    };
+
+    const handleCustomStorageChange = (e: CustomEvent) => {
+      if (e.detail?.key === 'tutoring_users') {
+        // Используем функцию refreshUsers из контекста для обновления списка пользователей
+        refreshUsers();
+        // Также обновляем серверных преподавателей
+        setServerTeachers([]); // Сбрасываем серверных преподавателей
+        // Перезагружаем преподавателей с сервера
+        fetch(`${SERVER_URL}/api/teachers`)
+          .then(res => res.json())
+          .then(data => setServerTeachers(Array.isArray(data) ? data : []))
+          .catch(() => setServerTeachers([]));
+        // Обновляем доступные слоты
+        loadAvailableSlots();
       }
     };
 
@@ -438,9 +463,8 @@ const StudentHome: React.FC = () => {
 
   // Первоначальная загрузка слотов при монтировании компонента
   React.useEffect(() => {
-    if (timeSlots.length > 0) {
-      loadAvailableSlots();
-    }
+    // Загружаем доступные слоты при любом изменении timeSlots
+    loadAvailableSlots();
   }, [timeSlots]);
 
   const handleTeacherClick = (teacher: any) => {
@@ -532,18 +556,7 @@ const StudentHome: React.FC = () => {
           </div>
         </button>
         
-        <button
-          onClick={() => setShowUsersList(!showUsersList)}
-          className="group bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 text-white px-6 py-3 rounded-xl font-semibold text-base hover:from-orange-600 hover:via-red-600 hover:to-pink-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center space-x-2"
-        >
-          <div className="p-1.5 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
-            <Users className="h-5 w-5" />
-          </div>
-          <div className="text-left">
-            <div className="font-bold">Пользователи</div>
-            <div className="text-xs opacity-90">Синхронизация</div>
-          </div>
-        </button>
+
         
         <button
           onClick={refreshSlots}
@@ -923,10 +936,7 @@ const StudentHome: React.FC = () => {
                   <button
                     onClick={(e) => {
                         e.stopPropagation();
-                        console.log('Button clicked, teacher:', teacher);
-                        console.log('hasAvailableSlots:', hasAvailableSlots);
                       if (hasAvailableSlots) {
-                          console.log('Setting teacher for calendar:', teacher);
                           setSelectedTeacherForCalendar(teacher);
                           setShowTeacherCalendarModal(true);
                       } else {
@@ -1423,27 +1433,7 @@ const StudentHome: React.FC = () => {
         </div>
       )}
       
-      {/* Users List Modal */}
-      {showUsersList && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-gray-900">Синхронизация пользователей</h2>
-                <button
-                  onClick={() => setShowUsersList(false)}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  <X className="h-6 w-6" />
-                </button>
-              </div>
-            </div>
-            <div className="p-6">
-              <UsersList />
-            </div>
-          </div>
-        </div>
-      )}
+
     </div>
   );
 };
