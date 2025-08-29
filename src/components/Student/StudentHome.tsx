@@ -485,7 +485,7 @@ const StudentHome: React.FC = () => {
     }
     
     setSelectedTeacher(teacherUser);
-    setShowTeacherProfilePage(true);
+    setShowTeacherModal(true); // Используем новое модальное окно вместо полной страницы
   };
 
   const handleBookLesson = (teacherId: string) => {
