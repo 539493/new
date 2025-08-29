@@ -122,6 +122,53 @@ const ProfileForm: React.FC = () => {
           }
         });
       }
+    } else if (user && !user.profile) {
+      // Если у пользователя нет профиля, создаем базовый
+      const baseProfile = user.role === 'teacher' ? {
+        subjects: [],
+        experience: 'experienced' as const,
+        grades: [],
+        goals: [],
+        lessonTypes: [],
+        durations: [],
+        formats: [],
+        offlineAvailable: false,
+        city: '',
+        overbookingEnabled: false,
+        bio: '',
+        avatar: '',
+        rating: 0,
+        hourlyRate: 1500,
+        age: undefined,
+        experienceYears: undefined,
+        education: {
+          university: '',
+          degree: '',
+          graduationYear: undefined,
+          courses: []
+        }
+      } as TeacherProfile : {
+        grade: '',
+        bio: '',
+        avatar: '',
+        subjects: [],
+        age: undefined,
+        school: '',
+        city: '',
+        phone: '',
+        parentName: '',
+        parentPhone: '',
+        goals: [],
+        interests: [],
+        learningStyle: 'mixed' as const,
+        experience: 'beginner' as const,
+        preferredFormats: [],
+        preferredDurations: [],
+        timeZone: '',
+      } as StudentProfile;
+      
+      // Обновляем профиль пользователя
+      updateProfile(baseProfile);
     }
   }, [user]);
 

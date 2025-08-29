@@ -199,6 +199,31 @@ app.get('/api/users', (req, res) => {
   }
 });
 
+// Endpoint для обновления профиля пользователя
+app.post('/api/updateProfile', (req, res) => {
+  try {
+    const { userId, profile, role } = req.body;
+    
+    if (!userId || !profile || !role) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+    
+    if (role === 'teacher') {
+      teacherProfiles[userId] = { ...teacherProfiles[userId], ...profile };
+    } else if (role === 'student') {
+      studentProfiles[userId] = { ...studentProfiles[userId], ...profile };
+    }
+    
+    // Сохраняем данные
+    saveServerData();
+    
+    res.json({ success: true, message: 'Profile updated successfully' });
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    res.status(500).json({ error: 'Failed to update profile' });
+  }
+});
+
 app.post('/api/register', (req, res) => {
   try {
     const { email, password, name, nickname, role, phone } = req.body;

@@ -208,6 +208,50 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return false;
       }
       
+      // Создаем базовый профиль в зависимости от роли
+      const baseProfile = role === 'teacher' ? {
+        subjects: [],
+        experience: 'experienced' as const,
+        grades: [],
+        goals: [],
+        lessonTypes: [],
+        durations: [],
+        formats: [],
+        offlineAvailable: false,
+        city: '',
+        overbookingEnabled: false,
+        bio: '',
+        avatar: '',
+        rating: 0,
+        hourlyRate: 1500,
+        age: undefined,
+        experienceYears: undefined,
+        education: {
+          university: '',
+          degree: '',
+          graduationYear: undefined,
+          courses: []
+        }
+      } as TeacherProfile : {
+        grade: '',
+        bio: '',
+        avatar: '',
+        subjects: [],
+        age: undefined,
+        school: '',
+        city: '',
+        phone: '',
+        parentName: '',
+        parentPhone: '',
+        goals: [],
+        interests: [],
+        learningStyle: 'mixed' as const,
+        experience: 'beginner' as const,
+        preferredFormats: [],
+        preferredDurations: [],
+        timeZone: '',
+      } as StudentProfile;
+
       const newUser: User = {
         id: uuidv4(),
         email,
@@ -215,6 +259,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         nickname,
         role,
         phone,
+        profile: baseProfile,
+        avatar: baseProfile.avatar
       };
       
       const updatedUsers = [...users, newUser];
@@ -242,6 +288,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const users = loadUsersFromStorage();
       const updatedUsers = users.map(u => u.id === user.id ? updatedUser : u);
       saveUsersToStorage(updatedUsers);
+      
+      // Отправляем обновление на сервер
+      if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+        // В production отправляем на сервер
+        fetch('https://tutoring-platform-am88.onrender.com/api/updateProfile', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: user.id,
+            profile: profile,
+            role: user.role
+          })
+        }).catch(error => {
+          console.log('Failed to update profile on server:', error);
+        });
+      }
     }
   };
 
