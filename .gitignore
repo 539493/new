@@ -8,6 +8,9 @@ yarn-error.log*
 dist/
 build/
 
+# Vite
+.vite/
+
 # Environment variables
 .env
 .env.local
