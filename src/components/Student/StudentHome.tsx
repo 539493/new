@@ -69,37 +69,35 @@ const StudentHome: React.FC = () => {
   // Загружаем преподавателей с сервера при монтировании
   useEffect(() => {
     
-    const loadTeachers = () => {
-      // Загружаем преподавателей через API /api/teachers
-      fetch(`${SERVER_URL}/api/teachers`)
-        .then(res => {
-          if (!res.ok) {
-            return [];
-          }
-          return res.json();
-        })
-        .then(data => {
-          setServerTeachers(Array.isArray(data) ? data : []);
-        })
-        .catch((error) => {
+    const loadTeachers = async () => {
+      try {
+        // Загружаем преподавателей через API /api/teachers
+        const teachersResponse = await fetch(`${SERVER_URL}/api/teachers`);
+        if (teachersResponse.ok) {
+          const teachersData = await teachersResponse.json();
+          console.log('Teachers loaded from server:', teachersData);
+          setServerTeachers(Array.isArray(teachersData) ? teachersData : []);
+        } else {
+          console.warn('Failed to load teachers from server:', teachersResponse.status);
           setServerTeachers([]);
-        });
+        }
         
-      // Также загружаем всех пользователей через API /api/users
-      fetch(`${SERVER_URL}/api/users`)
-        .then(res => {
-          if (!res.ok) {
-            return [];
-          }
-          return res.json();
-        })
-        .then(data => {
-          const teachers = data.filter((user: any) => user.role === 'teacher');
+        // Также загружаем всех пользователей через API /api/users
+        const usersResponse = await fetch(`${SERVER_URL}/api/users`);
+        if (usersResponse.ok) {
+          const usersData = await usersResponse.json();
+          console.log('Users loaded from server:', usersData);
+          const teachers = usersData.filter((user: any) => user.role === 'teacher');
+          console.log('Teachers from users API:', teachers);
           // Обновляем allUsers в контексте
           refreshUsers();
-        })
-        .catch((error) => {
-        });
+        } else {
+          console.warn('Failed to load users from server:', usersResponse.status);
+        }
+      } catch (error) {
+        console.error('Error loading teachers/users from server:', error);
+        setServerTeachers([]);
+      }
     };
     
     // Первоначальная загрузка
@@ -355,6 +353,12 @@ const StudentHome: React.FC = () => {
     const result = Array.from(allTeachersMap.values());
     
     // Отладочная информация
+    console.log('All teachers processed:', result.map(t => ({
+      id: t.id,
+      name: t.name,
+      hasAvatar: !!(t.avatar && t.avatar.trim() !== '' && t.avatar !== 'undefined' && t.avatar !== 'null'),
+      avatar: t.avatar
+    })));
     
     return result;
   }, [serverTeachers, allUsers, timeSlots]);
@@ -479,6 +483,8 @@ const StudentHome: React.FC = () => {
   }, [timeSlots]);
 
   const handleTeacherClick = async (teacher: any) => {
+    console.log('Teacher clicked:', teacher);
+    
     // Принудительно обновляем данные учителя с сервера
     try {
       const response = await fetch(`${SERVER_URL}/api/users/${teacher.id}`);
@@ -949,7 +955,13 @@ const StudentHome: React.FC = () => {
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
                               target.style.display = 'none';
-                              target.nextElementSibling?.classList.remove('hidden');
+                              const fallback = target.nextElementSibling as HTMLElement;
+                              if (fallback) fallback.classList.remove('hidden');
+                            }}
+                            onLoad={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              const fallback = target.nextElementSibling as HTMLElement;
+                              if (fallback) fallback.classList.add('hidden');
                             }}
                           />
                         );

@@ -79,7 +79,25 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
         refreshUsers();
         
         // Обновляем данные в модальном окне
-        window.location.reload();
+        const updatedTeacher = {
+          ...teacher,
+          name: freshData.name || teacher.name,
+          email: freshData.email || teacher.email,
+          avatar: freshData.profile?.avatar || freshData.avatar || teacher.avatar,
+          profile: {
+            ...teacher.profile,
+            ...freshData.profile,
+            avatar: freshData.profile?.avatar || freshData.avatar || teacher.avatar,
+            name: freshData.name || teacher.name,
+            email: freshData.email || teacher.email
+          }
+        };
+        
+        console.log('Updated teacher data in modal:', updatedTeacher);
+        // Обновляем состояние без перезагрузки страницы
+        // setSelectedTeacher(updatedTeacher); // This line was not in the original file, so it's removed.
+      } else {
+        console.warn('Failed to refresh teacher data:', response.status);
       }
     } catch (error) {
       console.error('Error refreshing teacher data:', error);
@@ -112,6 +130,27 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
           
           // Обновляем данные в контексте приложения
           refreshUsers();
+          
+          // Обновляем данные в модальном окне
+          const updatedTeacher = {
+            ...teacher,
+            name: freshData.name || teacher.name,
+            email: freshData.email || teacher.email,
+            avatar: freshData.profile?.avatar || freshData.avatar || teacher.avatar,
+            profile: {
+              ...teacher.profile,
+              ...freshData.profile,
+              avatar: freshData.profile?.avatar || freshData.avatar || teacher.avatar,
+              name: freshData.name || teacher.name,
+              email: freshData.email || teacher.email
+            }
+          };
+          
+          console.log('Updated teacher data in modal useEffect:', updatedTeacher);
+          // Обновляем состояние без перезагрузки страницы
+          // setSelectedTeacher(updatedTeacher);
+        } else {
+          console.warn('Failed to refresh teacher data in modal:', response.status);
         }
       } catch (error) {
         console.error('Error refreshing teacher data in modal:', error);
@@ -234,6 +273,11 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
                           const fallback = target.nextElementSibling as HTMLElement;
                           if (fallback) fallback.classList.remove('hidden');
                         }}
+                        onLoad={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          const fallback = target.nextElementSibling as HTMLElement;
+                          if (fallback) fallback.classList.add('hidden');
+                        }}
                       />
                     );
                   }
@@ -339,37 +383,228 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
 
           {/* About Section */}
           <div className="bg-white rounded-2xl shadow p-6 mb-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">О себе</h3>
-            <div className="text-gray-700 whitespace-pre-line leading-relaxed mb-4">
+            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+              <UserIcon className="w-5 h-5 mr-2" />
+              О преподавателе
+            </h3>
+            <div className="text-gray-700 whitespace-pre-line leading-relaxed mb-6">
               {profile?.bio || 'Информация о себе не указана'}
             </div>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="text-xs font-semibold text-gray-500">Предметы:</span>
-                <div className="text-base text-gray-900 mt-1">
-                  {profile?.subjects?.length > 0 ? profile.subjects.join(', ') : 'Не указано'}
+            
+            {/* Основная информация */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div className="space-y-4">
+                <div>
+                  <span className="text-sm font-semibold text-gray-500 flex items-center">
+                    <BookOpen className="w-4 h-4 mr-2" />
+                    Предметы:
+                  </span>
+                  <div className="text-base text-gray-900 mt-2">
+                    {profile?.subjects?.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {profile.subjects.map((subject, index) => (
+                          <span key={index} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                            {subject}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-gray-500">Не указано</span>
+                    )}
+                  </div>
+                </div>
+                
+                <div>
+                  <span className="text-sm font-semibold text-gray-500 flex items-center">
+                    <GraduationCap className="w-4 h-4 mr-2" />
+                    Классы:
+                  </span>
+                  <div className="text-base text-gray-900 mt-2">
+                    {profile?.grades?.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {profile.grades.map((grade, index) => (
+                          <span key={index} className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                            {grade}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-gray-500">Не указано</span>
+                    )}
+                  </div>
+                </div>
+                
+                <div>
+                  <span className="text-sm font-semibold text-gray-500 flex items-center">
+                    <Target className="w-4 h-4 mr-2" />
+                    Цели обучения:
+                  </span>
+                  <div className="text-base text-gray-900 mt-2">
+                    {profile?.goals?.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {profile.goals.map((goal, index) => (
+                          <span key={index} className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium">
+                            {goal}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-gray-500">Не указано</span>
+                    )}
+                  </div>
                 </div>
               </div>
-              <div>
-                <span className="text-xs font-semibold text-gray-500">Классы:</span>
-                <div className="text-base text-gray-900 mt-1">
-                  {profile?.grades?.length > 0 ? profile.grades.join(', ') : 'Не указано'}
+              
+              <div className="space-y-4">
+                <div>
+                  <span className="text-sm font-semibold text-gray-500 flex items-center">
+                    <Award className="w-4 h-4 mr-2" />
+                    Опыт:
+                  </span>
+                  <div className="text-base text-gray-900 mt-2">
+                    {profile?.experience ? (
+                      <div className="flex items-center space-x-2">
+                        <span className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-medium">
+                          {getExperienceLabel(profile.experience)}
+                        </span>
+                        {profile.experienceYears && (
+                          <span className="text-gray-600">
+                            ({profile.experienceYears} лет)
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-gray-500">Не указано</span>
+                    )}
+                  </div>
                 </div>
-              </div>
-              <div>
-                <span className="text-xs font-semibold text-gray-500">Город:</span>
-                <div className="text-base text-gray-900 mt-1">
-                  {profile?.city || 'Не указано'}
+                
+                <div>
+                  <span className="text-sm font-semibold text-gray-500 flex items-center">
+                    <MapPin className="w-4 h-4 mr-2" />
+                    Город:
+                  </span>
+                  <div className="text-base text-gray-900 mt-2">
+                    {profile?.city ? (
+                      <span className="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm font-medium">
+                        {profile.city}
+                      </span>
+                    ) : (
+                      <span className="text-gray-500">Не указано</span>
+                    )}
+                  </div>
                 </div>
-              </div>
-              <div>
-                <span className="text-xs font-semibold text-gray-500">Опыт:</span>
-                <div className="text-base text-gray-900 mt-1">
-                  {profile?.experience ? getExperienceLabel(profile.experience) : 'Не указано'}
+                
+                <div>
+                  <span className="text-sm font-semibold text-gray-500 flex items-center">
+                    <Globe className="w-4 h-4 mr-2" />
+                    Форматы обучения:
+                  </span>
+                  <div className="text-base text-gray-900 mt-2">
+                    {profile?.formats?.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {profile.formats.map((format, index) => (
+                          <span key={index} className="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm font-medium">
+                            {getFormatLabel(format)}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-gray-500">Не указано</span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
+
+          {/* Pricing and Services Section */}
+          <div className="bg-white rounded-2xl shadow p-6 mb-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+              <DollarSign className="w-5 h-5 mr-2" />
+              Стоимость и услуги
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Основная стоимость */}
+              <div className="space-y-4">
+                <div>
+                  <span className="text-sm font-semibold text-gray-500">Базовая стоимость:</span>
+                  <div className="text-2xl font-bold text-blue-600 mt-1">
+                    {profile?.hourlyRate ? `${profile.hourlyRate} ₽/час` : 'Не указана'}
+                  </div>
+                </div>
+                
+                {/* Длительности занятий */}
+                {profile?.durations && profile.durations.length > 0 && (
+                  <div>
+                    <span className="text-sm font-semibold text-gray-500">Длительности занятий:</span>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {profile.durations.map((duration, index) => (
+                        <span key={index} className="bg-blue-50 text-blue-700 px-3 py-1 rounded-lg text-sm font-medium">
+                          {duration} мин
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Типы уроков */}
+                {profile?.lessonTypes && profile.lessonTypes.length > 0 && (
+                  <div>
+                    <span className="text-sm font-semibold text-gray-500">Типы уроков:</span>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {profile.lessonTypes.map((type, index) => (
+                        <span key={index} className="bg-green-50 text-green-700 px-3 py-1 rounded-lg text-sm font-medium">
+                          {type}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              {/* Дополнительная информация */}
+              <div className="space-y-4">
+                {/* Рейтинг */}
+                {profile?.rating && (
+                  <div>
+                    <span className="text-sm font-semibold text-gray-500">Рейтинг:</span>
+                    <div className="flex items-center space-x-2 mt-1">
+                      <div className="flex items-center">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star 
+                            key={star} 
+                            className={`w-5 h-5 ${star <= (profile.rating || 0) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} 
+                          />
+                        ))}
+                      </div>
+                      <span className="text-lg font-semibold text-gray-900">{profile.rating}/5</span>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Овербукинг */}
+                <div>
+                  <span className="text-sm font-semibold text-gray-500">Автоподбор:</span>
+                  <div className="text-base text-gray-900 mt-1">
+                    {profile?.overbookingEnabled ? (
+                      <span className="text-green-600 font-medium">✓ Доступен</span>
+                    ) : (
+                      <span className="text-gray-500">Недоступен</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+              <p className="text-sm text-blue-700">
+                💡 Стоимость может варьироваться в зависимости от формата, длительности занятия и сложности материала
+              </p>
+            </div>
+          </div>
+
 
           {/* Available Slots Section */}
           <div className="bg-white rounded-2xl shadow p-6 mb-6">
@@ -378,34 +613,82 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
               Доступные слоты ({availableSlots.length})
             </h3>
             {availableSlots.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {availableSlots.slice(0, 6).map((slot) => (
-                  <div key={slot.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center space-x-2">
-                        <BookOpen className="w-4 h-4 text-blue-600" />
-                        <span className="font-semibold text-gray-900">{slot.subject}</span>
-                      </div>
-                      <span className="text-sm font-bold text-green-600">{slot.price} ₽</span>
-                    </div>
-                    <div className="text-sm text-gray-600 mb-2">
-                      <div className="flex items-center space-x-1 mb-1">
-                        <Clock className="w-3 h-3" />
-                        <span>{formatSlotDate(slot.date)} • {slot.startTime}-{slot.endTime}</span>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <MapPin className="w-3 h-3" />
-                        <span>{getFormatLabel(slot.format)} • {slot.duration} мин</span>
+              <div className="space-y-4">
+                {/* Сводка по ценам */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h4 className="font-semibold text-gray-900 mb-2">Сводка по ценам:</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-600">Минимальная цена:</span>
+                      <div className="font-semibold text-green-600">
+                        {Math.min(...availableSlots.map(s => s.price))} ₽
                       </div>
                     </div>
-                    <button
-                      onClick={() => onBookLesson(teacher.id)}
-                      className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors text-sm font-semibold"
-                    >
-                      Записаться
-                    </button>
+                    <div>
+                      <span className="text-gray-600">Максимальная цена:</span>
+                      <div className="font-semibold text-green-600">
+                        {Math.max(...availableSlots.map(s => s.price))} ₽
+                      </div>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Средняя цена:</span>
+                      <div className="font-semibold text-green-600">
+                        {Math.round(availableSlots.reduce((sum, slot) => sum + slot.price, 0) / availableSlots.length)} ₽
+                      </div>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Всего слотов:</span>
+                      <div className="font-semibold text-blue-600">
+                        {availableSlots.length}
+                      </div>
+                    </div>
                   </div>
-                ))}
+                </div>
+                
+                {/* Слоты */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {availableSlots.slice(0, 6).map((slot) => (
+                    <div key={slot.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center space-x-2">
+                          <BookOpen className="w-4 h-4 text-blue-600" />
+                          <span className="font-semibold text-gray-900">{slot.subject}</span>
+                        </div>
+                        <span className="text-lg font-bold text-green-600">{slot.price} ₽</span>
+                      </div>
+                      <div className="space-y-2 mb-3">
+                        <div className="flex items-center space-x-2 text-sm text-gray-600">
+                          <Clock className="w-3 h-3" />
+                          <span>{formatSlotDate(slot.date)} • {slot.startTime}-{slot.endTime}</span>
+                        </div>
+                        <div className="flex items-center space-x-2 text-sm text-gray-600">
+                          <MapPin className="w-3 h-3" />
+                          <span>{getFormatLabel(slot.format)} • {slot.duration} мин</span>
+                        </div>
+                        {slot.experience && (
+                          <div className="flex items-center space-x-2 text-sm text-gray-600">
+                            <Award className="w-3 h-3" />
+                            <span>Опыт: {getExperienceLabel(slot.experience)}</span>
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => onBookLesson(teacher.id)}
+                        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-2 px-4 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 text-sm font-semibold"
+                      >
+                        Записаться за {slot.price} ₽
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                
+                {availableSlots.length > 6 && (
+                  <div className="text-center pt-4">
+                    <p className="text-gray-600 text-sm">
+                      И еще {availableSlots.length - 6} доступных слотов
+                    </p>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="text-center py-8">
@@ -421,12 +704,15 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
           {/* Posts Section */}
           <div className="bg-white rounded-2xl shadow p-6 mb-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-gray-900">Записи преподавателя</h3>
+              <h3 className="text-lg font-bold text-gray-900 flex items-center">
+                <FileText className="w-5 h-5 mr-2" />
+                Записи преподавателя ({teacherPosts.length})
+              </h3>
             </div>
             {teacherPosts.length > 0 ? (
               <div className="space-y-4">
                 {teacherPosts.slice(0, 3).map((post) => (
-                  <div key={post.id} className="border border-gray-200 rounded-lg p-4">
+                  <div key={post.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
                     <div className="flex items-start space-x-3">
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center flex-shrink-0">
                         <UserIcon className="w-5 h-5 text-white" />
@@ -436,17 +722,29 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
                           <span className="font-semibold text-gray-900">{post.userName}</span>
                           <span className="text-sm text-gray-500">{formatDate(post.date)}</span>
                         </div>
-                        <p className="text-gray-700 mb-3">{post.text}</p>
+                        <p className="text-gray-700 mb-3 leading-relaxed">{post.text}</p>
+                        
+                        {/* Теги, если есть */}
+                        {post.tags && post.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mb-3">
+                            {post.tags.map((tag, index) => (
+                              <span key={index} className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        
                         <div className="flex items-center space-x-4 text-sm text-gray-500">
-                          <button className="flex items-center space-x-1 hover:text-blue-600">
+                          <button className="flex items-center space-x-1 hover:text-blue-600 transition-colors">
                             <ThumbsUp className="w-4 h-4" />
                             <span>{post.reactions.length}</span>
                           </button>
-                          <button className="flex items-center space-x-1 hover:text-blue-600">
+                          <button className="flex items-center space-x-1 hover:text-blue-600 transition-colors">
                             <MessageCircle className="w-4 h-4" />
                             <span>{post.comments.length}</span>
                           </button>
-                          <button className="flex items-center space-x-1 hover:text-blue-600">
+                          <button className="flex items-center space-x-1 hover:text-blue-600 transition-colors">
                             <Share2 className="w-4 h-4" />
                           </button>
                         </div>
@@ -454,14 +752,22 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
                     </div>
                   </div>
                 ))}
+                
+                {teacherPosts.length > 3 && (
+                  <div className="text-center pt-4">
+                    <p className="text-gray-600 text-sm">
+                      И еще {teacherPosts.length - 3} записей
+                    </p>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="text-center py-8">
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <FileText className="w-8 h-8 text-gray-400" />
                 </div>
-                <p className="text-gray-500 mb-2">У вас пока нет записей</p>
-                <p className="text-sm text-gray-400">Создайте первую запись!</p>
+                <p className="text-gray-500 mb-2">У преподавателя пока нет записей</p>
+                <p className="text-sm text-gray-400">Записи появятся здесь, когда преподаватель начнет публиковать контент</p>
               </div>
             )}
           </div>
