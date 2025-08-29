@@ -81,10 +81,18 @@ const DATA_FILE = path.join(__dirname, 'server_data.json');
 
 function loadServerData() {
   try {
+    console.log('Loading server data from:', DATA_FILE);
     if (fs.existsSync(DATA_FILE)) {
       const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+      console.log('Loaded server data:', {
+        teacherProfilesCount: Object.keys(data.teacherProfiles || {}).length,
+        studentProfilesCount: Object.keys(data.studentProfiles || {}).length,
+        timeSlotsCount: (data.timeSlots || []).length,
+        lessonsCount: (data.lessons || []).length
+      });
       return data;
     } else {
+      console.log('No server data file found, creating default structure');
       return {
         teacherProfiles: {},
         studentProfiles: {},
@@ -121,7 +129,15 @@ function saveServerData() {
       posts
     };
     
+    console.log('Saving server data:', {
+      teacherProfilesCount: Object.keys(teacherProfiles).length,
+      studentProfilesCount: Object.keys(studentProfiles).length,
+      timeSlotsCount: timeSlots.length,
+      lessonsCount: lessons.length
+    });
+    
     fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+    console.log('Server data saved successfully');
   } catch (error) {
     console.error('Error saving server data:', error);
     console.error('Error details:', error.message);
@@ -1023,6 +1039,9 @@ function getTeachersFromSlots() {
 
 // Endpoint для получения преподавателей
 app.get('/api/teachers', (req, res) => {
+  console.log('Requesting all teachers');
+  console.log('Available teacher profiles:', Object.keys(teacherProfiles));
+  
   // Собираем преподавателей из teacherProfiles
   const teachers = Object.entries(teacherProfiles).map(([id, profile]) => ({
     id,
@@ -1030,6 +1049,8 @@ app.get('/api/teachers', (req, res) => {
     avatar: profile.avatar || '',
     profile
   }));
+  
+  console.log('Returning teachers:', teachers);
   res.json(teachers);
 });
 
@@ -1158,13 +1179,74 @@ app.post('/api/register', (req, res) => {
   }
 });
 
+// Endpoint для обновления профиля пользователя
+app.post('/api/updateProfile', (req, res) => {
+  try {
+    const { userId, profileData, role } = req.body;
+    
+    if (!userId || !profileData || !role) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+    
+    // Обновляем профиль в зависимости от роли
+    if (role === 'teacher') {
+      if (teacherProfiles[userId]) {
+        teacherProfiles[userId] = {
+          ...teacherProfiles[userId],
+          ...profileData
+        };
+      } else {
+        return res.status(404).json({ error: 'Teacher profile not found' });
+      }
+    } else if (role === 'student') {
+      if (studentProfiles[userId]) {
+        studentProfiles[userId] = {
+          ...studentProfiles[userId],
+          ...profileData
+        };
+      } else {
+        return res.status(404).json({ error: 'Student profile not found' });
+      }
+    } else {
+      return res.status(400).json({ error: 'Invalid role' });
+    }
+    
+    // Сохраняем данные на сервере
+    saveServerData();
+    
+    // Отправляем уведомление всем подключенным клиентам
+    io.emit('profileUpdated', {
+      id: userId,
+      role: role,
+      profile: role === 'teacher' ? teacherProfiles[userId] : studentProfiles[userId]
+    });
+    
+    console.log(`Profile updated for ${role} ${userId}:`, profileData);
+    
+    res.json({ 
+      success: true, 
+      message: 'Profile updated successfully',
+      profile: role === 'teacher' ? teacherProfiles[userId] : studentProfiles[userId]
+    });
+    
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    res.status(500).json({ error: 'Failed to update profile' });
+  }
+});
+
 // Endpoint для получения пользователя по ID
 app.get('/api/users/:id', (req, res) => {
   try {
     const { id } = req.params;
     
+    console.log(`Requesting user with ID: ${id}`);
+    console.log('Available teacher profiles:', Object.keys(teacherProfiles));
+    console.log('Available student profiles:', Object.keys(studentProfiles));
+    
     // Ищем в преподавателях
     if (teacherProfiles[id]) {
+      console.log('Found teacher profile:', teacherProfiles[id]);
       return res.json({
         id,
         email: teacherProfiles[id].email || '',
@@ -1178,6 +1260,7 @@ app.get('/api/users/:id', (req, res) => {
     
     // Ищем в студентах
     if (studentProfiles[id]) {
+      console.log('Found student profile:', studentProfiles[id]);
       return res.json({
         id,
         email: studentProfiles[id].email || '',
@@ -1189,6 +1272,7 @@ app.get('/api/users/:id', (req, res) => {
       });
     }
     
+    console.log(`User with ID ${id} not found`);
     res.status(404).json({ error: 'User not found' });
     
   } catch (error) {
