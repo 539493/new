@@ -133,7 +133,7 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
         {/* Content */}
         <div className="p-6">
           {/* Profile Header */}
-          <div className="flex items-start gap-6 mb-8">
+          <div className="flex items-start gap-6 mb-6">
             {/* Avatar */}
             <div className="relative">
               <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center overflow-hidden border-4 border-white shadow-lg relative">
@@ -200,6 +200,47 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
                 )}
               </div>
             </div>
+          </div>
+
+          {/* Statistics Section - Compact */}
+          <div className="mb-6">
+            <h3 className="text-base font-bold text-gray-900 mb-3">Статистика</h3>
+            <div className="grid grid-cols-4 gap-3">
+              <div className="text-center p-3 bg-blue-50 rounded-lg">
+                <div className="text-lg font-bold text-blue-600 mb-1">{completedLessons.length}</div>
+                <div className="text-xs text-gray-600">Проведено уроков</div>
+              </div>
+              <div className="text-center p-3 bg-green-50 rounded-lg">
+                <div className="text-lg font-bold text-green-600 mb-1">{availableSlots.length}</div>
+                <div className="text-xs text-gray-600">Свободных слотов</div>
+              </div>
+              <div className="text-center p-3 bg-purple-50 rounded-lg">
+                <div className="text-lg font-bold text-purple-600 mb-1">{teacherPosts.length}</div>
+                <div className="text-xs text-gray-600">Записей</div>
+              </div>
+              <div className="text-center p-3 bg-yellow-50 rounded-lg">
+                <div className="text-lg font-bold text-yellow-600 mb-1">{profile?.reviewsCount || 0}</div>
+                <div className="text-xs text-gray-600">Отзывов</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <button
+              onClick={() => onBookLesson(teacher.id)}
+              className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-200 flex items-center justify-center space-x-2"
+            >
+              <BookOpen className="w-5 h-5" />
+              <span>Записаться на урок</span>
+            </button>
+            <button
+              onClick={() => onMessage(teacher.id)}
+              className="flex-1 bg-gradient-to-r from-green-600 to-green-700 text-white px-6 py-3 rounded-xl font-semibold hover:from-green-700 hover:to-green-800 transition-all duration-200 flex items-center justify-center space-x-2"
+            >
+              <MessageCircle className="w-5 h-5" />
+              <span>Написать сообщение</span>
+            </button>
           </div>
 
           {/* About Section */}
@@ -315,28 +356,7 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
             )}
           </div>
 
-          {/* Statistics Section */}
-          <div className="bg-white rounded-2xl shadow p-6 mb-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Статистика</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <div className="text-2xl font-bold text-blue-600 mb-1">{completedLessons.length}</div>
-                <div className="text-sm text-gray-600">Проведено уроков</div>
-              </div>
-              <div className="text-center p-4 bg-green-50 rounded-lg">
-                <div className="text-2xl font-bold text-green-600 mb-1">{availableSlots.length}</div>
-                <div className="text-sm text-gray-600">Свободных слотов</div>
-              </div>
-              <div className="text-center p-4 bg-purple-50 rounded-lg">
-                <div className="text-2xl font-bold text-purple-600 mb-1">{teacherPosts.length}</div>
-                <div className="text-sm text-gray-600">Записей</div>
-              </div>
-              <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                <div className="text-2xl font-bold text-yellow-600 mb-1">{profile?.reviewsCount || 0}</div>
-                <div className="text-sm text-gray-600">Отзывов</div>
-              </div>
-            </div>
-          </div>
+
 
           {/* Education Section */}
           {profile?.education && (
@@ -396,23 +416,7 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
             </div>
           )}
 
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4">
-            <button
-              onClick={() => onBookLesson(teacher.id)}
-              className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-200 flex items-center justify-center space-x-2"
-            >
-              <BookOpen className="w-5 h-5" />
-              <span>Записаться на урок</span>
-            </button>
-            <button
-              onClick={() => onMessage(teacher.id)}
-              className="flex-1 bg-gradient-to-r from-green-600 to-green-700 text-white px-6 py-3 rounded-xl font-semibold hover:from-green-700 hover:to-green-800 transition-all duration-200 flex items-center justify-center space-x-2"
-            >
-              <MessageCircle className="w-5 h-5" />
-              <span>Написать сообщение</span>
-            </button>
-          </div>
+
         </div>
       </div>
     </div>
