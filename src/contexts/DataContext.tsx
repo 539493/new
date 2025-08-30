@@ -253,72 +253,81 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     try {
       console.log('Force syncing data from server...');
       const response = await fetch(`${SERVER_URL}/api/sync`);
-      if (response.ok) {
-        const syncData = await response.json();
-        
-        // Обновляем слоты
-        if (syncData.timeSlots) {
-          setTimeSlots(syncData.timeSlots);
-          saveToStorage('tutoring_timeSlots', syncData.timeSlots);
-        }
-        
-        // Обновляем уроки
-        if (syncData.lessons) {
-          setLessons(syncData.lessons);
-          saveToStorage('tutoring_lessons', syncData.lessons);
-        }
-        
-        // Обновляем чаты
-        if (syncData.chats) {
-          setChats(syncData.chats);
-          saveToStorage('tutoring_chats', syncData.chats);
-        }
-        
-        // Обновляем посты
-        if (syncData.posts) {
-          setPosts(syncData.posts);
-          saveToStorage('tutoring_posts', syncData.posts);
-        }
-        
-        // Обновляем пользователей
-        const users: User[] = [];
-        if (syncData.teacherProfiles) {
-          Object.entries(syncData.teacherProfiles).forEach(([id, profile]) => {
-            const teacherProfile = profile as TeacherProfile;
-            users.push({
-              id,
-              email: String(teacherProfile.email || ''),
-              name: String(teacherProfile.name || ''),
-              nickname: String(teacherProfile.nickname || ''),
-              role: 'teacher',
-              phone: String(teacherProfile.phone || ''),
-              profile: teacherProfile
-            });
-          });
-        }
-        if (syncData.studentProfiles) {
-          Object.entries(syncData.studentProfiles).forEach(([id, profile]) => {
-            const studentProfile = profile as StudentProfile;
-            users.push({
-              id,
-              email: String(studentProfile.email || ''),
-              name: String(studentProfile.name || ''),
-              nickname: String(studentProfile.nickname || ''),
-              role: 'student',
-              phone: String(studentProfile.phone || ''),
-              profile: studentProfile
-            });
-          });
-        }
-        setAllUsers(users);
-        saveToStorage('tutoring_users', users);
-        
-        console.log('Data sync completed successfully');
-      } else {
-        console.error('Failed to sync data from server:', response.status);
+      
+      if (!response.ok) {
+        console.error('Failed to sync data from server:', response.status, response.statusText);
+        return;
       }
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.error('Server returned non-JSON response:', contentType);
+        return;
+      }
+      
+      const syncData = await response.json();
+      
+      // Обновляем слоты
+      if (syncData.timeSlots) {
+        setTimeSlots(syncData.timeSlots);
+        saveToStorage('tutoring_timeSlots', syncData.timeSlots);
+      }
+      
+      // Обновляем уроки
+      if (syncData.lessons) {
+        setLessons(syncData.lessons);
+        saveToStorage('tutoring_lessons', syncData.lessons);
+      }
+      
+      // Обновляем чаты
+      if (syncData.chats) {
+        setChats(syncData.chats);
+        saveToStorage('tutoring_chats', syncData.chats);
+      }
+      
+      // Обновляем посты
+      if (syncData.posts) {
+        setPosts(syncData.posts);
+        saveToStorage('tutoring_posts', syncData.posts);
+      }
+      
+      // Обновляем пользователей
+      const users: User[] = [];
+      if (syncData.teacherProfiles) {
+        Object.entries(syncData.teacherProfiles).forEach(([id, profile]) => {
+          const teacherProfile = profile as TeacherProfile;
+          users.push({
+            id,
+            email: String(teacherProfile.email || ''),
+            name: String(teacherProfile.name || ''),
+            nickname: String(teacherProfile.nickname || ''),
+            role: 'teacher',
+            phone: String(teacherProfile.phone || ''),
+            profile: teacherProfile
+          });
+        });
+      }
+      if (syncData.studentProfiles) {
+        Object.entries(syncData.studentProfiles).forEach(([id, profile]) => {
+          const studentProfile = profile as StudentProfile;
+          users.push({
+            id,
+            email: String(studentProfile.email || ''),
+            name: String(studentProfile.name || ''),
+            nickname: String(studentProfile.nickname || ''),
+            role: 'student',
+            phone: String(studentProfile.phone || ''),
+            profile: studentProfile
+          });
+        });
+      }
+      setAllUsers(users);
+      saveToStorage('tutoring_users', users);
+      
+      console.log('Data sync completed successfully');
     } catch (error) {
       console.error('Error syncing data:', error);
+      // Не выбрасываем ошибку, чтобы не ломать интерфейс
     }
   };
 

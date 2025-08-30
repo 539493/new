@@ -9,7 +9,7 @@ const getServerUrl = () => {
   // В разработке используем локальный сервер, но доступный из других сетей
   // Получаем IP адрес компьютера для доступа из других устройств
   const localIP = window.location.hostname === 'localhost' ? '192.168.0.103' : window.location.hostname;
-  return `http://${localIP}:10000`;
+  return `http://${localIP}:3001`;
 };
 
 const getWebSocketUrl = () => {
@@ -21,7 +21,7 @@ const getWebSocketUrl = () => {
   
   // В разработке используем локальный сервер, но доступный из других сетей
   const localIP = window.location.hostname === 'localhost' ? '192.168.0.103' : window.location.hostname;
-  return `http://${localIP}:10000`;
+  return `http://${localIP}:3001`;
 };
 
 export const SERVER_URL = getServerUrl();

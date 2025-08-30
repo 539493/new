@@ -75,9 +75,15 @@ const StudentHome: React.FC = () => {
       // Загружаем преподавателей через API /api/teachers
       const teachersResponse = await fetch(`${SERVER_URL}/api/teachers`);
       if (teachersResponse.ok) {
-        const teachersData = await teachersResponse.json();
-        console.log('Teachers loaded from server:', teachersData);
-        setServerTeachers(Array.isArray(teachersData) ? teachersData : []);
+        const contentType = teachersResponse.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const teachersData = await teachersResponse.json();
+          console.log('Teachers loaded from server:', teachersData);
+          setServerTeachers(Array.isArray(teachersData) ? teachersData : []);
+        } else {
+          console.warn('Server returned non-JSON response for teachers');
+          setServerTeachers([]);
+        }
       } else {
         console.warn('Failed to load teachers from server:', teachersResponse.status);
         setServerTeachers([]);
@@ -86,12 +92,17 @@ const StudentHome: React.FC = () => {
       // Также загружаем всех пользователей через API /api/users
       const usersResponse = await fetch(`${SERVER_URL}/api/users`);
       if (usersResponse.ok) {
-        const usersData = await usersResponse.json();
-        console.log('Users loaded from server:', usersData);
-        const teachers = usersData.filter((user: any) => user.role === 'teacher');
-        console.log('Teachers from users API:', teachers);
-        // Обновляем allUsers в контексте
-        refreshUsers();
+        const contentType = usersResponse.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const usersData = await usersResponse.json();
+          console.log('Users loaded from server:', usersData);
+          const teachers = usersData.filter((user: any) => user.role === 'teacher');
+          console.log('Teachers from users API:', teachers);
+          // Обновляем allUsers в контексте
+          refreshUsers();
+        } else {
+          console.warn('Server returned non-JSON response for users');
+        }
       } else {
         console.warn('Failed to load users from server:', usersResponse.status);
       }
