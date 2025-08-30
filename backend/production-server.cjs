@@ -85,75 +85,27 @@ const DATA_FILE = path.join(__dirname, 'server_data.json');
 
 function loadServerData() {
   try {
-    // Загружаем тестовые данные как основу
-    const testDataPath = path.join(__dirname, 'server_data.json');
-    let testData = {
-      teacherProfiles: {},
-      studentProfiles: {},
-      overbookingRequests: [],
-      timeSlots: [],
-      lessons: [],
-      chats: [],
-      posts: []
-    };
-    
-    if (fs.existsSync(testDataPath)) {
-      try {
-        testData = JSON.parse(fs.readFileSync(testDataPath, 'utf8'));
-        console.log('📊 Загружены тестовые данные:');
-        console.log(`👨‍🏫 Преподавателей: ${Object.keys(testData.teacherProfiles || {}).length}`);
-        console.log(`👨‍🎓 Студентов: ${Object.keys(testData.studentProfiles || {}).length}`);
-        console.log(`📅 Слотов: ${(testData.timeSlots || []).length}`);
-      } catch (testError) {
-        console.error('Error loading test data:', testError);
-      }
-    }
-    
-    // Загружаем реальные данные (если есть)
-    let realData = {
-      teacherProfiles: {},
-      studentProfiles: {},
-      overbookingRequests: [],
-      timeSlots: [],
-      lessons: [],
-      chats: [],
-      posts: []
-    };
-    
+    console.log('Loading server data from:', DATA_FILE);
     if (fs.existsSync(DATA_FILE)) {
-      try {
-        realData = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
-        console.log('📊 Загружены реальные данные:');
-        console.log(`👨‍🏫 Преподавателей: ${Object.keys(realData.teacherProfiles || {}).length}`);
-        console.log(`👨‍🎓 Студентов: ${Object.keys(realData.studentProfiles || {}).length}`);
-      } catch (error) {
-        console.error('Error loading real data:', error);
-      }
+      const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+      console.log('📊 Загружены данные:');
+      console.log(`👨‍🏫 Преподавателей: ${Object.keys(data.teacherProfiles || {}).length}`);
+      console.log(`👨‍🎓 Студентов: ${Object.keys(data.studentProfiles || {}).length}`);
+      console.log(`📅 Слотов: ${(data.timeSlots || []).length}`);
+      console.log(`📚 Уроков: ${(data.lessons || []).length}`);
+      return data;
+    } else {
+      console.log('No server data file found, creating default structure');
+      return {
+        teacherProfiles: {},
+        studentProfiles: {},
+        overbookingRequests: [],
+        timeSlots: [],
+        lessons: [],
+        chats: [],
+        posts: []
+      };
     }
-    
-    // Объединяем данные: тестовые как основа, реальные перезаписывают
-    const mergedData = {
-      teacherProfiles: {
-        ...testData.teacherProfiles,  // Тестовые данные (базовые)
-        ...realData.teacherProfiles   // Реальные данные (перезаписывают тестовые)
-      },
-      studentProfiles: {
-        ...testData.studentProfiles,  // Тестовые данные (базовые)
-        ...realData.studentProfiles   // Реальные данные (перезаписывают тестовые)
-      },
-      timeSlots: [...(testData.timeSlots || []), ...(realData.timeSlots || [])],
-      lessons: [...(testData.lessons || []), ...(realData.lessons || [])],
-      chats: [...(testData.chats || []), ...(realData.chats || [])],
-      posts: [...(testData.posts || []), ...(realData.posts || [])],
-      overbookingRequests: [...(testData.overbookingRequests || []), ...(realData.overbookingRequests || [])]
-    };
-    
-    console.log('📊 Итоговые данные:');
-    console.log(`👨‍🏫 Всего преподавателей: ${Object.keys(mergedData.teacherProfiles).length}`);
-    console.log(`👨‍🎓 Всего студентов: ${Object.keys(mergedData.studentProfiles).length}`);
-    console.log(`📅 Всего слотов: ${mergedData.timeSlots.length}`);
-    
-    return mergedData;
   } catch (error) {
     console.error('Error loading server data:', error);
     return {
