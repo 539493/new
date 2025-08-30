@@ -54,6 +54,7 @@ const StudentHome: React.FC = () => {
   // Новые состояния для календаря в фильтрах
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTimeRange, setSelectedTimeRange] = useState<{ start: string; end: string } | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const subjects = ['Математика', 'Русский язык', 'Английский язык'];
   const grades = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', 'Студент', 'Взрослый'];
@@ -190,8 +191,53 @@ const StudentHome: React.FC = () => {
     setLoading(true);
     
     try {
-      let results = getFilteredSlots(filters);
-      
+      // Получаем все доступные слоты
+      let results = timeSlots.filter(slot => {
+        // Базовые проверки
+        if (slot.isBooked) return false;
+        
+        // Проверяем, что дата слота не в прошлом
+        const slotDate = new Date(slot.date);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (slotDate < today) return false;
+        
+        return true;
+      });
+
+      // Применяем фильтры из FilterOptions
+      if (filters.grade && filters.grade !== '') {
+        results = results.filter(slot => 
+          slot.grades && slot.grades.includes(filters.grade!)
+        );
+      }
+
+      if (filters.subject && filters.subject !== '') {
+        results = results.filter(slot => slot.subject === filters.subject);
+      }
+
+      if (filters.experience && filters.experience !== '') {
+        results = results.filter(slot => slot.experience === filters.experience);
+      }
+
+      if (filters.format && filters.format !== '') {
+        results = results.filter(slot => slot.format === filters.format);
+      }
+
+      if (filters.duration && filters.duration > 0) {
+        results = results.filter(slot => slot.duration === filters.duration);
+      }
+
+      if (filters.minRating && filters.minRating > 0) {
+        results = results.filter(slot => (slot.rating || 0) >= filters.minRating!);
+      }
+
+      if (filters.goals && filters.goals.length > 0) {
+        results = results.filter(slot => 
+          slot.goals && filters.goals!.some(goal => slot.goals!.includes(goal))
+        );
+      }
+
       // Дополнительная фильтрация по дате и времени
       if (selectedDate) {
         const selectedDateStr = format(selectedDate, 'yyyy-MM-dd');
@@ -210,6 +256,7 @@ const StudentHome: React.FC = () => {
       setFilteredSlots(results);
       setShowFilters(false);
     } catch (error) {
+      console.error('Error applying filters:', error);
     } finally {
       setLoading(false);
     }
@@ -219,7 +266,8 @@ const StudentHome: React.FC = () => {
     setFilters({});
     setSelectedDate(null);
     setSelectedTimeRange(null);
-    loadAvailableSlots(); // Загружаем все доступные слоты вместо пустого массива
+    setSearchQuery('');
+    loadAvailableSlots(); // Загружаем все доступные слоты
     setShowFilters(false);
   };
 
@@ -376,21 +424,42 @@ const StudentHome: React.FC = () => {
     return result;
   }, [serverTeachers, allUsers, timeSlots]);
 
-  // Фильтруем преподавателей по доступным слотам
+  // Фильтруем преподавателей по доступным слотам и поиску
   const filteredTeachers = React.useMemo(() => {
-    if (Object.keys(filters).length === 0 && !selectedDate && !selectedTimeRange) {
-      // Если фильтры не применены, показываем ВСЕХ преподавателей
-      return allTeachers;
+    let teachers = allTeachers;
+
+    // Применяем фильтры по слотам
+    if (Object.keys(filters).length > 0 || selectedDate || selectedTimeRange) {
+      // Если есть фильтры, показываем только тех преподавателей, у которых есть подходящие слоты
+      teachers = allTeachers.filter(teacher => {
+        const teacherSlots = filteredSlots.filter(slot => slot.teacherId === teacher.id);
+        return teacherSlots.length > 0;
+      });
     }
 
-    // Если есть фильтры, показываем только тех преподавателей, у которых есть подходящие слоты
-    const teachersWithSlots = allTeachers.filter(teacher => {
-      const teacherSlots = filteredSlots.filter(slot => slot.teacherId === teacher.id);
-      return teacherSlots.length > 0;
-    });
+    // Применяем поиск по имени преподавателя, предметам или городу
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      teachers = teachers.filter(teacher => {
+        const profile = teacher.profile as any;
+        
+        // Поиск по имени преподавателя
+        if (teacher.name.toLowerCase().includes(query)) return true;
+        
+        // Поиск по предметам
+        if (profile?.subjects && profile.subjects.some((subject: string) => 
+          subject.toLowerCase().includes(query)
+        )) return true;
+        
+        // Поиск по городу
+        if (profile?.city && profile.city.toLowerCase().includes(query)) return true;
+        
+        return false;
+      });
+    }
 
-    return teachersWithSlots;
-  }, [allTeachers, filters, selectedDate, selectedTimeRange, filteredSlots]);
+    return teachers;
+  }, [allTeachers, filters, selectedDate, selectedTimeRange, filteredSlots, searchQuery]);
 
   function getTeacherProfileById(teacherId: string) {
     const teacher = serverTeachers.find(t => t.id === teacherId) ||
@@ -427,19 +496,16 @@ const StudentHome: React.FC = () => {
     return () => window.removeEventListener('storage', updatePosts);
   }, [selectedTeacher]);
 
-  // Автоматическое обновление filteredSlots при изменении timeSlots, если фильтры уже применены
-  React.useEffect(() => {
-    if (Object.keys(filters).length > 0 || selectedDate || selectedTimeRange) {
-      applyFilters();
-    }
-  }, [timeSlots]);
-
   // Автоматическое применение фильтров при их изменении
   React.useEffect(() => {
-    if (Object.keys(filters).length > 0 || selectedDate || selectedTimeRange) {
+    const hasActiveFilters = Object.keys(filters).length > 0 || selectedDate || selectedTimeRange;
+    
+    if (hasActiveFilters) {
       applyFilters();
+    } else {
+      loadAvailableSlots();
     }
-  }, [filters, selectedDate, selectedTimeRange]);
+  }, [filters, selectedDate, selectedTimeRange, timeSlots]);
 
   // Обновление доступных слотов при изменении списка пользователей
   React.useEffect(() => {
@@ -684,6 +750,8 @@ const StudentHome: React.FC = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
             <input
               type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="🔍 Поиск по предмету, преподавателю или городу..."
               className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-200 text-base placeholder-gray-400"
             />
@@ -699,9 +767,9 @@ const StudentHome: React.FC = () => {
             >
               <Filter className="h-4 w-4" />
             <span>Фильтры</span>
-              {(Object.keys(filters).length > 0 || selectedDate || selectedTimeRange) && (
+              {(Object.keys(filters).length > 0 || selectedDate || selectedTimeRange || searchQuery.trim()) && (
                 <span className="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full text-xs font-bold">
-                  {Object.keys(filters).length + (selectedDate ? 1 : 0) + (selectedTimeRange ? 1 : 0)}
+                  {Object.keys(filters).length + (selectedDate ? 1 : 0) + (selectedTimeRange ? 1 : 0) + (searchQuery.trim() ? 1 : 0)}
                 </span>
               )}
           </button>
@@ -721,7 +789,7 @@ const StudentHome: React.FC = () => {
                 </>
               )}
           </button>
-          {(Object.keys(filters).length > 0 || selectedDate || selectedTimeRange) && (
+          {(Object.keys(filters).length > 0 || selectedDate || selectedTimeRange || searchQuery.trim()) && (
             <button
               onClick={clearFilters}
                 className="bg-white border-2 border-gray-300 text-gray-700 px-4 py-2.5 rounded-xl font-medium hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 text-sm"
@@ -790,6 +858,65 @@ const StudentHome: React.FC = () => {
                     <option key={format} value={format}>
                       {format === 'online' ? 'Онлайн' : format === 'offline' ? 'Оффлайн' : 'Мини-группа'}
                     </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Дополнительные фильтры */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700">Длительность</label>
+                <select
+                  value={filters.duration || ''}
+                  onChange={(e) => setFilters({ ...filters, duration: e.target.value ? parseInt(e.target.value) : undefined })}
+                    className="w-full p-2.5 border-2 border-gray-200 rounded-lg focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-200"
+                >
+                  <option value="">Любая длительность</option>
+                  {durations.map(duration => (
+                    <option key={duration} value={duration}>{duration} мин</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700">Мин. рейтинг</label>
+                <select
+                  value={filters.minRating || ''}
+                  onChange={(e) => setFilters({ ...filters, minRating: e.target.value ? parseFloat(e.target.value) : undefined })}
+                    className="w-full p-2.5 border-2 border-gray-200 rounded-lg focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-200"
+                >
+                  <option value="">Любой рейтинг</option>
+                  <option value="4">4+ звезды</option>
+                  <option value="4.5">4.5+ звезды</option>
+                  <option value="5">5 звезд</option>
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700">Город</label>
+                <input
+                  type="text"
+                  value={filters.city || ''}
+                  onChange={(e) => setFilters({ ...filters, city: e.target.value })}
+                  placeholder="Введите город"
+                    className="w-full p-2.5 border-2 border-gray-200 rounded-lg focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-200"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700">Цели обучения</label>
+                <select
+                  value={filters.goals?.[0] || ''}
+                  onChange={(e) => setFilters({ 
+                    ...filters, 
+                    goals: e.target.value ? [e.target.value] : undefined 
+                  })}
+                    className="w-full p-2.5 border-2 border-gray-200 rounded-lg focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-200"
+                >
+                  <option value="">Любые цели</option>
+                  {goals.map(goal => (
+                    <option key={goal} value={goal}>{goal}</option>
                   ))}
                 </select>
               </div>
@@ -906,154 +1033,190 @@ const StudentHome: React.FC = () => {
             }}
           />
         ) : (
-          filteredTeachers.map(teacher => {
-            const profile = teacher.profile;
-            // Получаем слоты этого преподавателя из всех слотов (не только отфильтрованных)
-            const allTeacherSlots = timeSlots.filter(slot => slot.teacherId === teacher.id);
-            const availableTeacherSlots = allTeacherSlots.filter(slot => !slot.isBooked);
-            
-            // Для отображения цены используем все слоты преподавателя
-            const minPrice = allTeacherSlots.length > 0 ? Math.min(...allTeacherSlots.map(slot => slot.price)) : profile?.hourlyRate || 0;
-            const maxPrice = allTeacherSlots.length > 0 ? Math.max(...allTeacherSlots.map(slot => slot.price)) : profile?.hourlyRate || 0;
-            
-            // Определяем, есть ли доступные слоты у этого преподавателя
-            const hasAvailableSlots = availableTeacherSlots.length > 0;
-            
-            return (
-              <div 
-                key={teacher.id} 
-                className="bg-white rounded-3xl border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group overflow-hidden transform hover:-translate-y-2"
-                onClick={() => handleTeacherClick(teacher)}
-              >
-                {/* Custom Background - Smaller */}
-                <div 
-                  className="h-32 relative overflow-hidden"
-                  style={{
-                    background: profile?.cardBackground 
-                      ? (profile.cardBackground.startsWith('http') || profile.cardBackground.startsWith('data:'))
-                        ? `url(${profile.cardBackground}) center/cover`
-                        : profile.cardBackground
-                      : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-                  }}
-                >
-                  {/* Overlay for better text readability */}
-                  <div className="absolute inset-0 bg-black bg-opacity-30"></div>
-                  
-                  {/* Action buttons on top */}
-                  <div className="absolute top-3 right-3 flex items-center space-x-2">
-                    <button 
-                      className="p-1.5 bg-white/20 backdrop-blur-sm rounded-full text-white hover:bg-white/30 transition-colors border border-white/30"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        // Здесь можно добавить логику для добавления в избранное
-                      }}
-                    >
-                      <Heart className="h-3 w-3" />
-                    </button>
-                    <button 
-                      className="p-1.5 bg-white/20 backdrop-blur-sm rounded-full text-white hover:bg-white/30 transition-colors border border-white/30"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        // Здесь можно добавить логику для шаринга
-                      }}
-                    >
-                      <Share2 className="h-3 w-3" />
-                    </button>
+          <>
+            {/* Статистика результатов */}
+            <div className="mb-6 bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="flex items-center space-x-6">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-blue-600">{filteredTeachers.length}</div>
+                    <div className="text-sm text-gray-600">Преподавателей</div>
                   </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-600">{filteredSlots.length}</div>
+                    <div className="text-sm text-gray-600">Доступных слотов</div>
+                  </div>
+                  {(Object.keys(filters).length > 0 || selectedDate || selectedTimeRange || searchQuery.trim()) && (
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-purple-600">
+                        {Object.keys(filters).length + (selectedDate ? 1 : 0) + (selectedTimeRange ? 1 : 0) + (searchQuery.trim() ? 1 : 0)}
+                      </div>
+                      <div className="text-sm text-gray-600">Активных фильтров</div>
+                    </div>
+                  )}
                 </div>
                 
-                {/* Avatar - Centered on background, Bigger */}
-                <div className="relative -mt-12 flex justify-center">
-                  <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center overflow-hidden border-4 border-white shadow-2xl relative">
-                    {/* Online Status */}
-                    <div className="absolute top-2 right-2 w-5 h-5 bg-green-500 border-2 border-white rounded-full shadow-lg"></div>
+                {(Object.keys(filters).length > 0 || selectedDate || selectedTimeRange || searchQuery.trim()) && (
+                  <button
+                    onClick={clearFilters}
+                    className="flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors text-sm"
+                  >
+                    <X className="h-4 w-4" />
+                    <span>Очистить все фильтры</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Список преподавателей */}
+            {filteredTeachers.map(teacher => {
+              const profile = teacher.profile;
+              // Получаем слоты этого преподавателя из всех слотов (не только отфильтрованных)
+              const allTeacherSlots = timeSlots.filter(slot => slot.teacherId === teacher.id);
+              const availableTeacherSlots = allTeacherSlots.filter(slot => !slot.isBooked);
+              
+              // Для отображения цены используем все слоты преподавателя
+              const minPrice = allTeacherSlots.length > 0 ? Math.min(...allTeacherSlots.map(slot => slot.price)) : profile?.hourlyRate || 0;
+              const maxPrice = allTeacherSlots.length > 0 ? Math.max(...allTeacherSlots.map(slot => slot.price)) : profile?.hourlyRate || 0;
+              
+              // Определяем, есть ли доступные слоты у этого преподавателя
+              const hasAvailableSlots = availableTeacherSlots.length > 0;
+              
+              return (
+                <div 
+                  key={teacher.id} 
+                  className="bg-white rounded-3xl border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group overflow-hidden transform hover:-translate-y-2"
+                  onClick={() => handleTeacherClick(teacher)}
+                >
+                  {/* Custom Background - Smaller */}
+                  <div 
+                    className="h-32 relative overflow-hidden"
+                    style={{
+                      background: profile?.cardBackground 
+                        ? (profile.cardBackground.startsWith('http') || profile.cardBackground.startsWith('data:'))
+                          ? `url(${profile.cardBackground}) center/cover`
+                          : profile.cardBackground
+                        : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                    }}
+                  >
+                    {/* Overlay for better text readability */}
+                    <div className="absolute inset-0 bg-black bg-opacity-30"></div>
                     
-                    {/* Avatar Image */}
-                    {(() => {
-                      const avatarUrl = profile?.avatar || teacher.avatar;
-                      const hasAvatar = avatarUrl && avatarUrl.trim() !== '' && avatarUrl !== 'undefined' && avatarUrl !== 'null';
-                      
-                      if (hasAvatar) {
-                        return (
-                          <img 
-                            src={avatarUrl} 
-                            alt={teacher.name} 
-                            className="w-32 h-32 object-cover rounded-full"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.style.display = 'none';
-                              const fallback = target.nextElementSibling as HTMLElement;
-                              if (fallback) fallback.classList.remove('hidden');
-                            }}
-                            onLoad={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              const fallback = target.nextElementSibling as HTMLElement;
-                              if (fallback) fallback.classList.add('hidden');
-                            }}
-                          />
-                        );
-                      }
-                      return null;
-                    })()}
-                    
-                    {/* Fallback Avatar */}
-                    <div className={`w-32 h-32 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center ${(() => {
-                      const avatarUrl = profile?.avatar || teacher.avatar;
-                      const hasAvatar = avatarUrl && avatarUrl.trim() !== '' && avatarUrl !== 'undefined' && avatarUrl !== 'null';
-                      return hasAvatar ? 'hidden' : '';
-                    })()}`}>
-                      <UserIcon className="h-16 w-16 text-white" />
+                    {/* Action buttons on top */}
+                    <div className="absolute top-3 right-3 flex items-center space-x-2">
+                      <button 
+                        className="p-1.5 bg-white/20 backdrop-blur-sm rounded-full text-white hover:bg-white/30 transition-colors border border-white/30"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // Здесь можно добавить логику для добавления в избранное
+                        }}
+                      >
+                        <Heart className="h-3 w-3" />
+                      </button>
+                      <button 
+                        className="p-1.5 bg-white/20 backdrop-blur-sm rounded-full text-white hover:bg-white/30 transition-colors border border-white/30"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // Здесь можно добавить логику для шаринга
+                        }}
+                      >
+                        <Share2 className="h-3 w-3" />
+                      </button>
                     </div>
                   </div>
-                </div>
-                
-                {/* Content - Below avatar */}
-                <div className="px-6 pb-6 pt-4">
-                  {/* Name and Profession */}
-                  <div className="text-center mb-4">
-                    <h3 className="text-xl font-bold text-gray-900 mb-1">
-                      {profile?.name || teacher.name || 'Репетитор'}
-                    </h3>
-                    <p className="text-sm text-gray-600">Частный преподаватель</p>
-                  </div>
                   
-                  {/* Age and Experience */}
-                  <div className="flex items-center justify-center space-x-4 text-sm text-gray-600 mb-4">
-                    {profile?.age && <span>возраст {profile.age} лет</span>}
-                    {profile?.experienceYears && <span>стаж {profile.experienceYears} лет</span>}
-                  </div>
-                  
-                  {/* Reviews */}
-                  <div className="flex items-center justify-center mb-4">
-                    <div className="flex items-center space-x-1 bg-green-50 px-3 py-1.5 rounded-full">
-                      <MessageCircle className="h-4 w-4 text-green-600" />
-                      <span className="text-sm font-medium text-green-700">
-                        {profile?.reviewsCount && profile.reviewsCount > 0 ? `${profile.reviewsCount} отзывов` : 'отзывов нет'}
-                    </span>
+                  {/* Avatar - Centered on background, Bigger */}
+                  <div className="relative -mt-12 flex justify-center">
+                    <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center overflow-hidden border-4 border-white shadow-2xl relative">
+                      {/* Online Status */}
+                      <div className="absolute top-2 right-2 w-5 h-5 bg-green-500 border-2 border-white rounded-full shadow-lg"></div>
+                      
+                      {/* Avatar Image */}
+                      {(() => {
+                        const avatarUrl = profile?.avatar || teacher.avatar;
+                        const hasAvatar = avatarUrl && avatarUrl.trim() !== '' && avatarUrl !== 'undefined' && avatarUrl !== 'null';
+                        
+                        if (hasAvatar) {
+                          return (
+                            <img 
+                              src={avatarUrl} 
+                              alt={teacher.name} 
+                              className="w-32 h-32 object-cover rounded-full"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                                const fallback = target.nextElementSibling as HTMLElement;
+                                if (fallback) fallback.classList.remove('hidden');
+                              }}
+                              onLoad={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                const fallback = target.nextElementSibling as HTMLElement;
+                                if (fallback) fallback.classList.add('hidden');
+                              }}
+                            />
+                          );
+                        }
+                        return null;
+                      })()}
+                      
+                      {/* Fallback Avatar */}
+                      <div className={`w-32 h-32 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center ${(() => {
+                        const avatarUrl = profile?.avatar || teacher.avatar;
+                        const hasAvatar = avatarUrl && avatarUrl.trim() !== '' && avatarUrl !== 'undefined' && avatarUrl !== 'null';
+                        return hasAvatar ? 'hidden' : '';
+                      })()}`}>
+                        <UserIcon className="h-16 w-16 text-white" />
                       </div>
+                    </div>
                   </div>
                   
-                  {/* Location */}
-                  <div className="text-center mb-4">
-                    <div className="flex items-center justify-center space-x-1 text-sm text-gray-600">
-                      <MapPin className="h-4 w-4" />
-                      <span>{profile?.city || 'Город не указан'}</span>
-                  </div>
-                  </div>
-                  
-                                    {/* Action Buttons */}
-                  <div className="space-y-2">
-                  <button
-                    onClick={(e) => {
-                        e.stopPropagation();
-                      if (hasAvailableSlots) {
-                          setSelectedTeacherForCalendar(teacher);
-                          setShowTeacherCalendarModal(true);
-                      } else {
-                        handleTeacherClick(teacher);
-                      }
-                    }}
-                      className={`w-full py-3 rounded-xl font-semibold transition-all duration-200 text-base ${
+                  {/* Content - Below avatar */}
+                  <div className="px-6 pb-6 pt-4">
+                    {/* Name and Profession */}
+                    <div className="text-center mb-4">
+                      <h3 className="text-xl font-bold text-gray-900 mb-1">
+                        {profile?.name || teacher.name || 'Репетитор'}
+                      </h3>
+                      <p className="text-sm text-gray-600">Частный преподаватель</p>
+                    </div>
+                    
+                    {/* Age and Experience */}
+                    <div className="flex items-center justify-center space-x-4 text-sm text-gray-600 mb-4">
+                      {profile?.age && <span>возраст {profile.age} лет</span>}
+                      {profile?.experienceYears && <span>стаж {profile.experienceYears} лет</span>}
+                    </div>
+                    
+                    {/* Reviews */}
+                    <div className="flex items-center justify-center mb-4">
+                      <div className="flex items-center space-x-1 bg-green-50 px-3 py-1.5 rounded-full">
+                        <MessageCircle className="h-4 w-4 text-green-600" />
+                        <span className="text-sm font-medium text-green-700">
+                          {profile?.reviewsCount && profile.reviewsCount > 0 ? `${profile.reviewsCount} отзывов` : 'отзывов нет'}
+                      </span>
+                        </div>
+                    </div>
+                    
+                    {/* Location */}
+                    <div className="text-center mb-4">
+                      <div className="flex items-center justify-center space-x-1 text-sm text-gray-600">
+                        <MapPin className="h-4 w-4" />
+                        <span>{profile?.city || 'Город не указан'}</span>
+                    </div>
+                    </div>
+                    
+                                      {/* Action Buttons */}
+                    <div className="space-y-2">
+                    <button
+                      onClick={(e) => {
+                          e.stopPropagation();
+                        if (hasAvailableSlots) {
+                            setSelectedTeacherForCalendar(teacher);
+                            setShowTeacherCalendarModal(true);
+                        } else {
+                          handleTeacherClick(teacher);
+                        }
+                      }}
+                        className={`w-full py-3 rounded-xl font-semibold transition-all duration-200 text-base ${
                       hasAvailableSlots 
                           ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transform hover:-translate-y-1' 
                           : 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700 shadow-lg hover:shadow-xl transform hover:-translate-y-1'
@@ -1072,10 +1235,11 @@ const StudentHome: React.FC = () => {
                       Подробнее →
                   </button>
                   </div>
+                  </div>
                 </div>
-              </div>
-            );
-          })
+              );
+            })}
+          </>
         )}
         </div>
       </div>

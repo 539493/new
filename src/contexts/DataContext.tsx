@@ -1232,14 +1232,63 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
   const getFilteredSlots = (filters: FilterOptions): TimeSlot[] => {
     const filtered = timeSlots.filter(slot => {
+      // Базовые проверки
       if (slot.isBooked) return false;
-      if (filters.grade && !slot.grades.includes(filters.grade)) return false;
-      if (filters.subject && slot.subject !== filters.subject) return false;
-      if (filters.experience && slot.experience !== filters.experience) return false;
-      if (filters.lessonType && slot.lessonType !== filters.lessonType) return false;
-      if (filters.duration && slot.duration !== filters.duration) return false;
-      if (filters.format && slot.format !== filters.format) return false;
-      if (filters.minRating && (slot.rating || 0) < filters.minRating) return false;
+      
+      // Проверяем, что дата слота не в прошлом
+      const slotDate = new Date(slot.date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (slotDate < today) return false;
+      
+      // Фильтр по классу
+      if (filters.grade && filters.grade !== '') {
+        if (!slot.grades || !slot.grades.includes(filters.grade)) return false;
+      }
+      
+      // Фильтр по предмету
+      if (filters.subject && filters.subject !== '') {
+        if (slot.subject !== filters.subject) return false;
+      }
+      
+      // Фильтр по опыту
+      if (filters.experience && filters.experience !== '') {
+        if (slot.experience !== filters.experience) return false;
+      }
+      
+      // Фильтр по типу урока
+      if (filters.lessonType && filters.lessonType !== '') {
+        if (slot.lessonType !== filters.lessonType) return false;
+      }
+      
+      // Фильтр по длительности
+      if (filters.duration && filters.duration > 0) {
+        if (slot.duration !== filters.duration) return false;
+      }
+      
+      // Фильтр по формату
+      if (filters.format && filters.format !== '') {
+        if (slot.format !== filters.format) return false;
+      }
+      
+      // Фильтр по минимальному рейтингу
+      if (filters.minRating && filters.minRating > 0) {
+        if ((slot.rating || 0) < filters.minRating) return false;
+      }
+      
+      // Фильтр по целям обучения
+      if (filters.goals && filters.goals.length > 0) {
+        if (!slot.goals || !filters.goals.some(goal => slot.goals!.includes(goal))) return false;
+      }
+      
+      // Фильтр по городу (если есть в слоте)
+      if (filters.city && filters.city !== '') {
+        // Проверяем город преподавателя через профиль
+        const teacher = allUsers.find(u => u.id === slot.teacherId);
+        const teacherCity = teacher?.profile?.city || '';
+        if (teacherCity && !teacherCity.toLowerCase().includes(filters.city.toLowerCase())) return false;
+      }
+      
       return true;
     });
     
