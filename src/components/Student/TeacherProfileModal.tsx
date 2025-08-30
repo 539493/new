@@ -814,25 +814,6 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
             )}
           </div>
 
-
-
-          {/* Pricing Section */}
-          {profile?.hourlyRate && (
-            <div className="bg-white rounded-2xl shadow p-6 mb-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-                <DollarSign className="w-5 h-5 mr-2" />
-                Стоимость занятий
-              </h3>
-              <div className="text-3xl font-bold text-blue-600 mb-2">
-                {profile.hourlyRate} ₽/час
-              </div>
-              <div className="text-sm text-gray-600">
-                Стоимость может варьироваться в зависимости от формата и длительности занятия
-              </div>
-            </div>
-          )}
-
-
         </div>
       </div>
     </div>
