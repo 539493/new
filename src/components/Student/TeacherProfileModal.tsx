@@ -518,6 +518,48 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
             </div>
           </div>
 
+          {/* Education Section */}
+          {profile?.education && (
+            <div className="bg-white rounded-2xl shadow p-6 mb-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                <GraduationCap className="w-5 h-5 mr-2" />
+                Образование
+              </h3>
+              <div className="space-y-3">
+                {profile.education.university && (
+                  <div>
+                    <span className="text-sm font-semibold text-gray-500">Университет:</span>
+                    <div className="text-base text-gray-900">{profile.education.university}</div>
+                  </div>
+                )}
+                {profile.education.degree && (
+                  <div>
+                    <span className="text-sm font-semibold text-gray-500">Специальность:</span>
+                    <div className="text-base text-gray-900">{profile.education.degree}</div>
+                  </div>
+                )}
+                {profile.education.graduationYear && (
+                  <div>
+                    <span className="text-sm font-semibold text-gray-500">Год выпуска:</span>
+                    <div className="text-base text-gray-900">{profile.education.graduationYear}</div>
+                  </div>
+                )}
+                {profile.education.courses && profile.education.courses.length > 0 && (
+                  <div>
+                    <span className="text-sm font-semibold text-gray-500">Курсы:</span>
+                    <div className="space-y-1 mt-1">
+                      {profile.education.courses.map((course, index) => (
+                        <div key={index} className="text-sm text-gray-700">
+                          • {course.name} ({course.institution}, {course.year})
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Pricing and Services Section */}
           <div className="bg-white rounded-2xl shadow p-6 mb-6">
             <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
@@ -773,48 +815,6 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
           </div>
 
 
-
-          {/* Education Section */}
-          {profile?.education && (
-            <div className="bg-white rounded-2xl shadow p-6 mb-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-                <GraduationCap className="w-5 h-5 mr-2" />
-                Образование
-              </h3>
-              <div className="space-y-3">
-                {profile.education.university && (
-                  <div>
-                    <span className="text-sm font-semibold text-gray-500">Университет:</span>
-                    <div className="text-base text-gray-900">{profile.education.university}</div>
-                  </div>
-                )}
-                {profile.education.degree && (
-                  <div>
-                    <span className="text-sm font-semibold text-gray-500">Специальность:</span>
-                    <div className="text-base text-gray-900">{profile.education.degree}</div>
-                  </div>
-                )}
-                {profile.education.graduationYear && (
-                  <div>
-                    <span className="text-sm font-semibold text-gray-500">Год выпуска:</span>
-                    <div className="text-base text-gray-900">{profile.education.graduationYear}</div>
-                  </div>
-                )}
-                {profile.education.courses && profile.education.courses.length > 0 && (
-                  <div>
-                    <span className="text-sm font-semibold text-gray-500">Курсы:</span>
-                    <div className="space-y-1 mt-1">
-                      {profile.education.courses.map((course, index) => (
-                        <div key={index} className="text-sm text-gray-700">
-                          • {course.name} ({course.institution}, {course.year})
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
 
           {/* Pricing Section */}
           {profile?.hourlyRate && (
