@@ -300,16 +300,24 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   const forceSyncData = async () => {
     try {
       console.log('Force syncing data from server...');
-      const response = await fetch(`${SERVER_URL}/api/sync`);
+      const response = await fetch(`${SERVER_URL}/api/sync`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        // Добавляем timeout для запроса
+        signal: AbortSignal.timeout(10000) // 10 секунд timeout
+      });
       
       if (!response.ok) {
-        console.error('Failed to sync data from server:', response.status, response.statusText);
+        console.warn('Failed to sync data from server:', response.status, response.statusText);
+        // Не выбрасываем ошибку, продолжаем работу с локальными данными
         return;
       }
       
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
-        console.error('Server returned non-JSON response:', contentType);
+        console.warn('Server returned non-JSON response:', contentType);
         return;
       }
       
@@ -374,593 +382,628 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       
       console.log('Data sync completed successfully');
     } catch (error) {
-      console.error('Error syncing data:', error);
-      // Не выбрасываем ошибку, чтобы не ломать интерфейс
+      console.warn('Error syncing data (continuing with local data):', error);
+      // Не выбрасываем ошибку, продолжаем работу с локальными данными
     }
   };
 
   // Инициализация WebSocket соединения
   useEffect(() => {
-    
-    const newSocket = io(SERVER_URL, {
-      ...SOCKET_CONFIG,
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-    });
-
-    socketRef.current = newSocket;
-
-    newSocket.on('connect', () => {
-      setIsConnected(true);
-      
-      // Загружаем пользователей и уроки с сервера при подключении
-      loadUsersFromServer();
-      loadLessonsFromServer();
-      
-      // Синхронизируем локальные слоты с сервером при восстановлении соединения
-      const localSlots = loadFromStorage('tutoring_timeSlots', []);
-      if (localSlots.length > 0) {
-        localSlots.forEach((slot: TimeSlot) => {
-          if (socketRef.current) {
-            socketRef.current.emit('createSlot', slot);
-          }
-        });
-      }
-
-      // Запрашиваем все посты и уведомления
-      if (socketRef.current) {
-        socketRef.current.emit('requestAllPosts');
-        if (user) {
-          socketRef.current.emit('requestUserNotifications', user.id);
-          socketRef.current.emit('subscribeNotifications', user.id);
-        }
-      }
-    });
-
-    newSocket.on('disconnect', () => {
-      setIsConnected(false);
-    });
-
-    // Добавляем обработку ошибок подключения
-    newSocket.on('connect_error', (error) => {
-      setIsConnected(false);
-      
-      // При ошибке подключения загружаем начальные данные
-      loadInitialData();
-      loadLessonsFromServer();
-    });
-
-    // Получаем все актуальные данные при подключении
-    newSocket.on('initialData', (data: { timeSlots: TimeSlot[]; lessons: Lesson[]; chats: Chat[] }) => {
-      
-      // Объединяем серверные данные с локальными
-      const currentTimeSlots = loadFromStorage('tutoring_timeSlots', []);
-      const allTimeSlots = [...currentTimeSlots, ...data.timeSlots];
-      
-      // Убираем дубликаты по ID, приоритет у серверных данных
-      const uniqueTimeSlots = allTimeSlots.filter((slot: TimeSlot, index: number, self: TimeSlot[]) => 
-        index === self.findIndex((s: TimeSlot) => s.id === slot.id)
-      );
-      
-      setTimeSlots(uniqueTimeSlots);
-      setLessons(data.lessons);
-      saveToStorage('tutoring_timeSlots', uniqueTimeSlots);
-      saveToStorage('tutoring_lessons', data.lessons);
-      if (data.chats) {
-        setChats(data.chats);
-        saveToStorage('tutoring_chats', data.chats);
-      }
-    });
-
-    // Слушаем все слоты при подключении для синхронизации
-    newSocket.on('allSlots', (allSlots: TimeSlot[]) => {
-      setTimeSlots(allSlots);
-      saveToStorage('tutoring_timeSlots', allSlots);
-    });
-
-    // Слушаем всех пользователей при подключении для синхронизации
-    newSocket.on('allUsers', (allUsers: User[]) => {
-      setAllUsers(allUsers);
-      saveToStorage('tutoring_users', allUsers);
-    });
-
-    // Запрашиваем все слоты при подключении
-    if (socketRef.current && isConnected) {
-      socketRef.current.emit('requestAllSlots');
-      socketRef.current.emit('requestAllUsers');
-    }
-
-    // Слушаем обновления слотов от других клиентов
-    newSocket.on('slotCreated', (newSlot: TimeSlot) => {
-      console.log('Slot created via WebSocket:', newSlot);
-      setTimeSlots(prev => {
-        const exists = prev.find(slot => slot.id === newSlot.id);
-        if (!exists) {
-          const updated = [...prev, newSlot];
-          saveToStorage('tutoring_timeSlots', updated);
-          console.log('New slot added, total slots:', updated.length);
-          return updated;
-        } else {
-          // Обновляем существующий слот
-          const updated = prev.map(slot => slot.id === newSlot.id ? newSlot : slot);
-          saveToStorage('tutoring_timeSlots', updated);
-          console.log('Existing slot updated, total slots:', updated.length);
-          return updated;
-        }
-      });
-    });
-
-    // Слушаем обновления бронирования
-    newSocket.on('slotBooked', (data: { slotId: string; lesson: Lesson; bookedStudentId?: string }) => {
-      console.log('Slot booked via WebSocket:', data);
-      setTimeSlots(prev => {
-        const updated = prev.map(slot => 
-          slot.id === data.slotId ? { ...slot, isBooked: true, bookedStudentId: data.bookedStudentId || data.lesson.studentId } : slot
-        );
-        saveToStorage('tutoring_timeSlots', updated);
-        return updated;
-      });
-      setLessons(prev => {
-        const exists = prev.find(lesson => lesson.id === data.lesson.id);
-        if (!exists) {
-          const updated = [...prev, data.lesson];
-          saveToStorage('tutoring_lessons', updated);
-          console.log('New lesson added, total lessons:', updated.length);
-          return updated;
-        }
-        return prev;
-      });
-    });
-
-    // Слушаем отмены бронирования
-    newSocket.on('slotCancelled', (data: { slotId: string; lessonId: string }) => {
-      console.log('Slot cancelled via WebSocket:', data);
-      setTimeSlots(prev => {
-        const updated = prev.map(slot => 
-          slot.id === data.slotId ? { ...slot, isBooked: false, bookedStudentId: undefined } : slot
-        );
-        saveToStorage('tutoring_timeSlots', updated);
-        return updated;
-      });
-      setLessons(prev => {
-        const updated = prev.filter(lesson => lesson.id !== data.lessonId);
-        saveToStorage('tutoring_lessons', updated);
-        console.log('Lesson removed, total lessons:', updated.length);
-        return updated;
-      });
-    });
-
-    // Слушаем новые чаты
-    newSocket.on('chatCreated', (newChat: Chat) => {
-      setChats(prev => {
-        const exists = prev.find(chat => chat.id === newChat.id);
-        if (!exists) {
-          const updated = [...prev, newChat];
-          saveToStorage('tutoring_chats', updated);
-          return updated;
-        }
-        return prev;
-      });
-    });
-
-    newSocket.on('receiveMessage', (data: { chatId: string, message: any }) => {
-      setChats(prev => prev.map(chat => {
-        if (chat.id === data.chatId) {
-          const updatedChat = {
-            ...chat,
-            messages: [...chat.messages, data.message],
-            lastMessage: data.message,
-          };
-          saveToStorage('tutoring_chats', prev.map(c => c.id === chat.id ? updatedChat : c));
-          return updatedChat;
-        }
-        return chat;
-      }));
-    });
-
-    // Слушаем удаление слота
-    newSocket.on('slotDeleted', (data: { slotId: string }) => {
-      console.log('Slot deleted via WebSocket:', data);
-      setTimeSlots(prev => {
-        const updated = prev.filter(slot => slot.id !== data.slotId);
-        saveToStorage('tutoring_timeSlots', updated);
-        console.log('Slot removed, total slots:', updated.length);
-        return updated;
-      });
-    });
-
-    // Слушаем получение всех слотов
-    newSocket.on('allSlots', (allSlots: TimeSlot[]) => {
-      console.log('Received all slots from server:', allSlots.length);
-      setTimeSlots(allSlots);
-      saveToStorage('tutoring_timeSlots', allSlots);
-    });
-
-    // Слушаем получение всех уроков
-    newSocket.on('allLessons', (allLessons: Lesson[]) => {
-      console.log('Received all lessons from server:', allLessons.length);
-      setLessons(allLessons);
-      saveToStorage('tutoring_lessons', allLessons);
-    });
-
-    // Слушаем обновления данных от сервера для синхронизации между устройствами
-    newSocket.on('dataUpdated', (data: { 
-      type: string; 
-      timeSlots: TimeSlot[]; 
-      lessons?: Lesson[];
-      teacherProfiles: Record<string, TeacherProfile>; 
-      studentProfiles: Record<string, StudentProfile>; 
-    }) => {
-      console.log('Received dataUpdated event:', data.type);
-      
-      // Обновляем слоты
-      if (data.timeSlots) {
-        setTimeSlots(data.timeSlots);
-        saveToStorage('tutoring_timeSlots', data.timeSlots);
-        console.log('Slots updated via dataUpdated:', data.timeSlots.length);
-      }
-      
-      // Обновляем уроки
-      if (data.lessons) {
-        setLessons(data.lessons);
-        saveToStorage('tutoring_lessons', data.lessons);
-        console.log('Lessons updated via dataUpdated:', data.lessons.length);
-      }
-      
-      // Обновляем профили преподавателей
-      if (data.teacherProfiles) {
-        setTeacherProfiles(data.teacherProfiles);
-        saveToStorage('tutoring_teacherProfiles', data.teacherProfiles);
-        
-        // Обновляем список пользователей
-        const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
-        const updatedUsers = users.map((u: User) => {
-          if (u.role === 'teacher' && data.teacherProfiles[u.id]) {
-            return { ...u, profile: data.teacherProfiles[u.id] };
-          }
-          return u;
-        });
-        setAllUsers(updatedUsers);
-        saveToStorage('tutoring_users', updatedUsers);
-      }
-      
-      // Обновляем профили студентов
-      if (data.studentProfiles) {
-        setStudentProfiles(data.studentProfiles);
-        saveToStorage('tutoring_studentProfiles', data.studentProfiles);
-        
-        // Обновляем список пользователей
-        const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
-        const updatedUsers = users.map((u: User) => {
-          if (u.role === 'student' && data.studentProfiles[u.id]) {
-            return { ...u, profile: data.studentProfiles[u.id] };
-          }
-          return u;
-        });
-        setAllUsers(updatedUsers);
-        saveToStorage('tutoring_users', updatedUsers);
-      }
-    });
-
-    // Слушаем регистрацию новых пользователей
-    newSocket.on('userRegistered', (newUser: User) => {
-      setAllUsers(prev => {
-        const exists = prev.find(user => user.id === newUser.id);
-        if (!exists) {
-          const updated = [...prev, newUser];
-          saveToStorage('tutoring_users', updated);
-          return updated;
-        }
-        return prev;
-      });
-    });
-
-    // Добавляем обработку события завершения урока
-    if (socketRef.current) {
-      socketRef.current.on('lessonCompleted', (data: { lesson: any }) => {
-        setLessons(prev => {
-          const updated = prev.map(l => l.id === data.lesson.id ? data.lesson : l);
-          saveToStorage('tutoring_lessons', updated);
-          return updated;
-        });
-        // --- СТАТИСТИКА завершённых уроков ---
-        if (user && user.role === 'teacher' && data.lesson.status === 'completed') {
-          const profile: TeacherProfile = { ...(user.profile as TeacherProfile) };
-          profile.lessonsCount = (profile.lessonsCount || 0) + 1;
-          updateProfile(profile);
-        }
-        // --- КОНЕЦ СТАТИСТИКИ ---
-      });
-    }
-
-    newSocket.on('studentProfiles', (profiles: Record<string, StudentProfile>) => {
-      setStudentProfiles(profiles || {});
-      // Обновляем список всех пользователей с профилями студентов
-      const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
-      const updatedUsers = [...users];
-      
-      Object.entries(profiles).forEach(([studentId, profile]) => {
-        const existingUserIndex = updatedUsers.findIndex((u: User) => u.id === studentId);
-        if (existingUserIndex >= 0) {
-          updatedUsers[existingUserIndex] = { ...updatedUsers[existingUserIndex], profile };
-        } else {
-          updatedUsers.push({
-            id: studentId,
-            email: profile.email || '',
-            name: profile.name || '',
-            nickname: profile.nickname || '',
-            role: 'student',
-            phone: profile.phone || '',
-            profile
-          });
-        }
-      });
-      
-      localStorage.setItem('tutoring_users', JSON.stringify(updatedUsers));
-      setAllUsers(updatedUsers);
-    });
-    
-    newSocket.on('teacherProfiles', (profiles: Record<string, TeacherProfile>) => {
-      // Обновляем состояние teacherProfiles
-      setTeacherProfiles(profiles);
-      saveToStorage('tutoring_teacherProfiles', profiles);
-      
-      // Обновляем список всех пользователей с профилями преподавателей
-      const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
-      const updatedUsers = [...users];
-      
-      Object.entries(profiles).forEach(([teacherId, profile]) => {
-        const existingUserIndex = updatedUsers.findIndex((u: User) => u.id === teacherId);
-        if (existingUserIndex >= 0) {
-          updatedUsers[existingUserIndex] = { ...updatedUsers[existingUserIndex], profile };
-        } else {
-          updatedUsers.push({
-            id: teacherId,
-            email: profile.email || '',
-            name: profile.name || '',
-            nickname: profile.nickname || '',
-            role: 'teacher',
-            phone: profile.phone || '',
-            profile
-          });
-        }
-      });
-      
-      localStorage.setItem('tutoring_users', JSON.stringify(updatedUsers));
-      setAllUsers(updatedUsers);
-    });
-
-    newSocket.on('studentProfiles', (profiles: Record<string, StudentProfile>) => {
-      // Обновляем состояние studentProfiles
-      setStudentProfiles(profiles);
-      saveToStorage('tutoring_studentProfiles', profiles);
-      
-      // Обновляем список всех пользователей с профилями студентов
-      const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
-      const updatedUsers = [...users];
-      
-      Object.entries(profiles).forEach(([studentId, profile]) => {
-        const existingUserIndex = updatedUsers.findIndex((u: User) => u.id === studentId);
-        if (existingUserIndex >= 0) {
-          updatedUsers[existingUserIndex] = { ...updatedUsers[existingUserIndex], profile };
-        } else {
-          updatedUsers.push({
-            id: studentId,
-            email: profile.email || '',
-            name: profile.name || '',
-            nickname: profile.nickname || '',
-            role: 'student',
-            phone: profile.phone || '',
-            profile
-          });
-        }
-      });
-      
-      localStorage.setItem('tutoring_users', JSON.stringify(updatedUsers));
-      setAllUsers(updatedUsers);
-    });
-    newSocket.on('studentProfileUpdated', (data: { studentId: string; profile: StudentProfile }) => {
-      setStudentProfiles(prev => ({ ...prev, [data.studentId]: data.profile }));
-    });
-
-    // --- Синхронизация профиля преподавателя между устройствами ---
-    newSocket.on('teacherProfileUpdated', (data: { teacherId: string; profile: TeacherProfile }) => {
+    // Проверяем, доступен ли сервер перед подключением
+    const checkServerAvailability = async () => {
       try {
-        const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
-        const updatedUsers = users.map((u: User) =>
-          u.id === data.teacherId ? { ...u, profile: data.profile, avatar: data.profile.avatar } : u
-        );
-        localStorage.setItem('tutoring_users', JSON.stringify(updatedUsers));
-        setAllUsers(updatedUsers);
-      } catch (e) {
-      }
-    });
-
-    // --- Универсальная синхронизация профиля между устройствами ---
-    newSocket.on('profileUpdated', (data: { type: string; userId: string; profile: StudentProfile | TeacherProfile } | { id: string; role: string; profile: StudentProfile | TeacherProfile }) => {
-      try {
-        const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
-        let found = false;
-        
-        // Обрабатываем оба формата данных
-        const userId = 'userId' in data ? data.userId : data.id;
-        const role = 'type' in data ? data.type : data.role;
-        const profile = data.profile;
-        
-        const updatedUsers = users.map((u: User) => {
-          if (u.id === userId) {
-            found = true;
-            return { ...u, profile: profile, avatar: profile.avatar, name: profile.name || u.name, email: profile.email || u.email };
-          }
-          return u;
+        const response = await fetch(`${SERVER_URL}/`, { 
+          method: 'GET',
+          signal: AbortSignal.timeout(5000) // 5 секунд timeout
         });
-        if (!found) {
-          // Добавляем нового пользователя, если его не было
-          updatedUsers.push({
-            id: userId,
-            role: role,
-            profile: profile,
-            avatar: profile.avatar,
-            name: profile.name || '',
-            email: profile.email || ''
-          });
-        }
-        localStorage.setItem('tutoring_users', JSON.stringify(updatedUsers));
-        setAllUsers(updatedUsers);
-        
-        // Обновляем профили в соответствующих состояниях
-        if (role === 'teacher') {
-          setTeacherProfiles(prev => ({ ...prev, [userId]: profile as TeacherProfile }));
-        } else if (role === 'student') {
-          setStudentProfiles(prev => ({ ...prev, [userId]: profile as StudentProfile }));
-        }
-        
-        console.log('Profile updated via WebSocket:', { userId, role, profile });
-      } catch (e) {
-        console.error('Error processing profileUpdated event:', e);
+        return response.ok;
+      } catch (error) {
+        console.warn('Server not available, working in offline mode:', error);
+        return false;
       }
-    });
-
-    // --- Обработка регистрации нового пользователя ---
-    newSocket.on('userRegistered', (newUser: User) => {
-      try {
-        const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
-        
-        // Проверяем, есть ли уже такой пользователь
-        const existingUserIndex = users.findIndex((u: User) => u.id === newUser.id);
-        
-        if (existingUserIndex >= 0) {
-          // Обновляем существующего пользователя
-          users[existingUserIndex] = newUser;
-        } else {
-          // Добавляем нового пользователя
-          users.push(newUser);
-        }
-        
-        localStorage.setItem('tutoring_users', JSON.stringify(users));
-        setAllUsers(users);
-      } catch (e) {
-      }
-    });
-
-    // ===== ОБРАБОТЧИКИ ДЛЯ ПОСТОВ =====
-    
-    // Получение всех постов
-    newSocket.on('allPosts', (allPosts: Post[]) => {
-      setPosts(allPosts);
-      saveToStorage('tutoring_posts', allPosts);
-    });
-
-    // Новый пост создан
-    newSocket.on('postCreated', (newPost: Post) => {
-      setPosts(prev => {
-        const updated = [newPost, ...prev];
-        saveToStorage('tutoring_posts', updated);
-        return updated;
-      });
-    });
-
-    // Обновление реакции на пост
-    newSocket.on('postReactionUpdated', (data: { postId: string; reactions: any[]; likes: number }) => {
-      setPosts(prev => {
-        const updated = prev.map(post => 
-          post.id === data.postId 
-            ? { ...post, reactions: data.reactions, likes: data.likes }
-            : post
-        );
-        saveToStorage('tutoring_posts', updated);
-        return updated;
-      });
-    });
-
-    // Добавлен комментарий к посту
-    newSocket.on('postCommentAdded', (data: { postId: string; comment: Comment }) => {
-      setPosts(prev => {
-        const updated = prev.map(post => 
-          post.id === data.postId 
-            ? { ...post, comments: [...post.comments, data.comment] }
-            : post
-        );
-        saveToStorage('tutoring_posts', updated);
-        return updated;
-      });
-    });
-
-    // Пост отредактирован
-    newSocket.on('postEdited', (data: { postId: string; text: string; tags: string[]; editedAt: string }) => {
-      setPosts(prev => {
-        const updated = prev.map(post => 
-          post.id === data.postId 
-            ? { ...post, text: data.text, tags: data.tags, editedAt: data.editedAt }
-            : post
-        );
-        saveToStorage('tutoring_posts', updated);
-        return updated;
-      });
-    });
-
-    // Пост удален
-    newSocket.on('postDeleted', (data: { postId: string }) => {
-      setPosts(prev => {
-        const updated = prev.filter(post => post.id !== data.postId);
-        saveToStorage('tutoring_posts', updated);
-        return updated;
-      });
-    });
-
-    // Обновление закладки поста
-    newSocket.on('postBookmarkUpdated', (data: { postId: string; bookmarks: string[] }) => {
-      setPosts(prev => {
-        const updated = prev.map(post => 
-          post.id === data.postId 
-            ? { ...post, bookmarks: data.bookmarks }
-            : post
-        );
-        saveToStorage('tutoring_posts', updated);
-        return updated;
-      });
-    });
-
-    // Результаты поиска постов
-    newSocket.on('searchResults', (results: Post[]) => {
-      // Здесь можно добавить состояние для результатов поиска
-    });
-
-    // ===== ОБРАБОТЧИКИ ДЛЯ УВЕДОМЛЕНИЙ =====
-    
-    // Получение уведомлений пользователя
-    newSocket.on('userNotifications', (userNotifications: Notification[]) => {
-      setNotifications(userNotifications);
-      saveToStorage('tutoring_notifications', userNotifications);
-    });
-
-    // Новое уведомление
-    newSocket.on('newNotification', (notification: Notification) => {
-      setNotifications(prev => {
-        const updated = [notification, ...prev];
-        saveToStorage('tutoring_notifications', updated);
-        return updated;
-      });
-    });
-
-    // Уведомление отмечено как прочитанное
-    newSocket.on('notificationMarkedAsRead', (data: { notificationId: string }) => {
-      setNotifications(prev => {
-        const updated = prev.map(n => 
-          n.id === data.notificationId 
-            ? { ...n, isRead: true, readAt: new Date().toISOString() }
-            : n
-        );
-        saveToStorage('tutoring_notifications', updated);
-        return updated;
-      });
-    });
-
-    return () => {
-      newSocket.close();
-      socketRef.current = null;
     };
+
+    const initializeConnection = async () => {
+      const serverAvailable = await checkServerAvailability();
+      
+      if (!serverAvailable) {
+        console.log('Server not available, loading local data only');
+        loadInitialData();
+        loadLessonsFromServer();
+        return;
+      }
+
+      const newSocket = io(SERVER_URL, {
+        ...SOCKET_CONFIG,
+        reconnection: true,
+        reconnectionAttempts: 3,
+        reconnectionDelay: 2000,
+        timeout: 10000,
+      });
+
+      socketRef.current = newSocket;
+
+      newSocket.on('connect', () => {
+        setIsConnected(true);
+        console.log('Connected to server');
+        
+        // Загружаем пользователей и уроки с сервера при подключении
+        loadUsersFromServer();
+        loadLessonsFromServer();
+        
+        // Синхронизируем локальные слоты с сервером при восстановлении соединения
+        const localSlots = loadFromStorage('tutoring_timeSlots', []);
+        if (localSlots.length > 0) {
+          localSlots.forEach((slot: TimeSlot) => {
+            if (socketRef.current) {
+              socketRef.current.emit('createSlot', slot);
+            }
+          });
+        }
+
+        // Запрашиваем все посты и уведомления
+        if (socketRef.current) {
+          socketRef.current.emit('requestAllPosts');
+          if (user) {
+            socketRef.current.emit('requestUserNotifications', user.id);
+            socketRef.current.emit('subscribeNotifications', user.id);
+          }
+        }
+      });
+
+      newSocket.on('disconnect', () => {
+        setIsConnected(false);
+        console.log('Disconnected from server');
+      });
+
+      // Добавляем обработку ошибок подключения
+      newSocket.on('connect_error', (error) => {
+        setIsConnected(false);
+        console.warn('Connection error, working in offline mode:', error);
+        
+        // При ошибке подключения загружаем начальные данные
+        loadInitialData();
+        loadLessonsFromServer();
+      });
+
+      // Получаем все актуальные данные при подключении
+      newSocket.on('initialData', (data: { timeSlots: TimeSlot[]; lessons: Lesson[]; chats: Chat[] }) => {
+        
+        // Объединяем серверные данные с локальными
+        const currentTimeSlots = loadFromStorage('tutoring_timeSlots', []);
+        const allTimeSlots = [...currentTimeSlots, ...data.timeSlots];
+        
+        // Убираем дубликаты по ID, приоритет у серверных данных
+        const uniqueTimeSlots = allTimeSlots.filter((slot: TimeSlot, index: number, self: TimeSlot[]) => 
+          index === self.findIndex((s: TimeSlot) => s.id === slot.id)
+        );
+        
+        setTimeSlots(uniqueTimeSlots);
+        setLessons(data.lessons);
+        saveToStorage('tutoring_timeSlots', uniqueTimeSlots);
+        saveToStorage('tutoring_lessons', data.lessons);
+        if (data.chats) {
+          setChats(data.chats);
+          saveToStorage('tutoring_chats', data.chats);
+        }
+      });
+
+      // Слушаем все слоты при подключении для синхронизации
+      newSocket.on('allSlots', (allSlots: TimeSlot[]) => {
+        setTimeSlots(allSlots);
+        saveToStorage('tutoring_timeSlots', allSlots);
+      });
+
+      // Слушаем всех пользователей при подключении для синхронизации
+      newSocket.on('allUsers', (allUsers: User[]) => {
+        setAllUsers(allUsers);
+        saveToStorage('tutoring_users', allUsers);
+      });
+
+      // Запрашиваем все слоты при подключении
+      if (socketRef.current && isConnected) {
+        socketRef.current.emit('requestAllSlots');
+        socketRef.current.emit('requestAllUsers');
+      }
+
+      // Слушаем обновления слотов от других клиентов
+      newSocket.on('slotCreated', (newSlot: TimeSlot) => {
+        console.log('Slot created via WebSocket:', newSlot);
+        setTimeSlots(prev => {
+          const exists = prev.find(slot => slot.id === newSlot.id);
+          if (!exists) {
+            const updated = [...prev, newSlot];
+            saveToStorage('tutoring_timeSlots', updated);
+            console.log('New slot added, total slots:', updated.length);
+            return updated;
+          } else {
+            // Обновляем существующий слот
+            const updated = prev.map(slot => slot.id === newSlot.id ? newSlot : slot);
+            saveToStorage('tutoring_timeSlots', updated);
+            console.log('Existing slot updated, total slots:', updated.length);
+            return updated;
+          }
+        });
+      });
+
+      // Слушаем обновления бронирования
+      newSocket.on('slotBooked', (data: { slotId: string; lesson: Lesson; bookedStudentId?: string }) => {
+        console.log('Slot booked via WebSocket:', data);
+        setTimeSlots(prev => {
+          const updated = prev.map(slot => 
+            slot.id === data.slotId ? { ...slot, isBooked: true, bookedStudentId: data.bookedStudentId || data.lesson.studentId } : slot
+          );
+          saveToStorage('tutoring_timeSlots', updated);
+          return updated;
+        });
+        setLessons(prev => {
+          const exists = prev.find(lesson => lesson.id === data.lesson.id);
+          if (!exists) {
+            const updated = [...prev, data.lesson];
+            saveToStorage('tutoring_lessons', updated);
+            console.log('New lesson added, total lessons:', updated.length);
+            return updated;
+          }
+          return prev;
+        });
+      });
+
+      // Слушаем отмены бронирования
+      newSocket.on('slotCancelled', (data: { slotId: string; lessonId: string }) => {
+        console.log('Slot cancelled via WebSocket:', data);
+        setTimeSlots(prev => {
+          const updated = prev.map(slot => 
+            slot.id === data.slotId ? { ...slot, isBooked: false, bookedStudentId: undefined } : slot
+          );
+          saveToStorage('tutoring_timeSlots', updated);
+          return updated;
+        });
+        setLessons(prev => {
+          const updated = prev.filter(lesson => lesson.id !== data.lessonId);
+          saveToStorage('tutoring_lessons', updated);
+          console.log('Lesson removed, total lessons:', updated.length);
+          return updated;
+        });
+      });
+
+      // Слушаем новые чаты
+      newSocket.on('chatCreated', (newChat: Chat) => {
+        setChats(prev => {
+          const exists = prev.find(chat => chat.id === newChat.id);
+          if (!exists) {
+            const updated = [...prev, newChat];
+            saveToStorage('tutoring_chats', updated);
+            return updated;
+          }
+          return prev;
+        });
+      });
+
+      newSocket.on('receiveMessage', (data: { chatId: string, message: any }) => {
+        setChats(prev => prev.map(chat => {
+          if (chat.id === data.chatId) {
+            const updatedChat = {
+              ...chat,
+              messages: [...chat.messages, data.message],
+              lastMessage: data.message,
+            };
+            saveToStorage('tutoring_chats', prev.map(c => c.id === chat.id ? updatedChat : c));
+            return updatedChat;
+          }
+          return chat;
+        }));
+      });
+
+      // Слушаем удаление слота
+      newSocket.on('slotDeleted', (data: { slotId: string }) => {
+        console.log('Slot deleted via WebSocket:', data);
+        setTimeSlots(prev => {
+          const updated = prev.filter(slot => slot.id !== data.slotId);
+          saveToStorage('tutoring_timeSlots', updated);
+          console.log('Slot removed, total slots:', updated.length);
+          return updated;
+        });
+      });
+
+      // Слушаем получение всех слотов
+      newSocket.on('allSlots', (allSlots: TimeSlot[]) => {
+        console.log('Received all slots from server:', allSlots.length);
+        setTimeSlots(allSlots);
+        saveToStorage('tutoring_timeSlots', allSlots);
+      });
+
+      // Слушаем получение всех уроков
+      newSocket.on('allLessons', (allLessons: Lesson[]) => {
+        console.log('Received all lessons from server:', allLessons.length);
+        setLessons(allLessons);
+        saveToStorage('tutoring_lessons', allLessons);
+      });
+
+      // Слушаем обновления данных от сервера для синхронизации между устройствами
+      newSocket.on('dataUpdated', (data: { 
+        type: string; 
+        timeSlots: TimeSlot[]; 
+        lessons?: Lesson[];
+        teacherProfiles: Record<string, TeacherProfile>; 
+        studentProfiles: Record<string, StudentProfile>; 
+      }) => {
+        console.log('Received dataUpdated event:', data.type);
+        
+        // Обновляем слоты
+        if (data.timeSlots) {
+          setTimeSlots(data.timeSlots);
+          saveToStorage('tutoring_timeSlots', data.timeSlots);
+          console.log('Slots updated via dataUpdated:', data.timeSlots.length);
+        }
+        
+        // Обновляем уроки
+        if (data.lessons) {
+          setLessons(data.lessons);
+          saveToStorage('tutoring_lessons', data.lessons);
+          console.log('Lessons updated via dataUpdated:', data.lessons.length);
+        }
+        
+        // Обновляем профили преподавателей
+        if (data.teacherProfiles) {
+          setTeacherProfiles(data.teacherProfiles);
+          saveToStorage('tutoring_teacherProfiles', data.teacherProfiles);
+          
+          // Обновляем список пользователей
+          const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
+          const updatedUsers = users.map((u: User) => {
+            if (u.role === 'teacher' && data.teacherProfiles[u.id]) {
+              return { ...u, profile: data.teacherProfiles[u.id] };
+            }
+            return u;
+          });
+          setAllUsers(updatedUsers);
+          saveToStorage('tutoring_users', updatedUsers);
+        }
+        
+        // Обновляем профили студентов
+        if (data.studentProfiles) {
+          setStudentProfiles(data.studentProfiles);
+          saveToStorage('tutoring_studentProfiles', data.studentProfiles);
+          
+          // Обновляем список пользователей
+          const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
+          const updatedUsers = users.map((u: User) => {
+            if (u.role === 'student' && data.studentProfiles[u.id]) {
+              return { ...u, profile: data.studentProfiles[u.id] };
+            }
+            return u;
+          });
+          setAllUsers(updatedUsers);
+          saveToStorage('tutoring_users', updatedUsers);
+        }
+      });
+
+      // Слушаем регистрацию новых пользователей
+      newSocket.on('userRegistered', (newUser: User) => {
+        setAllUsers(prev => {
+          const exists = prev.find(user => user.id === newUser.id);
+          if (!exists) {
+            const updated = [...prev, newUser];
+            saveToStorage('tutoring_users', updated);
+            return updated;
+          }
+          return prev;
+        });
+      });
+
+      // Добавляем обработку события завершения урока
+      if (socketRef.current) {
+        socketRef.current.on('lessonCompleted', (data: { lesson: any }) => {
+          setLessons(prev => {
+            const updated = prev.map(l => l.id === data.lesson.id ? data.lesson : l);
+            saveToStorage('tutoring_lessons', updated);
+            return updated;
+          });
+          // --- СТАТИСТИКА завершённых уроков ---
+          if (user && user.role === 'teacher' && data.lesson.status === 'completed') {
+            const profile: TeacherProfile = { ...(user.profile as TeacherProfile) };
+            profile.lessonsCount = (profile.lessonsCount || 0) + 1;
+            updateProfile(profile);
+          }
+          // --- КОНЕЦ СТАТИСТИКИ ---
+        });
+      }
+
+      newSocket.on('studentProfiles', (profiles: Record<string, StudentProfile>) => {
+        setStudentProfiles(profiles || {});
+        // Обновляем список всех пользователей с профилями студентов
+        const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
+        const updatedUsers = [...users];
+        
+        Object.entries(profiles).forEach(([studentId, profile]) => {
+          const existingUserIndex = updatedUsers.findIndex((u: User) => u.id === studentId);
+          if (existingUserIndex >= 0) {
+            updatedUsers[existingUserIndex] = { ...updatedUsers[existingUserIndex], profile };
+          } else {
+            updatedUsers.push({
+              id: studentId,
+              email: profile.email || '',
+              name: profile.name || '',
+              nickname: profile.nickname || '',
+              role: 'student',
+              phone: profile.phone || '',
+              profile
+            });
+          }
+        });
+        
+        localStorage.setItem('tutoring_users', JSON.stringify(updatedUsers));
+        setAllUsers(updatedUsers);
+      });
+      
+      newSocket.on('teacherProfiles', (profiles: Record<string, TeacherProfile>) => {
+        // Обновляем состояние teacherProfiles
+        setTeacherProfiles(profiles);
+        saveToStorage('tutoring_teacherProfiles', profiles);
+        
+        // Обновляем список всех пользователей с профилями преподавателей
+        const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
+        const updatedUsers = [...users];
+        
+        Object.entries(profiles).forEach(([teacherId, profile]) => {
+          const existingUserIndex = updatedUsers.findIndex((u: User) => u.id === teacherId);
+          if (existingUserIndex >= 0) {
+            updatedUsers[existingUserIndex] = { ...updatedUsers[existingUserIndex], profile };
+          } else {
+            updatedUsers.push({
+              id: teacherId,
+              email: profile.email || '',
+              name: profile.name || '',
+              nickname: profile.nickname || '',
+              role: 'teacher',
+              phone: profile.phone || '',
+              profile
+            });
+          }
+        });
+        
+        localStorage.setItem('tutoring_users', JSON.stringify(updatedUsers));
+        setAllUsers(updatedUsers);
+      });
+
+      newSocket.on('studentProfiles', (profiles: Record<string, StudentProfile>) => {
+        // Обновляем состояние studentProfiles
+        setStudentProfiles(profiles);
+        saveToStorage('tutoring_studentProfiles', profiles);
+        
+        // Обновляем список всех пользователей с профилями студентов
+        const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
+        const updatedUsers = [...users];
+        
+        Object.entries(profiles).forEach(([studentId, profile]) => {
+          const existingUserIndex = updatedUsers.findIndex((u: User) => u.id === studentId);
+          if (existingUserIndex >= 0) {
+            updatedUsers[existingUserIndex] = { ...updatedUsers[existingUserIndex], profile };
+          } else {
+            updatedUsers.push({
+              id: studentId,
+              email: profile.email || '',
+              name: profile.name || '',
+              nickname: profile.nickname || '',
+              role: 'student',
+              phone: profile.phone || '',
+              profile
+            });
+          }
+        });
+        
+        localStorage.setItem('tutoring_users', JSON.stringify(updatedUsers));
+        setAllUsers(updatedUsers);
+      });
+      newSocket.on('studentProfileUpdated', (data: { studentId: string; profile: StudentProfile }) => {
+        setStudentProfiles(prev => ({ ...prev, [data.studentId]: data.profile }));
+      });
+
+      // --- Синхронизация профиля преподавателя между устройствами ---
+      newSocket.on('teacherProfileUpdated', (data: { teacherId: string; profile: TeacherProfile }) => {
+        try {
+          const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
+          const updatedUsers = users.map((u: User) =>
+            u.id === data.teacherId ? { ...u, profile: data.profile, avatar: data.profile.avatar } : u
+          );
+          localStorage.setItem('tutoring_users', JSON.stringify(updatedUsers));
+          setAllUsers(updatedUsers);
+        } catch (e) {
+        }
+      });
+
+      // --- Универсальная синхронизация профиля между устройствами ---
+      newSocket.on('profileUpdated', (data: { type: string; userId: string; profile: StudentProfile | TeacherProfile } | { id: string; role: string; profile: StudentProfile | TeacherProfile }) => {
+        try {
+          const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
+          let found = false;
+          
+          // Обрабатываем оба формата данных
+          const userId = 'userId' in data ? data.userId : data.id;
+          const role = 'type' in data ? data.type : data.role;
+          const profile = data.profile;
+          
+          const updatedUsers = users.map((u: User) => {
+            if (u.id === userId) {
+              found = true;
+              return { ...u, profile: profile, avatar: profile.avatar, name: profile.name || u.name, email: profile.email || u.email };
+            }
+            return u;
+          });
+          if (!found) {
+            // Добавляем нового пользователя, если его не было
+            updatedUsers.push({
+              id: userId,
+              role: role,
+              profile: profile,
+              avatar: profile.avatar,
+              name: profile.name || '',
+              email: profile.email || ''
+            });
+          }
+          localStorage.setItem('tutoring_users', JSON.stringify(updatedUsers));
+          setAllUsers(updatedUsers);
+          
+          // Обновляем профили в соответствующих состояниях
+          if (role === 'teacher') {
+            setTeacherProfiles(prev => ({ ...prev, [userId]: profile as TeacherProfile }));
+          } else if (role === 'student') {
+            setStudentProfiles(prev => ({ ...prev, [userId]: profile as StudentProfile }));
+          }
+          
+          console.log('Profile updated via WebSocket:', { userId, role, profile });
+        } catch (e) {
+          console.error('Error processing profileUpdated event:', e);
+        }
+      });
+
+      // --- Обработка регистрации нового пользователя ---
+      newSocket.on('userRegistered', (newUser: User) => {
+        try {
+          const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
+          
+          // Проверяем, есть ли уже такой пользователь
+          const existingUserIndex = users.findIndex((u: User) => u.id === newUser.id);
+          
+          if (existingUserIndex >= 0) {
+            // Обновляем существующего пользователя
+            users[existingUserIndex] = newUser;
+          } else {
+            // Добавляем нового пользователя
+            users.push(newUser);
+          }
+          
+          localStorage.setItem('tutoring_users', JSON.stringify(users));
+          setAllUsers(users);
+        } catch (e) {
+        }
+      });
+
+      // ===== ОБРАБОТЧИКИ ДЛЯ ПОСТОВ =====
+      
+      // Получение всех постов
+      newSocket.on('allPosts', (allPosts: Post[]) => {
+        setPosts(allPosts);
+        saveToStorage('tutoring_posts', allPosts);
+      });
+
+      // Новый пост создан
+      newSocket.on('postCreated', (newPost: Post) => {
+        setPosts(prev => {
+          const updated = [newPost, ...prev];
+          saveToStorage('tutoring_posts', updated);
+          return updated;
+        });
+      });
+
+      // Обновление реакции на пост
+      newSocket.on('postReactionUpdated', (data: { postId: string; reactions: any[]; likes: number }) => {
+        setPosts(prev => {
+          const updated = prev.map(post => 
+            post.id === data.postId 
+              ? { ...post, reactions: data.reactions, likes: data.likes }
+              : post
+          );
+          saveToStorage('tutoring_posts', updated);
+          return updated;
+        });
+      });
+
+      // Добавлен комментарий к посту
+      newSocket.on('postCommentAdded', (data: { postId: string; comment: Comment }) => {
+        setPosts(prev => {
+          const updated = prev.map(post => 
+            post.id === data.postId 
+              ? { ...post, comments: [...post.comments, data.comment] }
+              : post
+          );
+          saveToStorage('tutoring_posts', updated);
+          return updated;
+        });
+      });
+
+      // Пост отредактирован
+      newSocket.on('postEdited', (data: { postId: string; text: string; tags: string[]; editedAt: string }) => {
+        setPosts(prev => {
+          const updated = prev.map(post => 
+            post.id === data.postId 
+              ? { 
+                  ...post, 
+                  text: data.text, 
+                  tags: data.tags,
+                  editedAt: data.editedAt 
+                }
+              : post
+          );
+          saveToStorage('tutoring_posts', updated);
+          return updated;
+        });
+      });
+
+      // Пост удален
+      newSocket.on('postDeleted', (data: { postId: string }) => {
+        setPosts(prev => {
+          const updated = prev.filter(post => post.id !== data.postId);
+          saveToStorage('tutoring_posts', updated);
+          return updated;
+        });
+      });
+
+      // Обновление закладки поста
+      newSocket.on('postBookmarkUpdated', (data: { postId: string; bookmarks: string[] }) => {
+        setPosts(prev => {
+          const updated = prev.map(post => 
+            post.id === data.postId 
+              ? { ...post, bookmarks: data.bookmarks }
+              : post
+          );
+          saveToStorage('tutoring_posts', updated);
+          return updated;
+        });
+      });
+
+      // Результаты поиска постов
+      newSocket.on('searchResults', (results: Post[]) => {
+        // Здесь можно добавить состояние для результатов поиска
+      });
+
+      // ===== ОБРАБОТЧИКИ ДЛЯ УВЕДОМЛЕНИЙ =====
+      
+      // Получение уведомлений пользователя
+      newSocket.on('userNotifications', (userNotifications: Notification[]) => {
+        setNotifications(userNotifications);
+        saveToStorage('tutoring_notifications', userNotifications);
+      });
+
+      // Новое уведомление
+      newSocket.on('newNotification', (notification: Notification) => {
+        setNotifications(prev => {
+          const updated = [notification, ...prev];
+          saveToStorage('tutoring_notifications', updated);
+          return updated;
+        });
+      });
+
+      // Уведомление отмечено как прочитанное
+      newSocket.on('notificationMarkedAsRead', (data: { notificationId: string }) => {
+        setNotifications(prev => {
+          const updated = prev.map(n => 
+            n.id === data.notificationId 
+              ? { ...n, isRead: true, readAt: new Date().toISOString() }
+              : n
+          );
+          saveToStorage('tutoring_notifications', updated);
+          return updated;
+        });
+      });
+
+      return () => {
+        newSocket.close();
+        socketRef.current = null;
+      };
+    };
+
+    initializeConnection();
   }, []);
 
   // Слушатель изменений localStorage для синхронизации между вкладками

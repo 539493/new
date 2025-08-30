@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: tutoring-platform-backend
+    name: tutoring-platform-am88
     env: node
     buildCommand: cd backend && npm install
     startCommand: cd backend && node server.cjs
@@ -17,6 +17,6 @@ services:
     staticPublishPath: ./dist
     envVars:
       - key: VITE_SERVER_URL
-        value: https://tutoring-platform-backend.onrender.com
+        value: https://tutoring-platform-am88.onrender.com
       - key: VITE_WEBSOCKET_URL
-        value: https://tutoring-platform-backend.onrender.com 
+        value: https://tutoring-platform-am88.onrender.com 

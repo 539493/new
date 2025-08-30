@@ -7,8 +7,8 @@ const getServerUrl = () => {
   
   // В продакшене используем внешний сервер
   if (import.meta.env.PROD) {
-    // На Render используем развернутый сервер
-    return 'https://tutoring-platform-backend.onrender.com';
+    // На Render используем существующий сервер
+    return 'https://tutoring-platform-am88.onrender.com';
   }
   
   // В разработке используем локальный сервер
@@ -23,8 +23,8 @@ const getWebSocketUrl = () => {
   
   // В продакшене используем внешний сервер
   if (import.meta.env.PROD) {
-    // На Render используем развернутый сервер для WebSocket
-    return 'https://tutoring-platform-backend.onrender.com';
+    // На Render используем существующий сервер для WebSocket
+    return 'https://tutoring-platform-am88.onrender.com';
   }
   
   // В разработке используем локальный сервер
