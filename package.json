@@ -14,7 +14,9 @@
     "deploy:check": "./scripts/check-deploy-status.sh",
     "deploy:test": "echo 'Testing deployment...' && git add . && git commit -m 'Test auto-deploy' && git push origin main",
     "deploy:render": "./scripts/deploy-to-render.sh",
-    "sync:render": "node scripts/sync-data-to-render.js"
+    "sync:render": "node scripts/sync-data-to-render.js",
+    "install:render": "npm install --legacy-peer-deps",
+    "build:render": "npm install --legacy-peer-deps && npm run build"
   },
   "dependencies": {
     "@tailwindcss/aspect-ratio": "^0.4.2",
@@ -44,8 +46,8 @@
     "@types/react": "^18.2.43",
     "@types/react-dom": "^18.2.17",
     "@types/react-router-dom": "^5.3.3",
-    "@typescript-eslint/eslint-plugin": "^6.14.0",
-    "@typescript-eslint/parser": "^6.14.0",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.16",
     "eslint": "^8.55.0",
