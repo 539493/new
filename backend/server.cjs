@@ -52,6 +52,43 @@ app.use(express.urlencoded({ extended: true }));
 // Обслуживание статических файлов фронтенда
 app.use(express.static(path.join(__dirname, '../dist')));
 
+// API маршруты - должны быть перед Socket.IO
+app.get('/api/sync', (req, res) => {
+  try {
+    const syncData = {
+      timeSlots: timeSlots,
+      teacherProfiles: teacherProfiles,
+      studentProfiles: studentProfiles,
+      lessons: lessons,
+      chats: chats,
+      posts: posts,
+      overbookingRequests: overbookingRequests
+    };
+    
+    console.log('Sync endpoint called, sending data:', {
+      timeSlotsCount: timeSlots.length,
+      teacherProfilesCount: Object.keys(teacherProfiles).length,
+      studentProfilesCount: Object.keys(studentProfiles).length,
+      lessonsCount: lessons.length
+    });
+    
+    res.json(syncData);
+  } catch (error) {
+    console.error('Error in sync endpoint:', error);
+    res.status(500).json({ error: 'Failed to sync data' });
+  }
+});
+
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    message: 'Tutoring Platform WebSocket Server',
+    status: 'running',
+    connectedClients: io.engine.clientsCount,
+    timeSlots: timeSlots.length,
+    lessons: lessons.length
+  });
+});
+
 // Создание Socket.IO сервера
 const io = new Server(server, {
   cors: {
@@ -1344,33 +1381,6 @@ app.post('/api/updateProfile', (req, res) => {
   }
 });
 
-// Endpoint для принудительной синхронизации всех данных
-app.get('/api/sync', (req, res) => {
-  try {
-    const syncData = {
-      timeSlots: timeSlots,
-      teacherProfiles: teacherProfiles,
-      studentProfiles: studentProfiles,
-      lessons: lessons,
-      chats: chats,
-      posts: posts,
-      overbookingRequests: overbookingRequests
-    };
-    
-    console.log('Sync endpoint called, sending data:', {
-      timeSlotsCount: timeSlots.length,
-      teacherProfilesCount: Object.keys(teacherProfiles).length,
-      studentProfilesCount: Object.keys(studentProfiles).length,
-      lessonsCount: lessons.length
-    });
-    
-    res.json(syncData);
-  } catch (error) {
-    console.error('Error in sync endpoint:', error);
-    res.status(500).json({ error: 'Failed to sync data' });
-  }
-});
-
 // Endpoint для получения пользователя по ID
 app.get('/api/users/:id', (req, res) => {
   try {
@@ -1415,17 +1425,6 @@ app.get('/api/users/:id', (req, res) => {
     console.error('Error getting user:', error);
     res.status(500).json({ error: 'Failed to get user' });
   }
-});
-
-// Простой endpoint для проверки работы сервера
-app.get('/api/health', (req, res) => {
-  res.json({ 
-    message: 'Tutoring Platform WebSocket Server',
-    status: 'running',
-    connectedClients: io.engine.clientsCount,
-    timeSlots: timeSlots.length,
-    lessons: lessons.length
-  });
 });
 
 // Обработчик для SPA маршрутов - должен быть последним
