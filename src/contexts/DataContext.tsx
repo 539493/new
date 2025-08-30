@@ -435,34 +435,40 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
     // Слушаем обновления слотов от других клиентов
     newSocket.on('slotCreated', (newSlot: TimeSlot) => {
+      console.log('Slot created via WebSocket:', newSlot);
       setTimeSlots(prev => {
         const exists = prev.find(slot => slot.id === newSlot.id);
         if (!exists) {
           const updated = [...prev, newSlot];
           saveToStorage('tutoring_timeSlots', updated);
+          console.log('New slot added, total slots:', updated.length);
+          return updated;
+        } else {
+          // Обновляем существующий слот
+          const updated = prev.map(slot => slot.id === newSlot.id ? newSlot : slot);
+          saveToStorage('tutoring_timeSlots', updated);
+          console.log('Existing slot updated, total slots:', updated.length);
           return updated;
         }
-        return prev;
       });
-      
-      // Принудительно обновляем данные для всех клиентов
-      if (socketRef.current && isConnected) {
-        socketRef.current.emit('requestAllSlots');
-      }
     });
 
     // Слушаем обновления бронирования
     newSocket.on('slotBooked', (data: { slotId: string; lesson: Lesson; bookedStudentId?: string }) => {
-      setTimeSlots(prev => 
-        prev.map(slot => 
+      console.log('Slot booked via WebSocket:', data);
+      setTimeSlots(prev => {
+        const updated = prev.map(slot => 
           slot.id === data.slotId ? { ...slot, isBooked: true, bookedStudentId: data.bookedStudentId || data.lesson.studentId } : slot
-        )
-      );
+        );
+        saveToStorage('tutoring_timeSlots', updated);
+        return updated;
+      });
       setLessons(prev => {
         const exists = prev.find(lesson => lesson.id === data.lesson.id);
         if (!exists) {
           const updated = [...prev, data.lesson];
           saveToStorage('tutoring_lessons', updated);
+          console.log('New lesson added, total lessons:', updated.length);
           return updated;
         }
         return prev;
@@ -471,12 +477,20 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
     // Слушаем отмены бронирования
     newSocket.on('slotCancelled', (data: { slotId: string; lessonId: string }) => {
-      setTimeSlots(prev => 
-        prev.map(slot => 
+      console.log('Slot cancelled via WebSocket:', data);
+      setTimeSlots(prev => {
+        const updated = prev.map(slot => 
           slot.id === data.slotId ? { ...slot, isBooked: false, bookedStudentId: undefined } : slot
-        )
-      );
-      setLessons(prev => prev.filter(lesson => lesson.id !== data.lessonId));
+        );
+        saveToStorage('tutoring_timeSlots', updated);
+        return updated;
+      });
+      setLessons(prev => {
+        const updated = prev.filter(lesson => lesson.id !== data.lessonId);
+        saveToStorage('tutoring_lessons', updated);
+        console.log('Lesson removed, total lessons:', updated.length);
+        return updated;
+      });
     });
 
     // Слушаем новые чаты
@@ -509,17 +523,34 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
     // Слушаем удаление слота
     newSocket.on('slotDeleted', (data: { slotId: string }) => {
+      console.log('Slot deleted via WebSocket:', data);
       setTimeSlots(prev => {
         const updated = prev.filter(slot => slot.id !== data.slotId);
         saveToStorage('tutoring_timeSlots', updated);
+        console.log('Slot removed, total slots:', updated.length);
         return updated;
       });
+    });
+
+    // Слушаем получение всех слотов
+    newSocket.on('allSlots', (allSlots: TimeSlot[]) => {
+      console.log('Received all slots from server:', allSlots.length);
+      setTimeSlots(allSlots);
+      saveToStorage('tutoring_timeSlots', allSlots);
+    });
+
+    // Слушаем получение всех уроков
+    newSocket.on('allLessons', (allLessons: Lesson[]) => {
+      console.log('Received all lessons from server:', allLessons.length);
+      setLessons(allLessons);
+      saveToStorage('tutoring_lessons', allLessons);
     });
 
     // Слушаем обновления данных от сервера для синхронизации между устройствами
     newSocket.on('dataUpdated', (data: { 
       type: string; 
       timeSlots: TimeSlot[]; 
+      lessons?: Lesson[];
       teacherProfiles: Record<string, TeacherProfile>; 
       studentProfiles: Record<string, StudentProfile>; 
     }) => {
@@ -529,6 +560,14 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       if (data.timeSlots) {
         setTimeSlots(data.timeSlots);
         saveToStorage('tutoring_timeSlots', data.timeSlots);
+        console.log('Slots updated via dataUpdated:', data.timeSlots.length);
+      }
+      
+      // Обновляем уроки
+      if (data.lessons) {
+        setLessons(data.lessons);
+        saveToStorage('tutoring_lessons', data.lessons);
+        console.log('Lessons updated via dataUpdated:', data.lessons.length);
       }
       
       // Обновляем профили преподавателей

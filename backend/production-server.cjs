@@ -509,6 +509,165 @@ io.on('connection', (socket) => {
       });
     }
   });
+
+  // Обработка создания нового слота
+  socket.on('createSlot', (newSlot) => {
+    console.log('Creating new slot:', newSlot);
+    
+    // Проверяем, не существует ли уже слот с таким ID
+    const existingSlotIndex = timeSlots.findIndex(slot => slot.id === newSlot.id);
+    if (existingSlotIndex !== -1) {
+      // Обновляем существующий слот
+      timeSlots[existingSlotIndex] = { ...timeSlots[existingSlotIndex], ...newSlot };
+    } else {
+      // Добавляем новый слот
+      timeSlots.push(newSlot);
+    }
+    
+    // Сохраняем данные в файл
+    saveServerData();
+    
+    // Отправляем новый слот всем подключенным клиентам
+    io.emit('slotCreated', newSlot);
+    
+    // Отправляем обновленные данные всем клиентам для синхронизации
+    io.emit('dataUpdated', {
+      type: 'slotCreated',
+      timeSlots: timeSlots,
+      teacherProfiles: teacherProfiles,
+      studentProfiles: studentProfiles
+    });
+  });
+
+  // Обработка бронирования слота
+  socket.on('bookSlot', (data) => {
+    const { slotId, lesson, bookedStudentId } = data;
+    console.log('Booking slot:', data);
+    
+    // Обновляем статус слота и устанавливаем bookedStudentId
+    const slotIndex = timeSlots.findIndex(slot => slot.id === slotId);
+    if (slotIndex !== -1) {
+      timeSlots[slotIndex].isBooked = true;
+      timeSlots[slotIndex].bookedStudentId = bookedStudentId || lesson.studentId;
+    }
+    
+    // Добавляем урок
+    lessons.push(lesson);
+    
+    // Сохраняем данные в файл
+    saveServerData();
+    
+    // Отправляем обновление всем клиентам
+    io.emit('slotBooked', data);
+    
+    // Отправляем обновленные данные всем клиентам для синхронизации
+    io.emit('dataUpdated', {
+      type: 'slotBooked',
+      timeSlots: timeSlots,
+      lessons: lessons,
+      teacherProfiles: teacherProfiles,
+      studentProfiles: studentProfiles
+    });
+  });
+
+  // Обработка отмены бронирования
+  socket.on('cancelSlot', (data) => {
+    const { slotId, lessonId } = data;
+    console.log('Cancelling slot:', data);
+    
+    // Обновляем статус слота и очищаем bookedStudentId
+    const slotIndex = timeSlots.findIndex(slot => slot.id === slotId);
+    if (slotIndex !== -1) {
+      timeSlots[slotIndex].isBooked = false;
+      timeSlots[slotIndex].bookedStudentId = undefined;
+    }
+    
+    // Удаляем урок
+    const lessonIndex = lessons.findIndex(lesson => lesson.id === lessonId);
+    if (lessonIndex !== -1) {
+      lessons.splice(lessonIndex, 1);
+    }
+    
+    // Сохраняем данные в файл
+    saveServerData();
+    
+    // Отправляем обновление всем клиентам
+    io.emit('slotCancelled', data);
+    
+    // Отправляем обновленные данные всем клиентам для синхронизации
+    io.emit('dataUpdated', {
+      type: 'slotCancelled',
+      timeSlots: timeSlots,
+      lessons: lessons,
+      teacherProfiles: teacherProfiles,
+      studentProfiles: studentProfiles
+    });
+  });
+
+  // Обработка удаления слота
+  socket.on('deleteSlot', (data) => {
+    const { slotId } = data;
+    console.log('Deleting slot:', slotId);
+    
+    // Удаляем слот
+    const slotIndex = timeSlots.findIndex(slot => slot.id === slotId);
+    if (slotIndex !== -1) {
+      timeSlots.splice(slotIndex, 1);
+    }
+    
+    // Сохраняем данные в файл
+    saveServerData();
+    
+    // Отправляем обновление всем клиентам
+    io.emit('slotDeleted', { slotId });
+    
+    // Отправляем обновленные данные всем клиентам для синхронизации
+    io.emit('dataUpdated', {
+      type: 'slotDeleted',
+      timeSlots: timeSlots,
+      teacherProfiles: teacherProfiles,
+      studentProfiles: studentProfiles
+    });
+  });
+
+  // Обработка завершения урока
+  socket.on('lessonCompleted', (data) => {
+    const { lessonId } = data;
+    console.log('Completing lesson:', lessonId);
+    
+    // Обновляем статус урока
+    const lessonIndex = lessons.findIndex(lesson => lesson.id === lessonId);
+    if (lessonIndex !== -1) {
+      lessons[lessonIndex].status = 'completed';
+    }
+    
+    // Сохраняем данные в файл
+    saveServerData();
+    
+    // Отправляем обновление всем клиентам
+    io.emit('lessonCompleted', { lessonId });
+    
+    // Отправляем обновленные данные всем клиентам для синхронизации
+    io.emit('dataUpdated', {
+      type: 'lessonCompleted',
+      timeSlots: timeSlots,
+      lessons: lessons,
+      teacherProfiles: teacherProfiles,
+      studentProfiles: studentProfiles
+    });
+  });
+
+  // Обработка запроса всех слотов
+  socket.on('requestAllSlots', () => {
+    console.log('Sending all slots to client');
+    socket.emit('allSlots', timeSlots);
+  });
+
+  // Обработка запроса всех уроков
+  socket.on('requestAllLessons', () => {
+    console.log('Sending all lessons to client');
+    socket.emit('allLessons', lessons);
+  });
 });
 
 // Запуск сервера

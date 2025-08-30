@@ -160,12 +160,111 @@ const testStudentProfiles = {
   }
 };
 
+// Создаем тестовые слоты
+const testTimeSlots = [
+  {
+    id: 'slot_1',
+    teacherId: 'teacher_1',
+    teacherName: 'Анна Петрова',
+    teacherAvatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400&h=400&fit=crop&crop=face',
+    date: '2025-01-15',
+    startTime: '10:00',
+    endTime: '11:00',
+    duration: 60,
+    subject: 'Математика',
+    lessonType: 'regular',
+    format: 'online',
+    price: 1500,
+    isBooked: false,
+    experience: 'experienced',
+    goals: ['ЕГЭ', 'ОГЭ'],
+    grades: ['9', '10', '11'],
+    rating: 4.8
+  },
+  {
+    id: 'slot_2',
+    teacherId: 'teacher_1',
+    teacherName: 'Анна Петрова',
+    teacherAvatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400&h=400&fit=crop&crop=face',
+    date: '2025-01-15',
+    startTime: '14:00',
+    endTime: '15:00',
+    duration: 60,
+    subject: 'Физика',
+    lessonType: 'regular',
+    format: 'online',
+    price: 1500,
+    isBooked: false,
+    experience: 'experienced',
+    goals: ['ЕГЭ', 'ОГЭ'],
+    grades: ['9', '10', '11'],
+    rating: 4.8
+  },
+  {
+    id: 'slot_3',
+    teacherId: 'teacher_2',
+    teacherName: 'Михаил Сидоров',
+    teacherAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face',
+    date: '2025-01-16',
+    startTime: '16:00',
+    endTime: '17:00',
+    duration: 60,
+    subject: 'Химия',
+    lessonType: 'regular',
+    format: 'online',
+    price: 2000,
+    isBooked: false,
+    experience: 'professional',
+    goals: ['ЕГЭ', 'Поступление в медицинский'],
+    grades: ['8', '9', '10', '11'],
+    rating: 4.9
+  },
+  {
+    id: 'slot_4',
+    teacherId: 'teacher_3',
+    teacherName: 'Елена Козлова',
+    teacherAvatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop&crop=face',
+    date: '2025-01-17',
+    startTime: '12:00',
+    endTime: '12:45',
+    duration: 45,
+    subject: 'Английский язык',
+    lessonType: 'trial',
+    format: 'online',
+    price: 800,
+    isBooked: false,
+    experience: 'beginner',
+    goals: ['Разговорный английский'],
+    grades: ['5', '6', '7', '8', '9'],
+    rating: 4.6
+  },
+  {
+    id: 'slot_5',
+    teacherId: 'teacher_4',
+    teacherName: 'Дмитрий Волков',
+    teacherAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face',
+    date: '2025-01-18',
+    startTime: '18:00',
+    endTime: '19:30',
+    duration: 90,
+    subject: 'История',
+    lessonType: 'regular',
+    format: 'offline',
+    price: 1200,
+    isBooked: false,
+    experience: 'experienced',
+    goals: ['ЕГЭ', 'ОГЭ'],
+    grades: ['9', '10', '11'],
+    rating: 4.7
+  }
+];
+
 // Создаем структуру данных
 const serverData = {
   teacherProfiles: testTeacherProfiles,
   studentProfiles: testStudentProfiles,
   overbookingRequests: [],
-  timeSlots: [],
+  timeSlots: testTimeSlots,
   lessons: [],
   chats: [],
   posts: [],
@@ -237,4 +336,5 @@ console.log('✅ Тестовые данные созданы успешно!');
 console.log(`📁 Файл сохранен: ${dataFile}`);
 console.log(`👨‍🏫 Преподавателей: ${Object.keys(testTeacherProfiles).length}`);
 console.log(`👨‍🎓 Студентов: ${Object.keys(testStudentProfiles).length}`);
+console.log(`📅 Слотов: ${testTimeSlots.length}`);
 console.log(`👥 Всего пользователей: ${serverData.allUsers.length}`);
