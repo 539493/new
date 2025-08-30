@@ -108,7 +108,8 @@ const getInitialData = () => {
     timeSlots: [],
     lessons: [],
     chats: [],
-    studentProfiles: {}
+    studentProfiles: {},
+    teacherProfiles: {}
   };
 };
 
@@ -146,6 +147,17 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     const initialData = getInitialData();
     saveToStorage('tutoring_studentProfiles', initialData.studentProfiles);
     return initialData.studentProfiles;
+  });
+
+  const [teacherProfiles, setTeacherProfiles] = useState<Record<string, TeacherProfile>>(() => {
+    const saved = loadFromStorage('tutoring_teacherProfiles', {});
+    if (Object.keys(saved).length > 0) {
+      return saved;
+    }
+    // Если нет сохраненных данных, загружаем начальные
+    const initialData = getInitialData();
+    saveToStorage('tutoring_teacherProfiles', initialData.teacherProfiles);
+    return initialData.teacherProfiles;
   });
 
   const [allUsers, setAllUsers] = useState<User[]>(() => {
@@ -521,8 +533,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       
       // Обновляем профили преподавателей
       if (data.teacherProfiles) {
-        // setTeacherProfiles(data.teacherProfiles); // This state variable doesn't exist
-        // saveToStorage('tutoring_teacherProfiles', data.teacherProfiles); // This state variable doesn't exist
+        setTeacherProfiles(data.teacherProfiles);
+        saveToStorage('tutoring_teacherProfiles', data.teacherProfiles);
         
         // Обновляем список пользователей
         const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
@@ -538,8 +550,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       
       // Обновляем профили студентов
       if (data.studentProfiles) {
-        // setStudentProfiles(data.studentProfiles); // This state variable doesn't exist
-        // saveToStorage('tutoring_studentProfiles', data.studentProfiles); // This state variable doesn't exist
+        setStudentProfiles(data.studentProfiles);
+        saveToStorage('tutoring_studentProfiles', data.studentProfiles);
         
         // Обновляем список пользователей
         const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
@@ -613,6 +625,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     });
     
     newSocket.on('teacherProfiles', (profiles: Record<string, TeacherProfile>) => {
+      // Обновляем состояние teacherProfiles
+      setTeacherProfiles(profiles);
+      saveToStorage('tutoring_teacherProfiles', profiles);
+      
       // Обновляем список всех пользователей с профилями преподавателей
       const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
       const updatedUsers = [...users];
@@ -628,6 +644,36 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
             name: profile.name || '',
             nickname: profile.nickname || '',
             role: 'teacher',
+            phone: profile.phone || '',
+            profile
+          });
+        }
+      });
+      
+      localStorage.setItem('tutoring_users', JSON.stringify(updatedUsers));
+      setAllUsers(updatedUsers);
+    });
+
+    newSocket.on('studentProfiles', (profiles: Record<string, StudentProfile>) => {
+      // Обновляем состояние studentProfiles
+      setStudentProfiles(profiles);
+      saveToStorage('tutoring_studentProfiles', profiles);
+      
+      // Обновляем список всех пользователей с профилями студентов
+      const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
+      const updatedUsers = [...users];
+      
+      Object.entries(profiles).forEach(([studentId, profile]) => {
+        const existingUserIndex = updatedUsers.findIndex((u: User) => u.id === studentId);
+        if (existingUserIndex >= 0) {
+          updatedUsers[existingUserIndex] = { ...updatedUsers[existingUserIndex], profile };
+        } else {
+          updatedUsers.push({
+            id: studentId,
+            email: profile.email || '',
+            name: profile.name || '',
+            nickname: profile.nickname || '',
+            role: 'student',
             phone: profile.phone || '',
             profile
           });
@@ -685,6 +731,13 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         }
         localStorage.setItem('tutoring_users', JSON.stringify(updatedUsers));
         setAllUsers(updatedUsers);
+        
+        // Обновляем профили в соответствующих состояниях
+        if (role === 'teacher') {
+          setTeacherProfiles(prev => ({ ...prev, [userId]: profile as TeacherProfile }));
+        } else if (role === 'student') {
+          setStudentProfiles(prev => ({ ...prev, [userId]: profile as StudentProfile }));
+        }
         
         console.log('Profile updated via WebSocket:', { userId, role, profile });
       } catch (e) {
@@ -1510,7 +1563,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         refreshUsers, // Добавляем функцию для обновления пользователей
         refreshAllData, // Функция для принудительного обновления всех данных
         forceSyncData, // Добавлено
-        teacherProfiles: {},
+        teacherProfiles,
         updateTeacherProfile, // добавлено
         socketRef,
         loadInitialData, // добавлено

@@ -87,6 +87,38 @@ function loadServerData() {
   try {
     if (fs.existsSync(DATA_FILE)) {
       const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+      
+      // Загружаем тестовые данные, если они есть
+      const testDataPath = path.join(__dirname, 'server_data.json');
+      if (fs.existsSync(testDataPath)) {
+        try {
+          const testData = JSON.parse(fs.readFileSync(testDataPath, 'utf8'));
+          
+          // Объединяем тестовые данные с реальными данными
+          // Приоритет у реальных данных (новых пользователей)
+          const mergedData = {
+            ...data,
+            teacherProfiles: {
+              ...testData.teacherProfiles,  // Тестовые данные (базовые)
+              ...data.teacherProfiles       // Реальные данные (перезаписывают тестовые)
+            },
+            studentProfiles: {
+              ...testData.studentProfiles,  // Тестовые данные (базовые)
+              ...data.studentProfiles       // Реальные данные (перезаписывают тестовые)
+            }
+          };
+          
+          console.log('📊 Загружено данных:');
+          console.log(`👨‍🏫 Тестовых преподавателей: ${Object.keys(testData.teacherProfiles || {}).length}`);
+          console.log(`👨‍🏫 Реальных преподавателей: ${Object.keys(data.teacherProfiles || {}).length}`);
+          console.log(`👨‍🏫 Всего преподавателей: ${Object.keys(mergedData.teacherProfiles || {}).length}`);
+          
+          return mergedData;
+        } catch (testError) {
+          console.error('Error loading test data:', testError);
+        }
+      }
+      
       return data;
     } else {
       return {
@@ -420,6 +452,62 @@ io.on('connection', (socket) => {
   // Обработка регистрации пользователя
   socket.on('userRegistered', (user) => {
     io.emit('userRegistered', user);
+  });
+
+  // Обработка обновления профиля ученика
+  socket.on('updateStudentProfile', (data) => {
+    // data: { studentId, profile }
+    if (data && data.studentId && data.profile) {
+      studentProfiles[data.studentId] = data.profile;
+      saveServerData(); // Сохраняем данные в файл
+      // Универсальное событие
+      io.emit('profileUpdated', { type: 'student', userId: data.studentId, profile: data.profile });
+      // Старое событие для обратной совместимости
+      io.emit('studentProfileUpdated', { studentId: data.studentId, profile: data.profile });
+      // Отправляем событие регистрации для синхронизации между устройствами
+      const userData = {
+        id: data.studentId,
+        email: data.profile.email || '',
+        name: data.profile.name || '',
+        nickname: data.profile.nickname || '',
+        role: 'student',
+        phone: data.profile.phone || '',
+        createdAt: data.profile.createdAt || new Date().toISOString()
+      };
+      io.emit('userRegistered', userData);
+    }
+  });
+
+  // Обработка обновления профиля преподавателя
+  socket.on('updateTeacherProfile', (data) => {
+    // data: { teacherId, profile }
+    if (data && data.teacherId && data.profile) {
+      teacherProfiles[data.teacherId] = data.profile;
+      saveServerData(); // Сохраняем данные в файл
+      // Универсальное событие
+      io.emit('profileUpdated', { type: 'teacher', userId: data.teacherId, profile: data.profile });
+      // Старое событие для обратной совместимости
+      io.emit('teacherProfileUpdated', { teacherId: data.teacherId, profile: data.profile });
+      // Отправляем событие регистрации для синхронизации между устройствами
+      const userData = {
+        id: data.teacherId,
+        email: data.profile.email || '',
+        name: data.profile.name || '',
+        nickname: data.profile.nickname || '',
+        role: 'teacher',
+        phone: data.profile.phone || '',
+        createdAt: data.profile.createdAt || new Date().toISOString()
+      };
+      io.emit('userRegistered', userData);
+      
+      // Отправляем обновленные данные всем клиентам для синхронизации
+      io.emit('dataUpdated', {
+        type: 'teacherProfileUpdated',
+        timeSlots: timeSlots,
+        teacherProfiles: teacherProfiles,
+        studentProfiles: studentProfiles
+      });
+    }
   });
 });
 

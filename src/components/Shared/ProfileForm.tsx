@@ -214,10 +214,20 @@ const ProfileForm: React.FC = () => {
     if (file) {
       const reader = new FileReader();
       reader.onload = (ev) => {
+        const avatarUrl = ev.target?.result as string;
+        
         if (user.role === 'student') {
-          setStudentProfile({ ...studentProfile, avatar: ev.target?.result as string });
+          const updatedProfile = { ...studentProfile, avatar: avatarUrl };
+          setStudentProfile(updatedProfile);
+          // Автоматически сохраняем и синхронизируем
+          updateProfile(updatedProfile);
+          updateStudentProfile(user.id, updatedProfile);
         } else {
-          setTeacherProfile({ ...teacherProfile, avatar: ev.target?.result as string });
+          const updatedProfile = { ...teacherProfile, avatar: avatarUrl };
+          setTeacherProfile(updatedProfile);
+          // Автоматически сохраняем и синхронизируем
+          updateProfile(updatedProfile);
+          updateTeacherProfile(user.id, { ...updatedProfile, name: user.name, email: user.email });
         }
       };
       reader.readAsDataURL(file);
