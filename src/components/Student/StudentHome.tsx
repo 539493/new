@@ -18,7 +18,7 @@ import { User as UserIcon } from 'lucide-react';
 
 
 const StudentHome: React.FC = () => {
-  const { getFilteredSlots, bookLesson, timeSlots, isConnected, allUsers, refreshUsers, refreshAllData } = useData();
+  const { getFilteredSlots, bookLesson, timeSlots, isConnected, allUsers, refreshUsers, refreshAllData, forceSyncData } = useData();
   const { user } = useAuth();
   
   const [filters, setFilters] = useState<FilterOptions>({});
@@ -66,57 +66,59 @@ const StudentHome: React.FC = () => {
 
   const [serverTeachers, setServerTeachers] = useState<User[]>([]);
 
-  // Загружаем преподавателей с сервера при монтировании
-  useEffect(() => {
-    
-    const loadTeachers = async () => {
-      try {
-        // Загружаем преподавателей через API /api/teachers
-        const teachersResponse = await fetch(`${SERVER_URL}/api/teachers`);
-        if (teachersResponse.ok) {
-          const teachersData = await teachersResponse.json();
-          console.log('Teachers loaded from server:', teachersData);
-          setServerTeachers(Array.isArray(teachersData) ? teachersData : []);
-        } else {
-          console.warn('Failed to load teachers from server:', teachersResponse.status);
-          setServerTeachers([]);
-        }
-        
-        // Также загружаем всех пользователей через API /api/users
-        const usersResponse = await fetch(`${SERVER_URL}/api/users`);
-        if (usersResponse.ok) {
-          const usersData = await usersResponse.json();
-          console.log('Users loaded from server:', usersData);
-          const teachers = usersData.filter((user: any) => user.role === 'teacher');
-          console.log('Teachers from users API:', teachers);
-          // Обновляем allUsers в контексте
-          refreshUsers();
-        } else {
-          console.warn('Failed to load users from server:', usersResponse.status);
-        }
-      } catch (error) {
-        console.error('Error loading teachers/users from server:', error);
+  // Функция для загрузки преподавателей
+  const loadTeachers = async () => {
+    try {
+      // Принудительно синхронизируем данные с сервером
+      await forceSyncData();
+      
+      // Загружаем преподавателей через API /api/teachers
+      const teachersResponse = await fetch(`${SERVER_URL}/api/teachers`);
+      if (teachersResponse.ok) {
+        const teachersData = await teachersResponse.json();
+        console.log('Teachers loaded from server:', teachersData);
+        setServerTeachers(Array.isArray(teachersData) ? teachersData : []);
+      } else {
+        console.warn('Failed to load teachers from server:', teachersResponse.status);
         setServerTeachers([]);
       }
-    };
-    
-    // Первоначальная загрузка
+      
+      // Также загружаем всех пользователей через API /api/users
+      const usersResponse = await fetch(`${SERVER_URL}/api/users`);
+      if (usersResponse.ok) {
+        const usersData = await usersResponse.json();
+        console.log('Users loaded from server:', usersData);
+        const teachers = usersData.filter((user: any) => user.role === 'teacher');
+        console.log('Teachers from users API:', teachers);
+        // Обновляем allUsers в контексте
+        refreshUsers();
+      } else {
+        console.warn('Failed to load users from server:', usersResponse.status);
+      }
+    } catch (error) {
+      console.error('Error loading teachers/users from server:', error);
+      setServerTeachers([]);
+    }
+  };
+
+  // Загружаем преподавателей с сервера при монтировании
+  useEffect(() => {
     loadTeachers();
-    
-    // Принудительно обновляем все данные при загрузке страницы
-    refreshAllData();
-    
-    // Автоматическая синхронизация каждые 30 секунд
-    const intervalId = setInterval(() => {
-      loadTeachers();
-      refreshAllData(); // Также обновляем все данные каждые 30 секунд
-    }, 30000);
-    
-    // Очистка интервала при размонтировании
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, []);
+  }, [forceSyncData, refreshUsers]);
+
+  // Функция для принудительной синхронизации
+  const handleForceSync = async () => {
+    setLoading(true);
+    try {
+      await forceSyncData();
+      await loadTeachers();
+      console.log('Force sync completed successfully');
+    } catch (error) {
+      console.error('Error during force sync:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const socket = React.useRef<Socket | null>(null);
   React.useEffect(() => {
@@ -646,6 +648,20 @@ const StudentHome: React.FC = () => {
           <div className="text-left">
             <div className="font-bold">Обновить</div>
             <div className="text-xs opacity-90">Данные</div>
+          </div>
+        </button>
+        
+        <button
+          onClick={handleForceSync}
+          disabled={loading}
+          className="group bg-gradient-to-r from-green-500 to-emerald-500 text-white px-5 py-3 rounded-xl font-semibold text-base hover:from-green-600 hover:to-emerald-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center space-x-2 disabled:opacity-50 disabled:transform-none"
+        >
+          <div className="p-1.5 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
+            <Wifi className={`h-5 w-5 ${loading ? 'animate-pulse' : ''}`} />
+          </div>
+          <div className="text-left">
+            <div className="font-bold">Синхронизация</div>
+            <div className="text-xs opacity-90">Сервер</div>
           </div>
         </button>
       </div>

@@ -30,6 +30,7 @@ interface DataContextType {
   setAllUsers: (users: User[]) => void;
   refreshUsers: () => void; // Добавляем функцию для обновления пользователей
   refreshAllData: () => void; // Функция для принудительного обновления всех данных
+  forceSyncData: () => Promise<void>; // Функция для принудительной синхронизации с сервером
   updateTeacherProfile: (teacherId: string, profile: TeacherProfile) => void;
   socketRef: React.MutableRefObject<Socket | null>;
   loadInitialData: () => void;
@@ -247,6 +248,80 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     }
   };
 
+  // Функция для принудительной синхронизации всех данных с сервера
+  const forceSyncData = async () => {
+    try {
+      console.log('Force syncing data from server...');
+      const response = await fetch(`${SERVER_URL}/api/sync`);
+      if (response.ok) {
+        const syncData = await response.json();
+        
+        // Обновляем слоты
+        if (syncData.timeSlots) {
+          setTimeSlots(syncData.timeSlots);
+          saveToStorage('tutoring_timeSlots', syncData.timeSlots);
+        }
+        
+        // Обновляем уроки
+        if (syncData.lessons) {
+          setLessons(syncData.lessons);
+          saveToStorage('tutoring_lessons', syncData.lessons);
+        }
+        
+        // Обновляем чаты
+        if (syncData.chats) {
+          setChats(syncData.chats);
+          saveToStorage('tutoring_chats', syncData.chats);
+        }
+        
+        // Обновляем посты
+        if (syncData.posts) {
+          setPosts(syncData.posts);
+          saveToStorage('tutoring_posts', syncData.posts);
+        }
+        
+        // Обновляем пользователей
+        const users: User[] = [];
+        if (syncData.teacherProfiles) {
+          Object.entries(syncData.teacherProfiles).forEach(([id, profile]) => {
+            const teacherProfile = profile as TeacherProfile;
+            users.push({
+              id,
+              email: String(teacherProfile.email || ''),
+              name: String(teacherProfile.name || ''),
+              nickname: String(teacherProfile.nickname || ''),
+              role: 'teacher',
+              phone: String(teacherProfile.phone || ''),
+              profile: teacherProfile
+            });
+          });
+        }
+        if (syncData.studentProfiles) {
+          Object.entries(syncData.studentProfiles).forEach(([id, profile]) => {
+            const studentProfile = profile as StudentProfile;
+            users.push({
+              id,
+              email: String(studentProfile.email || ''),
+              name: String(studentProfile.name || ''),
+              nickname: String(studentProfile.nickname || ''),
+              role: 'student',
+              phone: String(studentProfile.phone || ''),
+              profile: studentProfile
+            });
+          });
+        }
+        setAllUsers(users);
+        saveToStorage('tutoring_users', users);
+        
+        console.log('Data sync completed successfully');
+      } else {
+        console.error('Failed to sync data from server:', response.status);
+      }
+    } catch (error) {
+      console.error('Error syncing data:', error);
+    }
+  };
+
   // Инициализация WebSocket соединения
   useEffect(() => {
     
@@ -418,6 +493,56 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         saveToStorage('tutoring_timeSlots', updated);
         return updated;
       });
+    });
+
+    // Слушаем обновления данных от сервера для синхронизации между устройствами
+    newSocket.on('dataUpdated', (data: { 
+      type: string; 
+      timeSlots: TimeSlot[]; 
+      teacherProfiles: Record<string, TeacherProfile>; 
+      studentProfiles: Record<string, StudentProfile>; 
+    }) => {
+      console.log('Received dataUpdated event:', data.type);
+      
+      // Обновляем слоты
+      if (data.timeSlots) {
+        setTimeSlots(data.timeSlots);
+        saveToStorage('tutoring_timeSlots', data.timeSlots);
+      }
+      
+      // Обновляем профили преподавателей
+      if (data.teacherProfiles) {
+        // setTeacherProfiles(data.teacherProfiles); // This state variable doesn't exist
+        // saveToStorage('tutoring_teacherProfiles', data.teacherProfiles); // This state variable doesn't exist
+        
+        // Обновляем список пользователей
+        const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
+        const updatedUsers = users.map((u: User) => {
+          if (u.role === 'teacher' && data.teacherProfiles[u.id]) {
+            return { ...u, profile: data.teacherProfiles[u.id] };
+          }
+          return u;
+        });
+        setAllUsers(updatedUsers);
+        saveToStorage('tutoring_users', updatedUsers);
+      }
+      
+      // Обновляем профили студентов
+      if (data.studentProfiles) {
+        // setStudentProfiles(data.studentProfiles); // This state variable doesn't exist
+        // saveToStorage('tutoring_studentProfiles', data.studentProfiles); // This state variable doesn't exist
+        
+        // Обновляем список пользователей
+        const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
+        const updatedUsers = users.map((u: User) => {
+          if (u.role === 'student' && data.studentProfiles[u.id]) {
+            return { ...u, profile: data.studentProfiles[u.id] };
+          }
+          return u;
+        });
+        setAllUsers(updatedUsers);
+        saveToStorage('tutoring_users', updatedUsers);
+      }
     });
 
     // Слушаем регистрацию новых пользователей
@@ -1375,6 +1500,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         },
         refreshUsers, // Добавляем функцию для обновления пользователей
         refreshAllData, // Функция для принудительного обновления всех данных
+        forceSyncData, // Добавлено
         teacherProfiles: {},
         updateTeacherProfile, // добавлено
         socketRef,

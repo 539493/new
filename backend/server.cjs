@@ -265,6 +265,14 @@ io.on('connection', (socket) => {
     
     // Отправляем новый слот всем подключенным клиентам
     io.emit('slotCreated', newSlot);
+    
+    // Отправляем обновленные данные всем клиентам для синхронизации
+    io.emit('dataUpdated', {
+      type: 'slotCreated',
+      timeSlots: timeSlots,
+      teacherProfiles: teacherProfiles,
+      studentProfiles: studentProfiles
+    });
   });
 
   // Обработка создания нового чата
@@ -387,6 +395,14 @@ io.on('connection', (socket) => {
         createdAt: data.profile.createdAt || new Date().toISOString()
       };
       io.emit('userRegistered', userData);
+      
+      // Отправляем обновленные данные всем клиентам для синхронизации
+      io.emit('dataUpdated', {
+        type: 'teacherProfileUpdated',
+        timeSlots: timeSlots,
+        teacherProfiles: teacherProfiles,
+        studentProfiles: studentProfiles
+      });
     } else {
     }
   });
@@ -398,6 +414,14 @@ io.on('connection', (socket) => {
       timeSlots = timeSlots.filter(slot => slot.id !== slotId);
       saveServerData(); // Сохраняем данные в файл
       io.emit('slotDeleted', { slotId });
+      
+      // Отправляем обновленные данные всем клиентам для синхронизации
+      io.emit('dataUpdated', {
+        type: 'slotDeleted',
+        timeSlots: timeSlots,
+        teacherProfiles: teacherProfiles,
+        studentProfiles: studentProfiles
+      });
     }
   });
 
@@ -1232,6 +1256,33 @@ app.post('/api/updateProfile', (req, res) => {
   } catch (error) {
     console.error('Error updating profile:', error);
     res.status(500).json({ error: 'Failed to update profile' });
+  }
+});
+
+// Endpoint для принудительной синхронизации всех данных
+app.get('/api/sync', (req, res) => {
+  try {
+    const syncData = {
+      timeSlots: timeSlots,
+      teacherProfiles: teacherProfiles,
+      studentProfiles: studentProfiles,
+      lessons: lessons,
+      chats: chats,
+      posts: posts,
+      overbookingRequests: overbookingRequests
+    };
+    
+    console.log('Sync endpoint called, sending data:', {
+      timeSlotsCount: timeSlots.length,
+      teacherProfilesCount: Object.keys(teacherProfiles).length,
+      studentProfilesCount: Object.keys(studentProfiles).length,
+      lessonsCount: lessons.length
+    });
+    
+    res.json(syncData);
+  } catch (error) {
+    console.error('Error in sync endpoint:', error);
+    res.status(500).json({ error: 'Failed to sync data' });
   }
 });
 
