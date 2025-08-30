@@ -2,8 +2,8 @@ services:
   - type: web
     name: tutoring-platform-am88
     env: node
-    buildCommand: npm install --legacy-peer-deps && npm run build
-    startCommand: cd backend && node server.cjs
+    buildCommand: ./build.sh
+    startCommand: cd backend && node production-server.cjs
     envVars:
       - key: NODE_ENV
         value: production
