@@ -20,21 +20,21 @@ import './index.css';
 const AppContent: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
   
   try {
     const { user } = useAuth();
     const [activeTab, setActiveTab] = useState(user?.role === 'teacher' ? 'slots' : 'home');
 
-    // Инициализируем активную вкладку на основе роли пользователя
+    // Инициализируем активную вкладку на основе роли пользователя только один раз
     useEffect(() => {
-      if (user) {
+      if (user && !isInitialized) {
         const defaultTab = user.role === 'teacher' ? 'slots' : 'home';
-        if (activeTab !== defaultTab) {
-          setActiveTab(defaultTab);
-        }
+        setActiveTab(defaultTab);
+        setIsInitialized(true);
       }
       setIsLoading(false);
-    }, [user, activeTab, setActiveTab]);
+    }, [user, isInitialized]);
 
     // Показываем загрузку
     if (isLoading) {
