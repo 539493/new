@@ -1034,40 +1034,6 @@ const StudentHome: React.FC = () => {
           />
         ) : (
           <>
-            {/* Статистика результатов */}
-            <div className="mb-6 bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <div className="flex items-center space-x-6">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-blue-600">{filteredTeachers.length}</div>
-                    <div className="text-sm text-gray-600">Преподавателей</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600">{filteredSlots.length}</div>
-                    <div className="text-sm text-gray-600">Доступных слотов</div>
-                  </div>
-                  {(Object.keys(filters).length > 0 || selectedDate || selectedTimeRange || searchQuery.trim()) && (
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-purple-600">
-                        {Object.keys(filters).length + (selectedDate ? 1 : 0) + (selectedTimeRange ? 1 : 0) + (searchQuery.trim() ? 1 : 0)}
-                      </div>
-                      <div className="text-sm text-gray-600">Активных фильтров</div>
-                    </div>
-                  )}
-                </div>
-                
-                {(Object.keys(filters).length > 0 || selectedDate || selectedTimeRange || searchQuery.trim()) && (
-                  <button
-                    onClick={clearFilters}
-                    className="flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors text-sm"
-                  >
-                    <X className="h-4 w-4" />
-                    <span>Очистить все фильтры</span>
-                  </button>
-                )}
-              </div>
-            </div>
-
             {/* Список преподавателей */}
             {filteredTeachers.map(teacher => {
               const profile = teacher.profile;
