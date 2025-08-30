@@ -49,10 +49,7 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Обслуживание статических файлов фронтенда
-app.use(express.static(path.join(__dirname, '../dist')));
-
-// API маршруты - должны быть перед Socket.IO
+// API маршруты - должны быть ПЕРЕД статическими файлами
 app.get('/api/sync', (req, res) => {
   try {
     const syncData = {
@@ -88,6 +85,9 @@ app.get('/api/health', (req, res) => {
     lessons: lessons.length
   });
 });
+
+// Обслуживание статических файлов фронтенда
+app.use(express.static(path.join(__dirname, '../dist')));
 
 // Создание Socket.IO сервера
 const io = new Server(server, {
