@@ -49,6 +49,11 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Простой тестовый API маршрут
+app.get('/api/test', (req, res) => {
+  res.json({ message: 'API работает!', timestamp: new Date().toISOString() });
+});
+
 // API маршруты - должны быть ПЕРЕД статическими файлами
 app.get('/api/sync', (req, res) => {
   try {
