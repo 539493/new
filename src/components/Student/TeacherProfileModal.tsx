@@ -382,28 +382,24 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
           </div>
 
           {/* About Section */}
-          <div className="bg-white rounded-2xl shadow p-6 mb-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-              <UserIcon className="w-5 h-5 mr-2" />
+          <div className="bg-white rounded-xl shadow p-4 mb-4">
+            <h3 className="text-base font-bold text-gray-900 mb-3 flex items-center">
+              <UserIcon className="w-4 h-4 mr-2" />
               О преподавателе
             </h3>
-            <div className="text-gray-700 whitespace-pre-line leading-relaxed mb-6">
-              {profile?.bio || 'Информация о себе не указана'}
-            </div>
             
-            {/* Основная информация */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-3">
                 <div>
-                  <span className="text-sm font-semibold text-gray-500 flex items-center">
-                    <BookOpen className="w-4 h-4 mr-2" />
+                  <span className="text-xs font-semibold text-gray-500 flex items-center">
+                    <BookOpen className="w-3 h-3 mr-1" />
                     Предметы:
                   </span>
-                  <div className="text-base text-gray-900 mt-2">
+                  <div className="text-sm text-gray-900 mt-1">
                     {profile?.subjects?.length > 0 ? (
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-1">
                         {profile.subjects.map((subject, index) => (
-                          <span key={index} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                          <span key={index} className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full text-xs font-medium">
                             {subject}
                           </span>
                         ))}
@@ -415,15 +411,15 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
                 </div>
                 
                 <div>
-                  <span className="text-sm font-semibold text-gray-500 flex items-center">
-                    <GraduationCap className="w-4 h-4 mr-2" />
+                  <span className="text-xs font-semibold text-gray-500 flex items-center">
+                    <GraduationCap className="w-3 h-3 mr-1" />
                     Классы:
                   </span>
-                  <div className="text-base text-gray-900 mt-2">
+                  <div className="text-sm text-gray-900 mt-1">
                     {profile?.grades?.length > 0 ? (
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-1">
                         {profile.grades.map((grade, index) => (
-                          <span key={index} className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                          <span key={index} className="bg-green-100 text-green-800 px-2 py-0.5 rounded-full text-xs font-medium">
                             {grade}
                           </span>
                         ))}
@@ -435,15 +431,15 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
                 </div>
                 
               <div>
-                  <span className="text-sm font-semibold text-gray-500 flex items-center">
-                    <Target className="w-4 h-4 mr-2" />
+                  <span className="text-xs font-semibold text-gray-500 flex items-center">
+                    <Target className="w-3 h-3 mr-1" />
                     Цели обучения:
                   </span>
-                  <div className="text-base text-gray-900 mt-2">
+                  <div className="text-sm text-gray-900 mt-1">
                     {profile?.goals?.length > 0 ? (
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-1">
                         {profile.goals.map((goal, index) => (
-                          <span key={index} className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium">
+                          <span key={index} className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full text-xs font-medium">
                             {goal}
                           </span>
                         ))}
@@ -455,20 +451,20 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
                 </div>
               </div>
               
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <div>
-                  <span className="text-sm font-semibold text-gray-500 flex items-center">
-                    <Award className="w-4 h-4 mr-2" />
+                  <span className="text-xs font-semibold text-gray-500 flex items-center">
+                    <Award className="w-3 h-3 mr-1" />
                     Опыт:
                   </span>
-                  <div className="text-base text-gray-900 mt-2">
+                  <div className="text-sm text-gray-900 mt-1">
                     {profile?.experience ? (
                       <div className="flex items-center space-x-2">
-                        <span className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-medium">
+                        <span className="bg-orange-100 text-orange-800 px-2 py-0.5 rounded-full text-xs font-medium">
                           {getExperienceLabel(profile.experience)}
                         </span>
                         {profile.experienceYears && (
-                          <span className="text-gray-600">
+                          <span className="text-gray-600 text-xs">
                             ({profile.experienceYears} лет)
                           </span>
                         )}
@@ -480,13 +476,13 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
                 </div>
                 
                 <div>
-                  <span className="text-sm font-semibold text-gray-500 flex items-center">
-                    <MapPin className="w-4 h-4 mr-2" />
+                  <span className="text-xs font-semibold text-gray-500 flex items-center">
+                    <MapPin className="w-3 h-3 mr-1" />
                     Город:
                   </span>
-                  <div className="text-base text-gray-900 mt-2">
+                  <div className="text-sm text-gray-900 mt-1">
                     {profile?.city ? (
-                      <span className="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm font-medium">
+                      <span className="bg-gray-100 text-gray-800 px-2 py-0.5 rounded-full text-xs font-medium">
                         {profile.city}
                       </span>
                     ) : (
@@ -496,8 +492,8 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
                 </div>
                 
               <div>
-                  <span className="text-sm font-semibold text-gray-500 flex items-center">
-                    <Globe className="w-4 h-4 mr-2" />
+                  <span className="text-xs font-semibold text-gray-500 flex items-center">
+                    <Globe className="w-3 h-3 mr-1" />
                     Форматы обучения:
                   </span>
                   <div className="text-base text-gray-900 mt-2">
@@ -520,36 +516,36 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
 
           {/* Education Section */}
           {profile?.education && (
-            <div className="bg-white rounded-2xl shadow p-6 mb-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-                <GraduationCap className="w-5 h-5 mr-2" />
+            <div className="bg-white rounded-xl shadow p-4 mb-4">
+              <h3 className="text-base font-bold text-gray-900 mb-3 flex items-center">
+                <GraduationCap className="w-4 h-4 mr-2" />
                 Образование
               </h3>
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {profile.education.university && (
                   <div>
-                    <span className="text-sm font-semibold text-gray-500">Университет:</span>
-                    <div className="text-base text-gray-900">{profile.education.university}</div>
+                    <span className="text-xs font-semibold text-gray-500">Университет:</span>
+                    <div className="text-sm text-gray-900">{profile.education.university}</div>
                   </div>
                 )}
                 {profile.education.degree && (
                   <div>
-                    <span className="text-sm font-semibold text-gray-500">Специальность:</span>
-                    <div className="text-base text-gray-900">{profile.education.degree}</div>
+                    <span className="text-xs font-semibold text-gray-500">Специальность:</span>
+                    <div className="text-sm text-gray-900">{profile.education.degree}</div>
                   </div>
                 )}
                 {profile.education.graduationYear && (
                   <div>
-                    <span className="text-sm font-semibold text-gray-500">Год выпуска:</span>
-                    <div className="text-base text-gray-900">{profile.education.graduationYear}</div>
+                    <span className="text-xs font-semibold text-gray-500">Год выпуска:</span>
+                    <div className="text-sm text-gray-900">{profile.education.graduationYear}</div>
                   </div>
                 )}
                 {profile.education.courses && profile.education.courses.length > 0 && (
                   <div>
-                    <span className="text-sm font-semibold text-gray-500">Курсы:</span>
+                    <span className="text-xs font-semibold text-gray-500">Курсы:</span>
                     <div className="space-y-1 mt-1">
                       {profile.education.courses.map((course, index) => (
-                        <div key={index} className="text-sm text-gray-700">
+                        <div key={index} className="text-xs text-gray-700">
                           • {course.name} ({course.institution}, {course.year})
                         </div>
                       ))}
@@ -561,18 +557,18 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
           )}
 
           {/* Pricing and Services Section */}
-          <div className="bg-white rounded-2xl shadow p-6 mb-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-              <DollarSign className="w-5 h-5 mr-2" />
+          <div className="bg-white rounded-xl shadow p-4 mb-4">
+            <h3 className="text-base font-bold text-gray-900 mb-3 flex items-center">
+              <DollarSign className="w-4 h-4 mr-2" />
               Стоимость и услуги
             </h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Основная стоимость */}
-              <div className="space-y-4">
+              <div className="space-y-3">
               <div>
-                  <span className="text-sm font-semibold text-gray-500">Базовая стоимость:</span>
-                  <div className="text-2xl font-bold text-blue-600 mt-1">
+                  <span className="text-xs font-semibold text-gray-500">Базовая стоимость:</span>
+                  <div className="text-xl font-bold text-blue-600 mt-1">
                     {profile?.hourlyRate ? `${profile.hourlyRate} ₽/час` : 'Не указана'}
                   </div>
                 </div>
@@ -580,10 +576,10 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
                 {/* Длительности занятий */}
                 {profile?.durations && profile.durations.length > 0 && (
                   <div>
-                    <span className="text-sm font-semibold text-gray-500">Длительности занятий:</span>
-                    <div className="flex flex-wrap gap-2 mt-2">
+                    <span className="text-xs font-semibold text-gray-500">Длительности занятий:</span>
+                    <div className="flex flex-wrap gap-1 mt-1">
                       {profile.durations.map((duration, index) => (
-                        <span key={index} className="bg-blue-50 text-blue-700 px-3 py-1 rounded-lg text-sm font-medium">
+                        <span key={index} className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded-lg text-xs font-medium">
                           {duration} мин
                         </span>
                       ))}
@@ -594,10 +590,10 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
                 {/* Типы уроков */}
                 {profile?.lessonTypes && profile.lessonTypes.length > 0 && (
                   <div>
-                    <span className="text-sm font-semibold text-gray-500">Типы уроков:</span>
-                    <div className="flex flex-wrap gap-2 mt-2">
+                    <span className="text-xs font-semibold text-gray-500">Типы уроков:</span>
+                    <div className="flex flex-wrap gap-1 mt-1">
                       {profile.lessonTypes.map((type, index) => (
-                        <span key={index} className="bg-green-50 text-green-700 px-3 py-1 rounded-lg text-sm font-medium">
+                        <span key={index} className="bg-green-50 text-green-700 px-2 py-0.5 rounded-lg text-xs font-medium">
                           {type}
                         </span>
                       ))}
@@ -607,29 +603,29 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
               </div>
               
               {/* Дополнительная информация */}
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {/* Рейтинг */}
                 {profile?.rating && (
                   <div>
-                    <span className="text-sm font-semibold text-gray-500">Рейтинг:</span>
+                    <span className="text-xs font-semibold text-gray-500">Рейтинг:</span>
                     <div className="flex items-center space-x-2 mt-1">
                       <div className="flex items-center">
                         {[1, 2, 3, 4, 5].map((star) => (
                           <Star 
                             key={star} 
-                            className={`w-5 h-5 ${star <= (profile.rating || 0) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} 
+                            className={`w-4 h-4 ${star <= (profile.rating || 0) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} 
                           />
                         ))}
                       </div>
-                      <span className="text-lg font-semibold text-gray-900">{profile.rating}/5</span>
+                      <span className="text-sm font-semibold text-gray-900">{profile.rating}/5</span>
                     </div>
                   </div>
                 )}
                 
                 {/* Овербукинг */}
               <div>
-                  <span className="text-sm font-semibold text-gray-500">Автоподбор:</span>
-                <div className="text-base text-gray-900 mt-1">
+                  <span className="text-xs font-semibold text-gray-500">Автоподбор:</span>
+                <div className="text-sm text-gray-900 mt-1">
                     {profile?.overbookingEnabled ? (
                       <span className="text-green-600 font-medium">✓ Доступен</span>
                     ) : (
@@ -640,8 +636,8 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
               </div>
             </div>
             
-            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-              <p className="text-sm text-blue-700">
+            <div className="mt-3 p-2 bg-blue-50 rounded-lg">
+              <p className="text-xs text-blue-700">
                 💡 Стоимость может варьироваться в зависимости от формата, длительности занятия и сложности материала
               </p>
             </div>
@@ -649,17 +645,17 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
 
 
           {/* Available Slots Section */}
-          <div className="bg-white rounded-2xl shadow p-6 mb-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-              <Calendar className="w-5 h-5 mr-2" />
+          <div className="bg-white rounded-xl shadow p-4 mb-4">
+            <h3 className="text-base font-bold text-gray-900 mb-3 flex items-center">
+              <Calendar className="w-4 h-4 mr-2" />
               Доступные слоты ({availableSlots.length})
             </h3>
             {availableSlots.length > 0 ? (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {/* Сводка по ценам */}
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="font-semibold text-gray-900 mb-2">Сводка по ценам:</h4>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <h4 className="font-semibold text-gray-900 mb-2 text-sm">Сводка по ценам:</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                     <div>
                       <span className="text-gray-600">Минимальная цена:</span>
                       <div className="font-semibold text-green-600">
@@ -688,27 +684,27 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
                 </div>
                 
                 {/* Слоты */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {availableSlots.slice(0, 6).map((slot) => (
-                  <div key={slot.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                      <div className="flex items-center justify-between mb-3">
+                  <div key={slot.id} className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition-colors">
+                      <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center space-x-2">
-                        <BookOpen className="w-4 h-4 text-blue-600" />
-                        <span className="font-semibold text-gray-900">{slot.subject}</span>
+                        <BookOpen className="w-3 h-3 text-blue-600" />
+                        <span className="font-semibold text-gray-900 text-sm">{slot.subject}</span>
                       </div>
-                        <span className="text-lg font-bold text-green-600">{slot.price} ₽</span>
+                        <span className="text-base font-bold text-green-600">{slot.price} ₽</span>
                     </div>
-                      <div className="space-y-2 mb-3">
-                        <div className="flex items-center space-x-2 text-sm text-gray-600">
+                      <div className="space-y-1 mb-2">
+                        <div className="flex items-center space-x-2 text-xs text-gray-600">
                         <Clock className="w-3 h-3" />
                         <span>{formatSlotDate(slot.date)} • {slot.startTime}-{slot.endTime}</span>
                       </div>
-                        <div className="flex items-center space-x-2 text-sm text-gray-600">
+                        <div className="flex items-center space-x-2 text-xs text-gray-600">
                         <MapPin className="w-3 h-3" />
                         <span>{getFormatLabel(slot.format)} • {slot.duration} мин</span>
                         </div>
                         {slot.experience && (
-                          <div className="flex items-center space-x-2 text-sm text-gray-600">
+                          <div className="flex items-center space-x-2 text-xs text-gray-600">
                             <Award className="w-3 h-3" />
                             <span>Опыт: {getExperienceLabel(slot.experience)}</span>
                           </div>
@@ -744,50 +740,50 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
 
 
           {/* Posts Section */}
-          <div className="bg-white rounded-2xl shadow p-6 mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-gray-900 flex items-center">
-                <FileText className="w-5 h-5 mr-2" />
+          <div className="bg-white rounded-xl shadow p-4 mb-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-base font-bold text-gray-900 flex items-center">
+                <FileText className="w-4 h-4 mr-2" />
                 Записи преподавателя ({teacherPosts.length})
               </h3>
             </div>
             {teacherPosts.length > 0 ? (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {teacherPosts.slice(0, 3).map((post) => (
-                  <div key={post.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                  <div key={post.id} className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition-colors">
                     <div className="flex items-start space-x-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center flex-shrink-0">
-                        <UserIcon className="w-5 h-5 text-white" />
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center flex-shrink-0">
+                        <UserIcon className="w-4 h-4 text-white" />
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center space-x-2 mb-2">
-                          <span className="font-semibold text-gray-900">{post.userName}</span>
-                          <span className="text-sm text-gray-500">{formatDate(post.date)}</span>
+                          <span className="font-semibold text-gray-900 text-sm">{post.userName}</span>
+                          <span className="text-xs text-gray-500">{formatDate(post.date)}</span>
                         </div>
-                        <p className="text-gray-700 mb-3 leading-relaxed">{post.text}</p>
+                        <p className="text-gray-700 mb-2 leading-relaxed text-sm">{post.text}</p>
                         
                         {/* Теги, если есть */}
                         {post.tags && post.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-2 mb-3">
+                          <div className="flex flex-wrap gap-1 mb-2">
                             {post.tags.map((tag, index) => (
-                              <span key={index} className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
+                              <span key={index} className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full text-xs font-medium">
                                 {tag}
                               </span>
                             ))}
                           </div>
                         )}
                         
-                        <div className="flex items-center space-x-4 text-sm text-gray-500">
+                        <div className="flex items-center space-x-4 text-xs text-gray-500">
                           <button className="flex items-center space-x-1 hover:text-blue-600 transition-colors">
-                            <ThumbsUp className="w-4 h-4" />
+                            <ThumbsUp className="w-3 h-3" />
                             <span>{post.reactions.length}</span>
                           </button>
                           <button className="flex items-center space-x-1 hover:text-blue-600 transition-colors">
-                            <MessageCircle className="w-4 h-4" />
+                            <MessageCircle className="w-3 h-3" />
                             <span>{post.comments.length}</span>
                           </button>
                           <button className="flex items-center space-x-1 hover:text-blue-600 transition-colors">
-                            <Share2 className="w-4 h-4" />
+                            <Share2 className="w-3 h-3" />
                           </button>
                         </div>
                       </div>
@@ -796,20 +792,20 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
                 ))}
                 
                 {teacherPosts.length > 3 && (
-                  <div className="text-center pt-4">
-                    <p className="text-gray-600 text-sm">
+                  <div className="text-center pt-3">
+                    <p className="text-gray-600 text-xs">
                       И еще {teacherPosts.length - 3} записей
                     </p>
                   </div>
                 )}
               </div>
             ) : (
-              <div className="text-center py-8">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <FileText className="w-8 h-8 text-gray-400" />
+              <div className="text-center py-6">
+                <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <FileText className="w-6 h-6 text-gray-400" />
                 </div>
-                <p className="text-gray-500 mb-2">У преподавателя пока нет записей</p>
-                <p className="text-sm text-gray-400">Записи появятся здесь, когда преподаватель начнет публиковать контент</p>
+                <p className="text-gray-500 mb-2 text-sm">У преподавателя пока нет записей</p>
+                <p className="text-xs text-gray-400">Записи появятся здесь, когда преподаватель начнет публиковать контент</p>
               </div>
             )}
           </div>
