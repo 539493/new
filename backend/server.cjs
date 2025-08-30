@@ -1430,6 +1430,12 @@ app.get('/api/health', (req, res) => {
 
 // Обработчик для SPA маршрутов - должен быть последним
 app.get('*', (req, res) => {
+  // Не обрабатываем API маршруты через SPA
+  if (req.path.startsWith('/api/')) {
+    return res.status(404).json({ error: 'API endpoint not found' });
+  }
+  
+  // Для всех остальных маршрутов возвращаем SPA
   res.sendFile(path.join(__dirname, '../dist/index.html'));
 });
 
