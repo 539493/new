@@ -24,8 +24,8 @@
         "Групповые"
       ],
       "durations": [
-        "60 минут",
-        "90 минут"
+        60,
+        90
       ],
       "formats": [
         "online",
@@ -69,9 +69,9 @@
         "Индивидуальные"
       ],
       "durations": [
-        "60 минут",
-        "90 минут",
-        "120 минут"
+        60,
+        90,
+        120
       ],
       "formats": [
         "online"
@@ -115,15 +115,15 @@
         "Мини-группы"
       ],
       "durations": [
-        "45 минут",
-        "60 минут"
+        45,
+        60
       ],
       "formats": [
         "online",
         "offline"
       ],
       "offlineAvailable": true,
-      "city": "Казань",
+      "city": "Москва",
       "overbookingEnabled": true,
       "bio": "Молодой преподаватель иностранных языков. Использую современные методики обучения и игровой подход для детей.",
       "avatar": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop&crop=face",
@@ -160,8 +160,8 @@
         "Групповые"
       ],
       "durations": [
-        "60 минут",
-        "90 минут"
+        60,
+        90
       ],
       "formats": [
         "online",
@@ -209,8 +209,8 @@
         "Индивидуальные"
       ],
       "durations": [
-        "60 минут",
-        "90 минут"
+        60,
+        90
       ],
       "formats": [
         "online"
@@ -347,6 +347,44 @@
       "goals": ["Разговорная практика", "Подготовка к экзаменам"],
       "grades": ["5", "6", "7", "8", "9", "10", "11"],
       "rating": 4.5
+    },
+    {
+      "id": "slot_5",
+      "teacherId": "teacher_3",
+      "teacherName": "Елена Козлова",
+      "teacherAvatar": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop&crop=face",
+      "date": "2025-01-26",
+      "startTime": "14:00",
+      "endTime": "15:00",
+      "duration": 60,
+      "subject": "Немецкий язык",
+      "lessonType": "regular",
+      "format": "offline",
+      "price": 800,
+      "isBooked": false,
+      "experience": "beginner",
+      "goals": ["Разговорная практика"],
+      "grades": ["5", "6", "7", "8", "9"],
+      "rating": 4.5
+    },
+    {
+      "id": "slot_6",
+      "teacherId": "teacher_4",
+      "teacherName": "Дмитрий Волков",
+      "teacherAvatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face",
+      "date": "2025-01-25",
+      "startTime": "18:00",
+      "endTime": "19:30",
+      "duration": 90,
+      "subject": "История",
+      "lessonType": "regular",
+      "format": "online",
+      "price": 1200,
+      "isBooked": false,
+      "experience": "experienced",
+      "goals": ["ЕГЭ", "ОГЭ"],
+      "grades": ["9", "10", "11"],
+      "rating": 4.7
     }
   ],
   "lessons": [
