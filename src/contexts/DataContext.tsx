@@ -642,6 +642,15 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         });
       });
 
+      // Слушаем новые уведомления
+      newSocket.on('newNotification', (notification: Notification) => {
+        setNotifications(prev => {
+          const updated = [...prev, notification];
+          saveToStorage('tutoring_notifications', updated);
+          return updated;
+        });
+      });
+
       // Слушаем удаление слота
       newSocket.on('slotDeleted', (data: { slotId: string }) => {
         console.log('Slot deleted via WebSocket:', data);
@@ -1411,6 +1420,20 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     // Отправляем новый чат на сервер для других клиентов
     if (socketRef.current && isConnected) {
       socketRef.current.emit('createChat', newChat);
+      
+      // Создаем уведомление для репетитора о новом чате
+      const notification = {
+        id: `notification_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        userId: participant2Id, // ID репетитора
+        type: 'new_chat',
+        title: 'Новый чат',
+        message: `${participant1Name} создал с вами чат`,
+        isRead: false,
+        timestamp: new Date().toISOString(),
+        data: { chatId: newChat.id, studentId: participant1Id, studentName: participant1Name }
+      };
+      
+      socketRef.current.emit('createNotification', notification);
     }
 
     return newChat.id;

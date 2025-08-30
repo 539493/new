@@ -100,7 +100,8 @@ function loadServerData() {
         timeSlots: [],
         lessons: [],
         chats: [],
-        posts: []
+        posts: [],
+        notifications: []
       };
     }
   } catch (error) {
@@ -112,7 +113,8 @@ function loadServerData() {
       timeSlots: [],
       lessons: [],
       chats: [],
-      posts: []
+      posts: [],
+      notifications: []
     };
   }
 }
@@ -126,7 +128,8 @@ function saveServerData() {
       timeSlots,
       lessons,
       chats,
-      posts
+      posts,
+      notifications
     };
     
     console.log('Saving server data:', {
@@ -164,6 +167,8 @@ let overbookingRequests = Array.isArray(serverData.overbookingRequests) ? server
 let pendingOverbookingForTeacher = {};
 // Хранилище для постов
 let posts = Array.isArray(serverData.posts) ? serverData.posts : [];
+// Хранилище для уведомлений
+let notifications = Array.isArray(serverData.notifications) ? serverData.notifications : [];
 
 // Тестовое сохранение при запуске для проверки работы функции
 saveServerData();
@@ -861,6 +866,15 @@ io.on('connection', (socket) => {
       saveServerData();
       io.emit('chatArchived', { chatId });
     }
+  });
+
+  // Обработка создания уведомлений
+  socket.on('createNotification', (notification) => {
+    notifications.push(notification);
+    saveServerData();
+    
+    // Отправляем уведомление конкретному пользователю
+    io.emit('newNotification', notification);
   });
 
   socket.on('disconnect', () => {

@@ -79,6 +79,19 @@ const ChatList: React.FC = () => {
     }
   }, [user, loadChatsFromServer]);
 
+  // Автоматически выбираем чат, если он был только что создан
+  useEffect(() => {
+    if (chats.length > 0 && !selectedChatId) {
+      // Если есть чаты, но ни один не выбран, выбираем первый
+      const firstChat = chats.find(chat => 
+        chat.participants.includes(user?.id || '') && !chat.archived
+      );
+      if (firstChat) {
+        setSelectedChatId(firstChat.id);
+      }
+    }
+  }, [chats, selectedChatId, user]);
+
   // Автоматически отмечаем сообщения как прочитанные при открытии чата
   useEffect(() => {
     if (selectedChatId && user) {

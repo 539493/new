@@ -21,7 +21,7 @@ interface StudentHomeProps {
 }
 
 const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
-  const { getFilteredSlots, bookLesson, timeSlots, isConnected, allUsers, refreshUsers, refreshAllData, forceSyncData, getOrCreateChat } = useData();
+  const { getFilteredSlots, bookLesson, timeSlots, isConnected, allUsers, refreshUsers, refreshAllData, forceSyncData, getOrCreateChat, sendMessage } = useData();
   const { user } = useAuth();
   
   const [filters, setFilters] = useState<FilterOptions>({});
@@ -741,7 +741,13 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
     const teacher = allUsers.find(user => user.id === teacherId);
     if (teacher && user) {
       // Создаем или открываем чат с преподавателем
-      getOrCreateChat(user.id, teacherId, user.name, teacher.name);
+      const chatId = getOrCreateChat(user.id, teacherId, user.name, teacher.name);
+      
+      // Отправляем первое приветственное сообщение
+      setTimeout(() => {
+        sendMessage(chatId, user.id, user.name, `Привет! Меня зовут ${user.name}. Можете ли вы помочь мне с обучением?`);
+      }, 100);
+      
       // Переключаемся на вкладку чатов
       setActiveTab('chats');
     }
