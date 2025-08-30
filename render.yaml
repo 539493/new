@@ -1,24 +1,22 @@
 services:
-  # Основной сервис (полный стек)
   - type: web
-    name: tutoring-platform
+    name: tutoring-platform-backend
     env: node
-    buildCommand: npm install && npm run build
-    startCommand: npm start
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && node server.cjs
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 10000
-      - key: HOST
-        value: 0.0.0.0
-    healthCheckPath: /
-    autoDeploy: true
-    branch: main
-    plan: starter
-    region: oregon
-    numInstances: 1
-    disk:
-      name: data
-      mountPath: /opt/render/project/src/backend
-      sizeGB: 1 
+
+  - type: web
+    name: tutoring-platform-frontend
+    env: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_SERVER_URL
+        value: https://tutoring-platform-backend.onrender.com
+      - key: VITE_WEBSOCKET_URL
+        value: https://tutoring-platform-backend.onrender.com 

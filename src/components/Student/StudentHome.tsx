@@ -6,7 +6,6 @@ import { ru } from 'date-fns/locale';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { useNavigation } from '../../contexts/NavigationContext';
 import { FilterOptions, TimeSlot, User } from '../../types';
 import { io, Socket } from 'socket.io-client';
 import { SERVER_URL, WEBSOCKET_URL } from '../../config';
@@ -17,11 +16,13 @@ import BookingModal from '../Shared/BookingModal';
 import EmptyState from '../Shared/EmptyState';
 import { User as UserIcon } from 'lucide-react';
 
+interface StudentHomeProps {
+  setActiveTab: (tab: string) => void;
+}
 
-const StudentHome: React.FC = () => {
+const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
   const { getFilteredSlots, bookLesson, timeSlots, isConnected, allUsers, refreshUsers, refreshAllData, forceSyncData, getOrCreateChat } = useData();
   const { user } = useAuth();
-  const { setActiveTab } = useNavigation();
   
   const [filters, setFilters] = useState<FilterOptions>({});
   const [showFilters, setShowFilters] = useState(false);

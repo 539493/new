@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { DataProvider } from './contexts/DataContext';
 import { NavigationProvider, useNavigation } from './contexts/NavigationContext';
@@ -18,59 +18,127 @@ import { Routes, Route } from 'react-router-dom';
 import './index.css';
 
 const AppContent: React.FC = () => {
-  const { user } = useAuth();
-  const { activeTab, setActiveTab } = useNavigation();
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  try {
+    const { user } = useAuth();
+    const [activeTab, setActiveTab] = useState(user?.role === 'teacher' ? 'slots' : 'home');
 
-  if (!user) {
-    return <AuthForm onSuccess={() => {}} />;
-  }
+    // Инициализируем активную вкладку на основе роли пользователя
+    useEffect(() => {
+      if (user) {
+        const defaultTab = user.role === 'teacher' ? 'slots' : 'home';
+        if (activeTab !== defaultTab) {
+          setActiveTab(defaultTab);
+        }
+      }
+      setIsLoading(false);
+    }, [user, activeTab, setActiveTab]);
 
-  const renderContent = () => {
-    switch (activeTab) {
-      case 'home':
-        return user.role === 'student' ? <StudentHome /> : <TeacherSlots />;
-      case 'slots':
-        return user.role === 'teacher' ? <TeacherSlots /> : <StudentHome />;
-      case 'calendar':
-        return user.role === 'student' ? <StudentCalendar onClose={() => setActiveTab('home')} /> : <TeacherCalendar />;
-      case 'lessons':
-        return user.role === 'student' ? <StudentLessons /> : null;
-      case 'students':
-        return user.role === 'teacher' ? <TeacherStudents /> : null;
-      case 'chats':
-        return <ChatList />;
-      case 'profile':
-        return <ProfileForm />;
-      default:
-        return user.role === 'student' ? <StudentHome /> : <TeacherSlots />;
+    // Показываем загрузку
+    if (isLoading) {
+      return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="bg-white p-8 rounded-lg shadow-lg text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Загрузка приложения...</p>
+          </div>
+        </div>
+      );
     }
-  };
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
-      <main className="container mx-auto px-4 py-8">
-        {renderContent()}
-      </main>
-    </div>
-  );
+    // Если нет пользователя, показываем форму входа
+    if (!user) {
+      return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="bg-white p-8 rounded-lg shadow-lg">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">Добро пожаловать в Nauchi</h1>
+            <p className="text-gray-600 mb-4">Платформа для репетиторов и учеников</p>
+            <AuthForm onSuccess={() => {}} />
+          </div>
+        </div>
+      );
+    }
+
+    const renderContent = () => {
+      try {
+        switch (activeTab) {
+          case 'home':
+            return user.role === 'student' ? <StudentHome setActiveTab={setActiveTab} /> : <TeacherSlots />;
+          case 'slots':
+            return user.role === 'teacher' ? <TeacherSlots /> : <StudentHome setActiveTab={setActiveTab} />;
+          case 'calendar':
+            return user.role === 'student' ? <StudentCalendar onClose={() => setActiveTab('home')} /> : <TeacherCalendar />;
+          case 'lessons':
+            return user.role === 'student' ? <StudentLessons /> : null;
+          case 'students':
+            return user.role === 'teacher' ? <TeacherStudents /> : null;
+          case 'chats':
+            return <ChatList />;
+          case 'profile':
+            return <ProfileForm />;
+          default:
+            return user.role === 'student' ? <StudentHome setActiveTab={setActiveTab} /> : <TeacherSlots />;
+        }
+      } catch (contentError) {
+        console.error('Error rendering content:', contentError);
+        return (
+          <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="bg-white p-8 rounded-lg shadow-lg text-center">
+              <h1 className="text-2xl font-bold text-red-600 mb-4">Ошибка загрузки контента</h1>
+              <p className="text-gray-600 mb-4">Попробуйте перезагрузить страницу</p>
+              <button 
+                onClick={() => window.location.reload()} 
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+              >
+                Перезагрузить
+              </button>
+            </div>
+          </div>
+        );
+      }
+    };
+
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
+        <main className="container mx-auto px-4 py-8">
+          {renderContent()}
+        </main>
+      </div>
+    );
+  } catch (err) {
+    console.error('Error in AppContent:', err);
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="bg-white p-8 rounded-lg shadow-lg text-center">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">Ошибка загрузки</h1>
+          <p className="text-gray-600 mb-4">Произошла ошибка при загрузке приложения</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            Перезагрузить страницу
+          </button>
+        </div>
+      </div>
+    );
+  }
 };
 
 const App: React.FC = () => {
-  const { user } = useAuth();
-  const initialTab = user?.role === 'teacher' ? 'slots' : 'home';
-  
   return (
-    <AuthProvider>
-      <DataProvider>
-        <NavigationProvider initialTab={initialTab}>
+    <div className="App">
+      <AuthProvider>
+        <DataProvider>
           <Routes>
             <Route path="/teacher/:teacherId" element={<TeacherProfilePage teacher={{}} onClose={() => {}} onBookLesson={() => {}} />} />
             <Route path="*" element={<AppContent />} />
           </Routes>
-        </NavigationProvider>
-      </DataProvider>
-    </AuthProvider>
+        </DataProvider>
+      </AuthProvider>
+    </div>
   );
 };
 

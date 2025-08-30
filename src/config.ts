@@ -1,27 +1,34 @@
 // Конфигурация для подключения к серверу
 const getServerUrl = () => {
+  // Используем переменные окружения если они есть
+  if (import.meta.env.VITE_SERVER_URL) {
+    return import.meta.env.VITE_SERVER_URL;
+  }
+  
   // В продакшене используем внешний сервер
   if (import.meta.env.PROD) {
     // На Render используем развернутый сервер
-    return 'https://tutoring-platform-am88.onrender.com';
+    return 'https://tutoring-platform-backend.onrender.com';
   }
   
-  // В разработке используем локальный сервер, но доступный из других сетей
-  // Получаем IP адрес компьютера для доступа из других устройств
-  const localIP = window.location.hostname === 'localhost' ? '192.168.0.103' : window.location.hostname;
-  return `http://${localIP}:3001`;
+  // В разработке используем локальный сервер
+  return 'http://localhost:3001';
 };
 
 const getWebSocketUrl = () => {
+  // Используем переменные окружения если они есть
+  if (import.meta.env.VITE_WEBSOCKET_URL) {
+    return import.meta.env.VITE_WEBSOCKET_URL;
+  }
+  
   // В продакшене используем внешний сервер
   if (import.meta.env.PROD) {
     // На Render используем развернутый сервер для WebSocket
-    return 'https://tutoring-platform-am88.onrender.com';
+    return 'https://tutoring-platform-backend.onrender.com';
   }
   
-  // В разработке используем локальный сервер, но доступный из других сетей
-  const localIP = window.location.hostname === 'localhost' ? '192.168.0.103' : window.location.hostname;
-  return `http://${localIP}:3001`;
+  // В разработке используем локальный сервер
+  return 'http://localhost:3001';
 };
 
 export const SERVER_URL = getServerUrl();
