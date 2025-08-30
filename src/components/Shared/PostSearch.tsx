@@ -7,7 +7,7 @@ import {
   Calendar, 
   User, 
   Image, 
-  Video, 
+  VideoIcon, 
   FileText,
   TrendingUp,
   Clock,
@@ -279,7 +279,7 @@ const PostSearch: React.FC<PostSearchProps> = ({
               <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-purple-100 text-purple-700">
                 {selectedType === 'text' && <FileText className="w-3 h-3 mr-1" />}
                 {selectedType === 'image' && <Image className="w-3 h-3 mr-1" />}
-                {selectedType === 'video' && <Video className="w-3 h-3 mr-1" />}
+                {selectedType === 'video' && <VideoIcon className="w-3 h-3 mr-1" />}
                 {selectedType === 'text' ? 'Текст' : selectedType === 'image' ? 'Изображения' : 'Видео'}
                 <button
                   onClick={() => setSelectedType('all')}
@@ -427,7 +427,7 @@ const PostSearch: React.FC<PostSearchProps> = ({
                       <span className="text-xs text-gray-500">{formatDate(post.date)}</span>
                       {post.type !== 'text' && (
                         <span className="text-xs text-gray-500">
-                          {post.type === 'image' ? <Image className="w-3 h-3 inline" /> : <Video className="w-3 h-3 inline" />}
+                          {post.type === 'image' ? <Image className="w-3 h-3 inline" /> : <VideoIcon className="w-3 h-3 inline" />}
                         </span>
                       )}
                     </div>

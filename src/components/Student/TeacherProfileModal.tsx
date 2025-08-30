@@ -19,7 +19,7 @@ import {
   Send,
   Play,
   Image as ImageIcon,
-  Video,
+  VideoIcon,
   FileText,
   Plus,
   Settings,

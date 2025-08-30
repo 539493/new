@@ -24,7 +24,7 @@ import {
   Send,
   Play,
   Image as ImageIcon,
-  Video,
+  VideoIcon,
   FileText
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';

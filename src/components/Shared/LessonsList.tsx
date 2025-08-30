@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Calendar, Clock, MapPin, User, BookOpen, Star, Filter, SortAsc, SortDesc, Search, X, Eye, MessageCircle, Video, Phone } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, BookOpen, Star, Filter, SortAsc, SortDesc, Search, X, Eye, MessageCircle, VideoIcon, Phone } from 'lucide-react';
 import { Lesson, TimeSlot, User as UserType } from '../../types';
 
 interface LessonsListProps {
@@ -486,7 +486,7 @@ const LessonsList: React.FC<LessonsListProps> = ({
                           className="p-2 text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-xl transition-all duration-200"
                           title="Присоединиться к уроку"
                         >
-                          <Video className="h-5 w-5" />
+                          <VideoIcon className="h-5 w-5" />
                         </button>
                       ) : (
                         <button

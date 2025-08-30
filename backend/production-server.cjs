@@ -85,52 +85,75 @@ const DATA_FILE = path.join(__dirname, 'server_data.json');
 
 function loadServerData() {
   try {
-    if (fs.existsSync(DATA_FILE)) {
-      const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
-      
-      // Загружаем тестовые данные, если они есть
-      const testDataPath = path.join(__dirname, 'server_data.json');
-      if (fs.existsSync(testDataPath)) {
-        try {
-          const testData = JSON.parse(fs.readFileSync(testDataPath, 'utf8'));
-          
-          // Объединяем тестовые данные с реальными данными
-          // Приоритет у реальных данных (новых пользователей)
-          const mergedData = {
-            ...data,
-            teacherProfiles: {
-              ...testData.teacherProfiles,  // Тестовые данные (базовые)
-              ...data.teacherProfiles       // Реальные данные (перезаписывают тестовые)
-            },
-            studentProfiles: {
-              ...testData.studentProfiles,  // Тестовые данные (базовые)
-              ...data.studentProfiles       // Реальные данные (перезаписывают тестовые)
-            }
-          };
-          
-          console.log('📊 Загружено данных:');
-          console.log(`👨‍🏫 Тестовых преподавателей: ${Object.keys(testData.teacherProfiles || {}).length}`);
-          console.log(`👨‍🏫 Реальных преподавателей: ${Object.keys(data.teacherProfiles || {}).length}`);
-          console.log(`👨‍🏫 Всего преподавателей: ${Object.keys(mergedData.teacherProfiles || {}).length}`);
-          
-          return mergedData;
-        } catch (testError) {
-          console.error('Error loading test data:', testError);
-        }
+    // Загружаем тестовые данные как основу
+    const testDataPath = path.join(__dirname, 'server_data.json');
+    let testData = {
+      teacherProfiles: {},
+      studentProfiles: {},
+      overbookingRequests: [],
+      timeSlots: [],
+      lessons: [],
+      chats: [],
+      posts: []
+    };
+    
+    if (fs.existsSync(testDataPath)) {
+      try {
+        testData = JSON.parse(fs.readFileSync(testDataPath, 'utf8'));
+        console.log('📊 Загружены тестовые данные:');
+        console.log(`👨‍🏫 Преподавателей: ${Object.keys(testData.teacherProfiles || {}).length}`);
+        console.log(`👨‍🎓 Студентов: ${Object.keys(testData.studentProfiles || {}).length}`);
+        console.log(`📅 Слотов: ${(testData.timeSlots || []).length}`);
+      } catch (testError) {
+        console.error('Error loading test data:', testError);
       }
-      
-      return data;
-    } else {
-      return {
-        teacherProfiles: {},
-        studentProfiles: {},
-        overbookingRequests: [],
-        timeSlots: [],
-        lessons: [],
-        chats: [],
-        posts: []
-      };
     }
+    
+    // Загружаем реальные данные (если есть)
+    let realData = {
+      teacherProfiles: {},
+      studentProfiles: {},
+      overbookingRequests: [],
+      timeSlots: [],
+      lessons: [],
+      chats: [],
+      posts: []
+    };
+    
+    if (fs.existsSync(DATA_FILE)) {
+      try {
+        realData = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+        console.log('📊 Загружены реальные данные:');
+        console.log(`👨‍🏫 Преподавателей: ${Object.keys(realData.teacherProfiles || {}).length}`);
+        console.log(`👨‍🎓 Студентов: ${Object.keys(realData.studentProfiles || {}).length}`);
+      } catch (error) {
+        console.error('Error loading real data:', error);
+      }
+    }
+    
+    // Объединяем данные: тестовые как основа, реальные перезаписывают
+    const mergedData = {
+      teacherProfiles: {
+        ...testData.teacherProfiles,  // Тестовые данные (базовые)
+        ...realData.teacherProfiles   // Реальные данные (перезаписывают тестовые)
+      },
+      studentProfiles: {
+        ...testData.studentProfiles,  // Тестовые данные (базовые)
+        ...realData.studentProfiles   // Реальные данные (перезаписывают тестовые)
+      },
+      timeSlots: [...(testData.timeSlots || []), ...(realData.timeSlots || [])],
+      lessons: [...(testData.lessons || []), ...(realData.lessons || [])],
+      chats: [...(testData.chats || []), ...(realData.chats || [])],
+      posts: [...(testData.posts || []), ...(realData.posts || [])],
+      overbookingRequests: [...(testData.overbookingRequests || []), ...(realData.overbookingRequests || [])]
+    };
+    
+    console.log('📊 Итоговые данные:');
+    console.log(`👨‍🏫 Всего преподавателей: ${Object.keys(mergedData.teacherProfiles).length}`);
+    console.log(`👨‍🎓 Всего студентов: ${Object.keys(mergedData.studentProfiles).length}`);
+    console.log(`📅 Всего слотов: ${mergedData.timeSlots.length}`);
+    
+    return mergedData;
   } catch (error) {
     console.error('Error loading server data:', error);
     return {

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calendar, Clock, Plus, Trash2, Edit, MapPin, Users, MessageCircle, CheckCircle, Bell, X, Video } from 'lucide-react';
+import { Calendar, Clock, Plus, Trash2, Edit, MapPin, Users, MessageCircle, CheckCircle, Bell, X, VideoIcon } from 'lucide-react';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { TimeSlot, Lesson } from '../../types';
@@ -545,7 +545,7 @@ const TeacherSlots: React.FC = () => {
               {selectedSlot && selectedSlot.isBooked && selectedSlot.format === 'online' && (
                 <div className="flex items-center gap-2">
                   <div className="flex items-center space-x-1 px-3 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                    <Video className="h-4 w-4" />
+                    <VideoIcon className="h-4 w-4" />
                     <span className="text-sm">Видеозвонок</span>
                   </div>
                 </div>
@@ -569,7 +569,7 @@ const TeacherSlots: React.FC = () => {
                   {/* Видеозвонок */}
                   {selectedLesson.format === 'online' && (
                     <div className="flex items-center space-x-1 px-3 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                      <Video className="h-4 w-4" />
+                      <VideoIcon className="h-4 w-4" />
                       <span className="text-sm">Видеозвонок</span>
                     </div>
                   )}

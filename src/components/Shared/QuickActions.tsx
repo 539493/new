@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Calendar, MessageCircle, BookOpen, Users, Settings, Bell, Star, Clock, Target, TrendingUp, Zap, Heart, Award, Globe, Phone, Video, MapPin } from 'lucide-react';
+import { Plus, Calendar, MessageCircle, BookOpen, Users, Settings, Bell, Star, Clock, Target, TrendingUp, Zap, Heart, Award, Globe, Phone, VideoIcon, MapPin } from 'lucide-react';
 
 interface QuickAction {
   id: string;

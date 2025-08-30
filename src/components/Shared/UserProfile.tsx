@@ -24,7 +24,7 @@ import {
   Send,
   Play,
   Image as ImageIcon,
-  Video,
+  VideoIcon,
   FileText,
   Edit,
   Settings

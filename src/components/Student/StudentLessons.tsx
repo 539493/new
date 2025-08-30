@@ -129,7 +129,7 @@ const StudentLessons: React.FC = () => {
               {/* Видеозвонок */}
               {lesson.format === 'online' && (
                 <div className="flex items-center space-x-1 px-3 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                  <Video className="h-4 w-4" />
+                  <VideoIcon className="h-4 w-4" />
                   <span className="text-sm">Видеозвонок</span>
                 </div>
               )}
