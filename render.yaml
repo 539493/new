@@ -2,8 +2,8 @@ services:
   - type: web
     name: tutoring-platform-am88
     env: node
-    buildCommand: npm run render:build
-    startCommand: npm run render:start
+    buildCommand: npm run build
+    startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
