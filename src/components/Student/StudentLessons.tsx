@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calendar, Clock, MessageCircle, User, MapPin, Users, X, Edit, Trash2 } from 'lucide-react';
+import { Calendar, Clock, MessageCircle, User, MapPin, Users, X, Edit, Trash2, Video } from 'lucide-react';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -12,6 +12,14 @@ const StudentLessons: React.FC = () => {
   const [newDate, setNewDate] = useState('');
   const [newTime, setNewTime] = useState('');
   // Удаляю переменные и функции, связанные с видеозвонком
+
+  // Отладочная информация
+  console.log('StudentLessons - Debug Info:', {
+    totalLessons: lessons.length,
+    user: user,
+    userLessons: lessons.filter(lesson => lesson.studentId === user?.id),
+    allLessons: lessons
+  });
 
   const userLessons = lessons.filter(lesson => lesson.studentId === user?.id);
   const scheduledLessons = userLessons.filter(lesson => lesson.status === 'scheduled');
@@ -129,7 +137,7 @@ const StudentLessons: React.FC = () => {
               {/* Видеозвонок */}
               {lesson.format === 'online' && (
                 <div className="flex items-center space-x-1 px-3 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                  <VideoIcon className="h-4 w-4" />
+                  <Video className="h-4 w-4" />
                   <span className="text-sm">Видеозвонок</span>
                 </div>
               )}

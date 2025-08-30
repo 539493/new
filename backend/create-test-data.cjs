@@ -259,13 +259,68 @@ const testTimeSlots = [
   }
 ];
 
+// Создаем тестовые забронированные уроки
+const testLessons = [
+  {
+    id: 'lesson_1',
+    teacherId: 'teacher_1',
+    teacherName: 'Анна Петрова',
+    studentId: 'student_1',
+    studentName: 'Алексей Иванов',
+    subject: 'Математика',
+    date: '2025-01-20',
+    startTime: '14:00',
+    endTime: '15:00',
+    duration: 60,
+    format: 'online',
+    lessonType: 'regular',
+    price: 1500,
+    status: 'scheduled',
+    comment: 'Подготовка к ЕГЭ по математике'
+  },
+  {
+    id: 'lesson_2',
+    teacherId: 'teacher_2',
+    teacherName: 'Михаил Сидоров',
+    studentId: 'student_1',
+    studentName: 'Алексей Иванов',
+    subject: 'Химия',
+    date: '2025-01-22',
+    startTime: '16:00',
+    endTime: '17:00',
+    duration: 60,
+    format: 'online',
+    lessonType: 'trial',
+    price: 2000,
+    status: 'scheduled',
+    comment: 'Пробный урок по химии'
+  },
+  {
+    id: 'lesson_3',
+    teacherId: 'teacher_3',
+    teacherName: 'Елена Козлова',
+    studentId: 'student_1',
+    studentName: 'Алексей Иванов',
+    subject: 'Английский язык',
+    date: '2025-01-19',
+    startTime: '12:00',
+    endTime: '12:45',
+    duration: 45,
+    format: 'online',
+    lessonType: 'regular',
+    price: 800,
+    status: 'completed',
+    comment: 'Разговорный английский'
+  }
+];
+
 // Создаем структуру данных
 const serverData = {
   teacherProfiles: testTeacherProfiles,
   studentProfiles: testStudentProfiles,
   overbookingRequests: [],
   timeSlots: testTimeSlots,
-  lessons: [],
+  lessons: testLessons,
   chats: [],
   posts: [],
   allUsers: [
@@ -337,4 +392,5 @@ console.log(`📁 Файл сохранен: ${dataFile}`);
 console.log(`👨‍🏫 Преподавателей: ${Object.keys(testTeacherProfiles).length}`);
 console.log(`👨‍🎓 Студентов: ${Object.keys(testStudentProfiles).length}`);
 console.log(`📅 Слотов: ${testTimeSlots.length}`);
+console.log(`📚 Уроков: ${testLessons.length}`);
 console.log(`👥 Всего пользователей: ${serverData.allUsers.length}`);

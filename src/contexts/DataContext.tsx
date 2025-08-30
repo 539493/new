@@ -238,6 +238,41 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     }
   };
 
+  // Функция для загрузки уроков с сервера
+  const loadLessonsFromServer = async () => {
+    try {
+      console.log('Loading lessons from server...');
+      const response = await fetch(`${SERVER_URL}/api/lessons`);
+      
+      if (!response.ok) {
+        console.error('Failed to load lessons from server:', response.status);
+        return [];
+      }
+      
+      const serverLessons = await response.json();
+      console.log('Loaded lessons from server:', serverLessons.length, serverLessons);
+      
+      // Объединяем с локальными уроками
+      const localLessons = JSON.parse(localStorage.getItem('tutoring_lessons') || '[]');
+      console.log('Local lessons:', localLessons.length, localLessons);
+      
+      const allLessons = [...localLessons, ...serverLessons];
+      
+      // Убираем дубликаты по ID, приоритет у серверных данных
+      const uniqueLessons = allLessons.filter((lesson, index, self) => 
+        index === self.findIndex(l => l.id === lesson.id)
+      );
+      
+      console.log('Setting lessons in context:', uniqueLessons.length, uniqueLessons);
+      setLessons(uniqueLessons);
+      saveToStorage('tutoring_lessons', uniqueLessons);
+      return uniqueLessons;
+    } catch (error) {
+      console.error('Error loading lessons from server:', error);
+      return [];
+    }
+  };
+
   // Функция для принудительного обновления списка пользователей
   const refreshUsers = () => {
     try {
@@ -250,8 +285,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
   // Функция для принудительного обновления всех данных
   const refreshAllData = () => {
-    // Обновляем пользователей
+    // Обновляем пользователей и уроки
     loadUsersFromServer();
+    loadLessonsFromServer();
     
     // Запрашиваем все слоты и пользователей с сервера
     if (socketRef.current && isConnected) {
@@ -358,8 +394,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     newSocket.on('connect', () => {
       setIsConnected(true);
       
-      // Загружаем пользователей с сервера при подключении
+      // Загружаем пользователей и уроки с сервера при подключении
       loadUsersFromServer();
+      loadLessonsFromServer();
       
       // Синхронизируем локальные слоты с сервером при восстановлении соединения
       const localSlots = loadFromStorage('tutoring_timeSlots', []);
@@ -391,6 +428,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       
       // При ошибке подключения загружаем начальные данные
       loadInitialData();
+      loadLessonsFromServer();
     });
 
     // Получаем все актуальные данные при подключении

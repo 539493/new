@@ -1117,6 +1117,17 @@ app.get('/api/users', (req, res) => {
   }
 });
 
+// Endpoint для получения всех уроков
+app.get('/api/lessons', (req, res) => {
+  try {
+    console.log('Lessons endpoint called, returning', lessons.length, 'lessons');
+    res.json(lessons);
+  } catch (error) {
+    console.error('Error getting lessons:', error);
+    res.status(500).json({ error: 'Failed to get lessons' });
+  }
+});
+
 // Endpoint для регистрации пользователя
 app.post('/api/register', (req, res) => {
   try {
