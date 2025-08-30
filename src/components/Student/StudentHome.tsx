@@ -6,6 +6,7 @@ import { ru } from 'date-fns/locale';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNavigation } from '../../contexts/NavigationContext';
 import { FilterOptions, TimeSlot, User } from '../../types';
 import { io, Socket } from 'socket.io-client';
 import { SERVER_URL, WEBSOCKET_URL } from '../../config';
@@ -18,8 +19,9 @@ import { User as UserIcon } from 'lucide-react';
 
 
 const StudentHome: React.FC = () => {
-  const { getFilteredSlots, bookLesson, timeSlots, isConnected, allUsers, refreshUsers, refreshAllData, forceSyncData } = useData();
+  const { getFilteredSlots, bookLesson, timeSlots, isConnected, allUsers, refreshUsers, refreshAllData, forceSyncData, getOrCreateChat } = useData();
   const { user } = useAuth();
+  const { setActiveTab } = useNavigation();
   
   const [filters, setFilters] = useState<FilterOptions>({});
   const [showFilters, setShowFilters] = useState(false);
@@ -724,9 +726,25 @@ const StudentHome: React.FC = () => {
   };
 
   const handleBookLesson = (teacherId: string) => {
-    // Здесь можно добавить логику для бронирования урока
+    // Находим преподавателя
+    const teacher = allUsers.find(user => user.id === teacherId);
+    if (teacher) {
+      setSelectedTeacherForCalendar(teacher);
+      setShowTeacherCalendarModal(true);
+    }
     setShowTeacherProfilePage(false);
-    // Можно открыть модальное окно для выбора времени
+  };
+
+  const handleMessage = (teacherId: string) => {
+    // Находим преподавателя
+    const teacher = allUsers.find(user => user.id === teacherId);
+    if (teacher && user) {
+      // Создаем или открываем чат с преподавателем
+      getOrCreateChat(user.id, teacherId, user.name, teacher.name);
+      // Переключаемся на вкладку чатов
+      setActiveTab('chats');
+    }
+    setShowTeacherProfilePage(false);
   };
 
   return (
@@ -1472,13 +1490,11 @@ const StudentHome: React.FC = () => {
           onClose={() => setShowTeacherModal(false)}
           onBookLesson={(teacherId) => {
             setShowTeacherModal(false);
-            // Здесь можно добавить логику для бронирования урока
-            console.log('Booking lesson for teacher:', teacherId);
+            handleBookLesson(teacherId);
           }}
           onMessage={(teacherId) => {
             setShowTeacherModal(false);
-            // Здесь можно добавить логику для отправки сообщения
-            console.log('Sending message to teacher:', teacherId);
+            handleMessage(teacherId);
           }}
         />
       )}
@@ -1504,6 +1520,7 @@ const StudentHome: React.FC = () => {
           teacher={selectedTeacher}
           onClose={() => setShowTeacherProfilePage(false)}
           onBookLesson={handleBookLesson}
+          onMessage={handleMessage}
         />
       )}
 

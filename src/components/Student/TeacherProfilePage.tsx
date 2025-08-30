@@ -36,9 +36,10 @@ interface TeacherProfilePageProps {
   teacher: any;
   onClose: () => void;
   onBookLesson: (teacherId: string) => void;
+  onMessage?: (teacherId: string) => void;
 }
 
-const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClose, onBookLesson }) => {
+const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClose, onBookLesson, onMessage }) => {
   const { user } = useAuth();
   const { timeSlots, bookLesson, posts, createPost, addReaction, addComment, sharePost, bookmarkPost, editPost, deletePost } = useData();
   const [isLiked, setIsLiked] = useState(false);
@@ -293,9 +294,18 @@ const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClos
                   <BookOpen className="h-6 w-6" />
                   <span className="text-lg">Записаться на урок</span>
                 </button>
+                {onMessage && (
+                  <button
+                    onClick={() => onMessage(teacher.id)}
+                    className="bg-gradient-to-r from-green-600 to-green-700 text-white px-8 py-4 rounded-2xl font-semibold hover:from-green-700 hover:to-green-800 transition-all duration-200 flex items-center space-x-2 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                  >
+                    <MessageCircle className="h-6 w-6" />
+                    <span className="text-lg">Написать сообщение</span>
+                  </button>
+                )}
                 <button
                   onClick={() => setShowSlots(!showSlots)}
-                  className="bg-gradient-to-r from-green-600 to-green-700 text-white px-8 py-4 rounded-2xl font-semibold hover:from-green-700 hover:to-green-800 transition-all duration-200 flex items-center space-x-2 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                  className="border-2 border-gray-300 text-gray-700 px-8 py-4 rounded-2xl font-semibold hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 flex items-center space-x-2 transform hover:-translate-y-1"
                 >
                   <Calendar className="h-6 w-6" />
                   <span className="text-lg">Слоты ({availableSlots.length})</span>
@@ -304,8 +314,8 @@ const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClos
                   onClick={() => setShowContactInfo(!showContactInfo)}
                   className="border-2 border-gray-300 text-gray-700 px-8 py-4 rounded-2xl font-semibold hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 flex items-center space-x-2 transform hover:-translate-y-1"
                 >
-                  <MessageCircle className="h-6 w-6" />
-                  <span className="text-lg">Связаться</span>
+                  <Eye className="h-6 w-6" />
+                  <span className="text-lg">Контактная информация</span>
                 </button>
               </div>
             </div>
@@ -782,9 +792,12 @@ const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClos
       {/* Booking Modal */}
       {showBookingModal && selectedSlot && (
         <BookingModal
+          isOpen={showBookingModal}
           slot={selectedSlot}
           onClose={() => setShowBookingModal(false)}
           onConfirm={handleConfirmBooking}
+          teacher={teacher}
+          student={user}
         />
       )}
     </div>

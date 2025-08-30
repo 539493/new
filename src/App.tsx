@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { DataProvider } from './contexts/DataContext';
+import { NavigationProvider, useNavigation } from './contexts/NavigationContext';
 import AuthForm from './components/Auth/AuthForm';
 import Navigation from './components/Layout/Navigation';
 import StudentHome from './components/Student/StudentHome';
@@ -18,7 +19,7 @@ import './index.css';
 
 const AppContent: React.FC = () => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState(user?.role === 'teacher' ? 'slots' : 'home');
+  const { activeTab, setActiveTab } = useNavigation();
 
   if (!user) {
     return <AuthForm onSuccess={() => {}} />;
@@ -31,7 +32,7 @@ const AppContent: React.FC = () => {
       case 'slots':
         return user.role === 'teacher' ? <TeacherSlots /> : <StudentHome />;
       case 'calendar':
-        return user.role === 'student' ? <StudentCalendar /> : <TeacherCalendar />;
+        return user.role === 'student' ? <StudentCalendar onClose={() => setActiveTab('home')} /> : <TeacherCalendar />;
       case 'lessons':
         return user.role === 'student' ? <StudentLessons /> : null;
       case 'students':
@@ -56,13 +57,18 @@ const AppContent: React.FC = () => {
 };
 
 const App: React.FC = () => {
+  const { user } = useAuth();
+  const initialTab = user?.role === 'teacher' ? 'slots' : 'home';
+  
   return (
     <AuthProvider>
       <DataProvider>
-        <Routes>
-          <Route path="/teacher/:teacherId" element={<TeacherProfilePage teacher={{}} onClose={() => {}} onBookLesson={() => {}} />} />
-          <Route path="*" element={<AppContent />} />
-        </Routes>
+        <NavigationProvider initialTab={initialTab}>
+          <Routes>
+            <Route path="/teacher/:teacherId" element={<TeacherProfilePage teacher={{}} onClose={() => {}} onBookLesson={() => {}} />} />
+            <Route path="*" element={<AppContent />} />
+          </Routes>
+        </NavigationProvider>
       </DataProvider>
     </AuthProvider>
   );
