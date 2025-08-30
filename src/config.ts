@@ -1,38 +1,15 @@
-// Конфигурация для подключения к серверу
-const getServerUrl = () => {
-  // Используем переменные окружения если они есть
-  if (import.meta.env.VITE_SERVER_URL) {
-    return import.meta.env.VITE_SERVER_URL;
-  }
-  
-  // В продакшене используем внешний сервер
-  if (import.meta.env.PROD) {
-    // На Render используем существующий сервер
-    return 'https://tutoring-platform-am88.onrender.com';
-  }
-  
-  // В разработке используем локальный сервер
-  return 'http://localhost:3001';
-};
+// Конфигурация для разных окружений
+const isProd = import.meta.env.PROD;
 
-const getWebSocketUrl = () => {
-  // Используем переменные окружения если они есть
-  if (import.meta.env.VITE_WEBSOCKET_URL) {
-    return import.meta.env.VITE_WEBSOCKET_URL;
-  }
-  
-  // В продакшене используем внешний сервер
-  if (import.meta.env.PROD) {
-    // На Render используем существующий сервер для WebSocket
-    return 'https://tutoring-platform-am88.onrender.com';
-  }
-  
-  // В разработке используем локальный сервер
-  return 'http://localhost:3001';
-};
+// URL сервера
+export const SERVER_URL = isProd 
+  ? 'https://tutoring-platform-am88.onrender.com' 
+  : 'http://localhost:3001';
 
-export const SERVER_URL = getServerUrl();
-export const WEBSOCKET_URL = getWebSocketUrl();
+// URL WebSocket
+export const WEBSOCKET_URL = isProd 
+  ? 'https://tutoring-platform-am88.onrender.com' 
+  : 'http://localhost:3001';
 
 // URL внешнего сервиса видео чата
 export const EXTERNAL_VIDEO_CHAT_URL = 'https://video-chat-web-lp8d.onrender.com';

@@ -2,21 +2,10 @@ services:
   - type: web
     name: tutoring-platform-am88
     env: node
-    buildCommand: cd backend && npm install
+    buildCommand: npm install && cd backend && npm install && npm run build
     startCommand: cd backend && node server.cjs
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
-        value: 10000
-
-  - type: web
-    name: tutoring-platform-frontend
-    env: node
-    buildCommand: npm install && npm run build
-    startCommand: npx serve -s dist -l $PORT
-    envVars:
-      - key: VITE_SERVER_URL
-        value: https://tutoring-platform-am88.onrender.com
-      - key: VITE_WEBSOCKET_URL
-        value: https://tutoring-platform-am88.onrender.com 
+        value: 10000 

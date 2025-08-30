@@ -49,6 +49,9 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Обслуживание статических файлов фронтенда
+app.use(express.static(path.join(__dirname, '../dist')));
+
 // Создание Socket.IO сервера
 const io = new Server(server, {
   cors: {
@@ -1423,6 +1426,11 @@ app.get('/', (req, res) => {
     timeSlots: timeSlots.length,
     lessons: lessons.length
   });
+});
+
+// Обработчик для SPA маршрутов - должен быть последним
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../dist/index.html'));
 });
 
 // Запуск сервера
