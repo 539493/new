@@ -57,6 +57,7 @@ interface DataContextType {
   markChatAsRead: (chatId: string) => void;
   clearChatMessages: (chatId: string) => void;
   archiveChat: (chatId: string) => void;
+  unarchiveChat: (chatId: string) => void;
   loadChatsFromServer: () => Promise<void>;
 }
 
@@ -635,6 +636,19 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           const updated = prev.map(chat => 
             chat.id === data.chatId 
               ? { ...chat, archived: true }
+              : chat
+          );
+          saveToStorage('tutoring_chats', updated);
+          return updated;
+        });
+      });
+
+      // Слушаем восстановление чата из архива
+      newSocket.on('chatUnarchived', (data: { chatId: string }) => {
+        setChats(prev => {
+          const updated = prev.map(chat => 
+            chat.id === data.chatId 
+              ? { ...chat, archived: false }
               : chat
           );
           saveToStorage('tutoring_chats', updated);
@@ -1786,6 +1800,22 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     }
   };
 
+  const unarchiveChat = (chatId: string) => {
+    setChats(prev => {
+      const updated = prev.map(chat => 
+        chat.id === chatId 
+          ? { ...chat, archived: false }
+          : chat
+      );
+      saveToStorage('tutoring_chats', updated);
+      return updated;
+    });
+
+    if (socketRef.current && isConnected) {
+      socketRef.current.emit('unarchiveChat', { chatId });
+    }
+  };
+
   const loadChatsFromServer = async () => {
     try {
       const response = await fetch(`${SERVER_URL}/api/sync`);
@@ -1904,6 +1934,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         markChatAsRead,
         clearChatMessages,
         archiveChat,
+        unarchiveChat,
         loadChatsFromServer,
       }}
     >

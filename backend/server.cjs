@@ -868,6 +868,17 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Обработка восстановления чата из архива
+  socket.on('unarchiveChat', (data) => {
+    const { chatId } = data;
+    const chat = chats.find(chat => chat.id === chatId);
+    if (chat) {
+      chat.archived = false;
+      saveServerData();
+      io.emit('chatUnarchived', { chatId });
+    }
+  });
+
   // Обработка создания уведомлений
   socket.on('createNotification', (notification) => {
     notifications.push(notification);

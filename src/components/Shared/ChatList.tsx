@@ -41,6 +41,7 @@ const ChatList: React.FC = () => {
     markChatAsRead,
     clearChatMessages,
     archiveChat,
+    unarchiveChat,
     getOrCreateChat,
     loadChatsFromServer
   } = useData();
@@ -222,7 +223,10 @@ const ChatList: React.FC = () => {
 
   // Действия с чатами
   const handleDeleteChat = (chatId: string) => {
-    if (confirm('Вы уверены, что хотите удалить этот чат? Это действие нельзя отменить.')) {
+    const chat = chats.find(c => c.id === chatId);
+    const otherParticipantName = chat ? getOtherParticipantName(chat) : 'пользователем';
+    
+    if (confirm(`Вы уверены, что хотите удалить чат с ${otherParticipantName}? Это действие нельзя отменить.`)) {
       deleteChat(chatId);
       if (selectedChatId === chatId) {
         setSelectedChatId(null);
@@ -238,7 +242,16 @@ const ChatList: React.FC = () => {
   };
 
   const handleClearMessages = (chatId: string) => {
-    if (confirm('Вы уверены, что хотите очистить все сообщения в этом чате?')) {
+    const chat = chats.find(c => c.id === chatId);
+    const messageCount = chat?.messages?.length || 0;
+    
+    if (messageCount === 0) {
+      alert('В этом чате нет сообщений для очистки.');
+      setShowChatMenu(null);
+      return;
+    }
+    
+    if (confirm(`Вы уверены, что хотите очистить все ${messageCount} сообщений в этом чате? Это действие нельзя отменить.`)) {
       clearChatMessages(chatId);
       setShowChatMenu(null);
     }
@@ -250,8 +263,7 @@ const ChatList: React.FC = () => {
   };
 
   const handleUnarchiveChat = (chatId: string) => {
-    // Добавляем функцию для восстановления чата из архива
-    // Пока просто закрываем меню, восстановление будет добавлено позже
+    unarchiveChat(chatId);
     setShowChatMenu(null);
   };
 
@@ -263,6 +275,30 @@ const ChatList: React.FC = () => {
       console.log('Files to upload:', files);
     }
     setShowAttachmentMenu(false);
+  };
+
+  const handleShowProfile = (chatId: string) => {
+    const chat = chats.find(c => c.id === chatId);
+    if (chat) {
+      const otherId = getOtherParticipantId(chat);
+      setProfileUserId(otherId);
+      setShowProfileModal(true);
+    }
+    setShowChatMenu(null);
+  };
+
+  const handleMarkAllAsRead = () => {
+    const unreadChats = chats.filter(chat => 
+      chat.participants.includes(user?.id || '') && 
+      !chat.archived &&
+      chat.messages?.some((msg: any) => 
+        msg.senderId !== user?.id && !msg.isRead
+      )
+    );
+    
+    unreadChats.forEach(chat => {
+      markChatAsRead(chat.id);
+    });
   };
 
   // Закрытие меню при клике вне его
@@ -279,6 +315,19 @@ const ChatList: React.FC = () => {
     };
   }, [showChatMenu]);
 
+  // Подсчет непрочитанных сообщений
+  const getUnreadCount = () => {
+    return chats.filter(chat => 
+      chat.participants.includes(user?.id || '') && 
+      !chat.archived &&
+      chat.messages?.some((msg: any) => 
+        msg.senderId !== user?.id && !msg.isRead
+      )
+    ).length;
+  };
+
+  const unreadCount = getUnreadCount();
+
   return (
     <div className="h-screen bg-gray-50 flex flex-col">
       {/* Header */}
@@ -286,9 +335,22 @@ const ChatList: React.FC = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Мои чаты</h1>
-            <p className="text-gray-600 text-sm">Общайтесь с преподавателями и учениками</p>
+            <p className="text-gray-600 text-sm">
+              {unreadCount > 0 
+                ? `${unreadCount} непрочитанных сообщений` 
+                : 'Общайтесь с преподавателями и учениками'
+              }
+            </p>
           </div>
           <div className="flex items-center space-x-3">
+            {unreadCount > 0 && (
+              <button
+                onClick={handleMarkAllAsRead}
+                className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
+              >
+                Отметить все как прочитанные
+              </button>
+            )}
             <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
               <Settings className="w-5 h-5" />
             </button>
@@ -419,9 +481,7 @@ const ChatList: React.FC = () => {
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            setProfileUserId(otherId);
-                            setShowProfileModal(true);
-                            setShowChatMenu(null);
+                            handleShowProfile(chat.id);
                           }}
                           className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2"
                         >
@@ -688,7 +748,115 @@ const ChatList: React.FC = () => {
                   <ArrowLeft className="w-5 h-5" />
                 </button>
               </div>
-              {/* Здесь будет содержимое профиля */}
+              
+              {(() => {
+                const profile = getUserProfileById(profileUserId);
+                if (!profile) {
+                  return (
+                    <div className="text-center py-8">
+                      <p className="text-gray-500">Профиль пользователя не найден</p>
+                    </div>
+                  );
+                }
+                
+                return (
+                  <div className="space-y-6">
+                    {/* Avatar and basic info */}
+                    <div className="flex items-center space-x-4">
+                      {profile.avatar ? (
+                        <img 
+                          src={profile.avatar} 
+                          alt="avatar" 
+                          className="h-16 w-16 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="h-16 w-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                          <span className="text-white font-medium text-lg">
+                            {profile.name?.charAt(0).toUpperCase() || 'U'}
+                          </span>
+                        </div>
+                      )}
+                      <div>
+                        <h3 className="text-lg font-semibold">{profile.name || 'Неизвестный пользователь'}</h3>
+                        <p className="text-gray-500">{profile.role === 'teacher' ? 'Преподаватель' : 'Ученик'}</p>
+                        {profile.email && (
+                          <p className="text-sm text-gray-400">{profile.email}</p>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Profile details */}
+                    {profile.profile && (
+                      <div className="space-y-4">
+                        {profile.profile.bio && (
+                          <div>
+                            <h4 className="font-medium text-gray-900 mb-2">О себе</h4>
+                            <p className="text-gray-600">{profile.profile.bio}</p>
+                          </div>
+                        )}
+                        
+                        {profile.profile.subjects && profile.profile.subjects.length > 0 && (
+                          <div>
+                            <h4 className="font-medium text-gray-900 mb-2">Предметы</h4>
+                            <div className="flex flex-wrap gap-2">
+                              {profile.profile.subjects.map((subject: string, index: number) => (
+                                <span 
+                                  key={index}
+                                  className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
+                                >
+                                  {subject}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {profile.profile.experience && (
+                          <div>
+                            <h4 className="font-medium text-gray-900 mb-2">Опыт</h4>
+                            <p className="text-gray-600">
+                              {profile.profile.experience === 'beginner' && 'Начинающий'}
+                              {profile.profile.experience === 'experienced' && 'Опытный'}
+                              {profile.profile.experience === 'professional' && 'Профессионал'}
+                            </p>
+                          </div>
+                        )}
+                        
+                        {profile.profile.city && (
+                          <div>
+                            <h4 className="font-medium text-gray-900 mb-2">Город</h4>
+                            <p className="text-gray-600">{profile.profile.city}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* Action buttons */}
+                    <div className="flex space-x-3 pt-4 border-t">
+                      <button
+                        onClick={() => {
+                          setShowProfileModal(false);
+                          // Здесь можно добавить логику для начала звонка
+                        }}
+                        className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
+                      >
+                        <Phone className="w-4 h-4" />
+                        <span>Позвонить</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowProfileModal(false);
+                          // Здесь можно добавить логику для видео звонка
+                        }}
+                        className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center space-x-2"
+                      >
+                        <Video className="w-4 h-4" />
+                        <span>Видео</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>
