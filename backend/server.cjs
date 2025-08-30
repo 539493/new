@@ -1418,7 +1418,7 @@ app.get('/api/users/:id', (req, res) => {
 });
 
 // Простой endpoint для проверки работы сервера
-app.get('/', (req, res) => {
+app.get('/api/health', (req, res) => {
   res.json({ 
     message: 'Tutoring Platform WebSocket Server',
     status: 'running',
