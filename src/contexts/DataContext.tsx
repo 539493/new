@@ -57,6 +57,7 @@ interface DataContextType {
   markChatAsRead: (chatId: string) => void;
   clearChatMessages: (chatId: string) => void;
   archiveChat: (chatId: string) => void;
+  loadChatsFromServer: () => Promise<void>;
 }
 
 export const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -205,6 +206,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     saveToStorage('tutoring_chats', savedChats);
     saveToStorage('tutoring_studentProfiles', initialData.studentProfiles);
     
+    // Загружаем чаты с сервера
+    loadChatsFromServer();
   };
 
   // Функция для загрузки пользователей с сервера
@@ -592,6 +595,51 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           }
           return chat;
         }));
+      });
+
+      // Обработчики событий чатов
+      newSocket.on('chatDeleted', (data: { chatId: string }) => {
+        setChats(prev => {
+          const updated = prev.filter(chat => chat.id !== data.chatId);
+          saveToStorage('tutoring_chats', updated);
+          return updated;
+        });
+      });
+
+      newSocket.on('chatMarkedAsRead', (data: { chatId: string }) => {
+        setChats(prev => {
+          const updated = prev.map(chat => 
+            chat.id === data.chatId 
+              ? { ...chat, messages: chat.messages.map(msg => ({ ...msg, isRead: true })) }
+              : chat
+          );
+          saveToStorage('tutoring_chats', updated);
+          return updated;
+        });
+      });
+
+      newSocket.on('chatMessagesCleared', (data: { chatId: string }) => {
+        setChats(prev => {
+          const updated = prev.map(chat => 
+            chat.id === data.chatId 
+              ? { ...chat, messages: [] }
+              : chat
+          );
+          saveToStorage('tutoring_chats', updated);
+          return updated;
+        });
+      });
+
+      newSocket.on('chatArchived', (data: { chatId: string }) => {
+        setChats(prev => {
+          const updated = prev.map(chat => 
+            chat.id === data.chatId 
+              ? { ...chat, archived: true }
+              : chat
+          );
+          saveToStorage('tutoring_chats', updated);
+          return updated;
+        });
       });
 
       // Слушаем удаление слота
@@ -1379,7 +1427,19 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       isRead: false,
     };
 
-    // Не добавляем сообщение локально, ждем receiveMessage от сервера
+    // Добавляем сообщение локально сразу для мгновенного отображения
+    setChats(prev => prev.map(chat => {
+      if (chat.id === chatId) {
+        const updatedChat = {
+          ...chat,
+          messages: [...chat.messages, newMessage],
+          lastMessage: newMessage,
+        };
+        saveToStorage('tutoring_chats', prev.map(c => c.id === chat.id ? updatedChat : c));
+        return updatedChat;
+      }
+      return chat;
+    }));
 
     // Отправляем сообщение на сервер для других клиентов
     if (socketRef.current && isConnected) {
@@ -1703,6 +1763,21 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     }
   };
 
+  const loadChatsFromServer = async () => {
+    try {
+      const response = await fetch(`${SERVER_URL}/api/sync`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.chats) {
+          setChats(data.chats);
+          saveToStorage('tutoring_chats', data.chats);
+        }
+      }
+    } catch (error) {
+      console.warn('Error loading chats from server:', error);
+    }
+  };
+
   return (
     <DataContext.Provider
       value={{
@@ -1806,6 +1881,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         markChatAsRead,
         clearChatMessages,
         archiveChat,
+        loadChatsFromServer,
       }}
     >
       {children}

@@ -817,6 +817,52 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Обработка удаления чата
+  socket.on('deleteChat', (data) => {
+    const { chatId } = data;
+    const chatIndex = chats.findIndex(chat => chat.id === chatId);
+    if (chatIndex !== -1) {
+      chats.splice(chatIndex, 1);
+      saveServerData();
+      io.emit('chatDeleted', { chatId });
+    }
+  });
+
+  // Обработка отметки чата как прочитанного
+  socket.on('markChatAsRead', (data) => {
+    const { chatId } = data;
+    const chat = chats.find(chat => chat.id === chatId);
+    if (chat) {
+      chat.messages.forEach(message => {
+        message.isRead = true;
+      });
+      saveServerData();
+      io.emit('chatMarkedAsRead', { chatId });
+    }
+  });
+
+  // Обработка очистки сообщений чата
+  socket.on('clearChatMessages', (data) => {
+    const { chatId } = data;
+    const chat = chats.find(chat => chat.id === chatId);
+    if (chat) {
+      chat.messages = [];
+      saveServerData();
+      io.emit('chatMessagesCleared', { chatId });
+    }
+  });
+
+  // Обработка архивирования чата
+  socket.on('archiveChat', (data) => {
+    const { chatId } = data;
+    const chat = chats.find(chat => chat.id === chatId);
+    if (chat) {
+      chat.archived = true;
+      saveServerData();
+      io.emit('chatArchived', { chatId });
+    }
+  });
+
   socket.on('disconnect', () => {
     // Удаляем сокет из всех комнат
     for (const roomId in rooms) {

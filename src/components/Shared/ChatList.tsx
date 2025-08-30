@@ -41,7 +41,8 @@ const ChatList: React.FC = () => {
     markChatAsRead,
     clearChatMessages,
     archiveChat,
-    getOrCreateChat
+    getOrCreateChat,
+    loadChatsFromServer
   } = useData();
   const { user } = useAuth();
   
@@ -56,6 +57,7 @@ const ChatList: React.FC = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
+  const [showArchivedChats, setShowArchivedChats] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -69,6 +71,28 @@ const ChatList: React.FC = () => {
   useEffect(() => {
     scrollToBottom();
   }, [selectedChatId, chats]);
+
+  // Загружаем чаты при монтировании компонента
+  useEffect(() => {
+    if (user) {
+      loadChatsFromServer();
+    }
+  }, [user, loadChatsFromServer]);
+
+  // Автоматически отмечаем сообщения как прочитанные при открытии чата
+  useEffect(() => {
+    if (selectedChatId && user) {
+      const chat = chats.find(c => c.id === selectedChatId);
+      if (chat) {
+        const hasUnreadMessages = chat.messages?.some((msg: any) => 
+          msg.senderId !== user.id && !msg.isRead
+        );
+        if (hasUnreadMessages) {
+          markChatAsRead(selectedChatId);
+        }
+      }
+    }
+  }, [selectedChatId, chats, user, markChatAsRead]);
 
   // Получение профиля пользователя
   const getUserProfileById = (userId: string): any => {
@@ -110,7 +134,9 @@ const ChatList: React.FC = () => {
   // Фильтрация чатов
   const userChats = chats.filter(chat => chat.participants.includes(user?.id || ''));
   const filteredChats = userChats.filter(chat => {
-    if (chat.archived) return false;
+    // Показываем архивированные чаты только если включен соответствующий флаг
+    if (chat.archived && !showArchivedChats) return false;
+    if (!chat.archived && showArchivedChats) return false;
     
     const otherParticipantName = chat.participantNames.find(name => 
       name !== user?.name
@@ -210,6 +236,12 @@ const ChatList: React.FC = () => {
     setShowChatMenu(null);
   };
 
+  const handleUnarchiveChat = (chatId: string) => {
+    // Добавляем функцию для восстановления чата из архива
+    // Пока просто закрываем меню, восстановление будет добавлено позже
+    setShowChatMenu(null);
+  };
+
   // Обработка вложений
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -246,6 +278,16 @@ const ChatList: React.FC = () => {
           <div className="flex items-center space-x-3">
             <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
               <Settings className="w-5 h-5" />
+            </button>
+            <button 
+              onClick={() => setShowArchivedChats(!showArchivedChats)}
+              className={`px-3 py-1 text-sm rounded-lg transition-colors ${
+                showArchivedChats 
+                  ? 'bg-gray-200 text-gray-700' 
+                  : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+              }`}
+            >
+              {showArchivedChats ? 'Активные' : 'Архив'}
             </button>
             <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
               <Plus className="w-5 h-5" />
@@ -395,6 +437,19 @@ const ChatList: React.FC = () => {
                           <Archive className="w-4 h-4" />
                           <span>Архивировать</span>
                         </button>
+                        {chat.archived && (
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleUnarchiveChat(chat.id);
+                            }}
+                            className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2"
+                          >
+                            <Archive className="w-4 h-4" />
+                            <span>Восстановить</span>
+                          </button>
+                        )}
                         <button
                           onClick={(e) => {
                             e.preventDefault();
