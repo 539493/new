@@ -428,13 +428,63 @@ const StudentHome: React.FC = () => {
   const filteredTeachers = React.useMemo(() => {
     let teachers = allTeachers;
 
-    // Применяем фильтры по слотам
+    // Применяем фильтры по слотам и профилям преподавателей
     if (Object.keys(filters).length > 0 || selectedDate || selectedTimeRange) {
-      // Если есть фильтры, показываем только тех преподавателей, у которых есть подходящие слоты
+      console.log('Применяем фильтры:', filters);
+      console.log('Всего преподавателей до фильтрации:', allTeachers.length);
+      
       teachers = allTeachers.filter(teacher => {
+        const profile = teacher.profile as any;
+        
+        // Проверяем фильтры по профилю преподавателя
+        if (filters.subject && filters.subject !== '') {
+          // Проверяем, преподает ли преподаватель этот предмет
+          if (!profile?.subjects || !profile.subjects.includes(filters.subject)) {
+            console.log(`Преподаватель ${teacher.name} отфильтрован: не преподает ${filters.subject}`);
+            return false;
+          }
+        }
+        
+        if (filters.experience && filters.experience !== '') {
+          if (profile?.experience !== filters.experience) {
+            console.log(`Преподаватель ${teacher.name} отфильтрован: опыт не совпадает`);
+            return false;
+          }
+        }
+        
+        if (filters.format && filters.format !== '') {
+          if (!profile?.formats || !profile.formats.includes(filters.format)) {
+            console.log(`Преподаватель ${teacher.name} отфильтрован: формат не совпадает`);
+            return false;
+          }
+        }
+        
+        if (filters.city && filters.city !== '') {
+          if (!profile?.city || !profile.city.toLowerCase().includes(filters.city.toLowerCase())) {
+            console.log(`Преподаватель ${teacher.name} отфильтрован: город не совпадает`);
+            return false;
+          }
+        }
+        
+        if (filters.minRating && filters.minRating > 0) {
+          if ((profile?.rating || 0) < filters.minRating) {
+            console.log(`Преподаватель ${teacher.name} отфильтрован: рейтинг ниже ${filters.minRating}`);
+            return false;
+          }
+        }
+        
+        // Также проверяем, есть ли у преподавателя подходящие слоты
         const teacherSlots = filteredSlots.filter(slot => slot.teacherId === teacher.id);
-        return teacherSlots.length > 0;
+        if (teacherSlots.length === 0) {
+          console.log(`Преподаватель ${teacher.name} отфильтрован: нет подходящих слотов`);
+          return false;
+        }
+        
+        console.log(`Преподаватель ${teacher.name} прошел все фильтры`);
+        return true;
       });
+      
+      console.log('Преподавателей после фильтрации:', teachers.length);
     }
 
     // Применяем поиск по имени преподавателя, предметам или городу
