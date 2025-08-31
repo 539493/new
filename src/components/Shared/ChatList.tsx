@@ -227,18 +227,28 @@ const ChatList: React.FC = () => {
     const otherParticipantName = chat ? getOtherParticipantName(chat) : 'пользователем';
     
     if (confirm(`Вы уверены, что хотите удалить чат с ${otherParticipantName}? Это действие нельзя отменить.`)) {
-      deleteChat(chatId);
-      if (selectedChatId === chatId) {
-        setSelectedChatId(null);
+      try {
+        deleteChat(chatId);
+        if (selectedChatId === chatId) {
+          setSelectedChatId(null);
+        }
+        setShowChatMenu(null);
+        setShowDeleteConfirm(null);
+      } catch (error) {
+        console.error('Error deleting chat:', error);
+        alert('Ошибка при удалении чата. Попробуйте еще раз.');
       }
-      setShowChatMenu(null);
-      setShowDeleteConfirm(null);
     }
   };
 
   const handleMarkAsRead = (chatId: string) => {
-    markChatAsRead(chatId);
-    setShowChatMenu(null);
+    try {
+      markChatAsRead(chatId);
+      setShowChatMenu(null);
+    } catch (error) {
+      console.error('Error marking chat as read:', error);
+      alert('Ошибка при отметке чата как прочитанного.');
+    }
   };
 
   const handleClearMessages = (chatId: string) => {
@@ -252,19 +262,44 @@ const ChatList: React.FC = () => {
     }
     
     if (confirm(`Вы уверены, что хотите очистить все ${messageCount} сообщений в этом чате? Это действие нельзя отменить.`)) {
-      clearChatMessages(chatId);
-      setShowChatMenu(null);
+      try {
+        clearChatMessages(chatId);
+        setShowChatMenu(null);
+      } catch (error) {
+        console.error('Error clearing messages:', error);
+        alert('Ошибка при очистке сообщений.');
+      }
     }
   };
 
   const handleArchiveChat = (chatId: string) => {
-    archiveChat(chatId);
-    setShowChatMenu(null);
+    try {
+      archiveChat(chatId);
+      setShowChatMenu(null);
+      // Если архивируем выбранный чат, снимаем выделение
+      if (selectedChatId === chatId) {
+        setSelectedChatId(null);
+      }
+    } catch (error) {
+      console.error('Error archiving chat:', error);
+      alert('Ошибка при архивировании чата.');
+    }
   };
 
   const handleUnarchiveChat = (chatId: string) => {
-    unarchiveChat(chatId);
-    setShowChatMenu(null);
+    try {
+      unarchiveChat(chatId);
+      setShowChatMenu(null);
+    } catch (error) {
+      console.error('Error unarchiving chat:', error);
+      alert('Ошибка при восстановлении чата.');
+    }
+  };
+
+  const handleCreateNewChat = () => {
+    // Здесь можно добавить логику для создания нового чата
+    // Например, открыть модальное окно для выбора пользователя
+    alert('Функция создания нового чата будет добавлена в следующем обновлении.');
   };
 
   // Обработка вложений
@@ -278,13 +313,25 @@ const ChatList: React.FC = () => {
   };
 
   const handleShowProfile = (chatId: string) => {
-    const chat = chats.find(c => c.id === chatId);
-    if (chat) {
-      const otherId = getOtherParticipantId(chat);
-      setProfileUserId(otherId);
-      setShowProfileModal(true);
+    try {
+      const chat = chats.find(c => c.id === chatId);
+      if (chat) {
+        const otherId = getOtherParticipantId(chat);
+        if (otherId) {
+          setProfileUserId(otherId);
+          setShowProfileModal(true);
+        } else {
+          alert('Не удалось определить пользователя для показа профиля.');
+        }
+      } else {
+        alert('Чат не найден.');
+      }
+      setShowChatMenu(null);
+    } catch (error) {
+      console.error('Error showing profile:', error);
+      alert('Ошибка при открытии профиля пользователя.');
+      setShowChatMenu(null);
     }
-    setShowChatMenu(null);
   };
 
   const handleMarkAllAsRead = () => {
@@ -364,7 +411,11 @@ const ChatList: React.FC = () => {
             >
               {showArchivedChats ? 'Активные' : 'Архив'}
             </button>
-            <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+            <button 
+              onClick={handleCreateNewChat}
+              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              title="Создать новый чат"
+            >
               <Plus className="w-5 h-5" />
             </button>
           </div>
@@ -444,6 +495,11 @@ const ChatList: React.FC = () => {
                         <div className="flex items-center justify-between">
                           <h3 className="text-sm font-semibold text-gray-900 truncate">
                             {getOtherParticipantName(chat)}
+                            {chat.archived && (
+                              <span className="ml-2 text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded">
+                                Архив
+                              </span>
+                            )}
                           </h3>
                           {chat.lastMessage && (
                             <span className="text-xs text-gray-400">
