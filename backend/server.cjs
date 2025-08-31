@@ -944,11 +944,19 @@ io.on('connection', (socket) => {
   // Обработка удаления чата
   socket.on('deleteChat', (data) => {
     const { chatId } = data;
+    console.log('Server: deleteChat event received for chatId:', chatId);
+    console.log('Server: Current chats count:', chats.length);
+    
     const chatIndex = chats.findIndex(chat => chat.id === chatId);
     if (chatIndex !== -1) {
+      const deletedChat = chats[chatIndex];
       chats.splice(chatIndex, 1);
       saveServerData();
+      console.log(`Server: Chat ${chatId} deleted. New count: ${chats.length}`);
       io.emit('chatDeleted', { chatId });
+      console.log('Server: chatDeleted event sent to all clients');
+    } else {
+      console.warn('Server: Chat not found for deletion:', chatId);
     }
   });
 

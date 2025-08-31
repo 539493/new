@@ -600,8 +600,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
       // Обработчики событий чатов
       newSocket.on('chatDeleted', (data: { chatId: string }) => {
+        console.log('chatDeleted event received:', data);
         setChats(prev => {
           const updated = prev.filter(chat => chat.id !== data.chatId);
+          console.log(`Chat ${data.chatId} removed from state. Total chats: ${updated.length}`);
           saveToStorage('tutoring_chats', updated);
           return updated;
         });
@@ -1771,14 +1773,27 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
   // Функции для управления чатами
   const deleteChat = (chatId: string) => {
+    console.log('deleteChat called with chatId:', chatId);
+    console.log('Current chats count:', chats.length);
+    
     setChats(prev => {
+      const chatToDelete = prev.find(chat => chat.id === chatId);
+      if (!chatToDelete) {
+        console.warn('Chat not found for deletion:', chatId);
+        return prev;
+      }
+      
       const updated = prev.filter(chat => chat.id !== chatId);
+      console.log(`Chat ${chatId} removed. New count: ${updated.length}`);
       saveToStorage('tutoring_chats', updated);
       return updated;
     });
 
     if (socketRef.current && isConnected) {
+      console.log('Sending deleteChat event to server');
       socketRef.current.emit('deleteChat', { chatId });
+    } else {
+      console.warn('Socket not connected, chat deletion not synced to server');
     }
   };
 

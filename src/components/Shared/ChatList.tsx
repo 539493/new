@@ -224,23 +224,40 @@ const ChatList: React.FC = () => {
   // Действия с чатами
   const handleDeleteChat = (chatId: string) => {
     console.log('handleDeleteChat called with chatId:', chatId);
+    console.log('Current chats in component:', chats.length);
+    
     const chat = chats.find(c => c.id === chatId);
     const otherParticipantName = chat ? getOtherParticipantName(chat) : 'пользователем';
     
     if (confirm(`Вы уверены, что хотите удалить чат с ${otherParticipantName}? Это действие нельзя отменить.`)) {
       try {
-        console.log('Deleting chat:', chatId);
+        console.log('User confirmed deletion. Deleting chat:', chatId);
         deleteChat(chatId);
+        
+        // Принудительно снимаем выделение с удаляемого чата
         if (selectedChatId === chatId) {
+          console.log('Removing selection from deleted chat');
           setSelectedChatId(null);
         }
+        
+        // Закрываем меню
         setShowChatMenu(null);
         setShowDeleteConfirm(null);
-        console.log('Chat deleted successfully');
+        
+        // Принудительно обновляем состояние через небольшую задержку
+        setTimeout(() => {
+          console.log('Forcing state update after chat deletion');
+          // Это заставит компонент перерендериться
+          setShowChatMenu(null);
+        }, 100);
+        
+        console.log('Chat deletion process completed');
       } catch (error) {
         console.error('Error deleting chat:', error);
         alert('Ошибка при удалении чата. Попробуйте еще раз.');
       }
+    } else {
+      console.log('User cancelled chat deletion');
     }
   };
 
