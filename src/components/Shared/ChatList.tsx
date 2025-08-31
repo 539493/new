@@ -367,7 +367,12 @@ const ChatList: React.FC = () => {
   // Закрытие меню при клике вне его
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (showChatMenu && !(event.target as Element).closest('.chat-menu')) {
+      const target = event.target as Element;
+      const isMenuButton = target.closest('button[onClick*="setShowChatMenu"]');
+      const isMenuContent = target.closest('.chat-menu');
+      
+      if (showChatMenu && !isMenuButton && !isMenuContent) {
+        console.log('Click outside menu detected, closing menu');
         setShowChatMenu(null);
       }
     };
@@ -469,7 +474,7 @@ const ChatList: React.FC = () => {
                 return (
                   <div
                     key={chat.id}
-                    className={`relative p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
+                    className={`relative p-4 hover:bg-gray-50 cursor-pointer transition-colors chat-menu ${
                       isSelected ? 'bg-blue-50 border-r-2 border-blue-500' : ''
                     }`}
                     onClick={() => setSelectedChatId(chat.id)}
@@ -549,7 +554,7 @@ const ChatList: React.FC = () => {
 
                     {/* Context Menu */}
                     {showChatMenu === chat.id && (
-                      <div className="absolute right-2 top-12 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10 min-w-[180px]">
+                      <div className="absolute right-2 top-12 bg-white border border-gray-200 rounded-lg shadow-xl py-1 z-50 min-w-[180px]">
                         <button
                           onClick={(e) => {
                             console.log('Profile button clicked for chat:', chat.id);
@@ -557,7 +562,7 @@ const ChatList: React.FC = () => {
                             e.stopPropagation();
                             handleShowProfile(chat.id);
                           }}
-                          className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2"
+                          className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2 transition-colors"
                         >
                           <User className="w-4 h-4" />
                           <span>Профиль</span>
@@ -569,7 +574,7 @@ const ChatList: React.FC = () => {
                             e.stopPropagation();
                             handleMarkAsRead(chat.id);
                           }}
-                          className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2"
+                          className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2 transition-colors"
                         >
                           <Eye className="w-4 h-4" />
                           <span>Отметить как прочитанное</span>
@@ -581,7 +586,7 @@ const ChatList: React.FC = () => {
                             e.stopPropagation();
                             handleArchiveChat(chat.id);
                           }}
-                          className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2"
+                          className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2 transition-colors"
                         >
                           <Archive className="w-4 h-4" />
                           <span>Архивировать</span>
@@ -594,7 +599,7 @@ const ChatList: React.FC = () => {
                               e.stopPropagation();
                               handleUnarchiveChat(chat.id);
                             }}
-                            className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2"
+                            className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2 transition-colors"
                           >
                             <Archive className="w-4 h-4" />
                             <span>Восстановить</span>
@@ -607,7 +612,7 @@ const ChatList: React.FC = () => {
                             e.stopPropagation();
                             handleClearMessages(chat.id);
                           }}
-                          className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2"
+                          className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2 transition-colors"
                         >
                           <Trash2 className="w-4 h-4" />
                           <span>Очистить сообщения</span>
@@ -620,7 +625,7 @@ const ChatList: React.FC = () => {
                             e.stopPropagation();
                             handleDeleteChat(chat.id);
                           }}
-                          className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
+                          className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2 transition-colors"
                         >
                           <Trash2 className="w-4 h-4" />
                           <span>Удалить чат</span>
