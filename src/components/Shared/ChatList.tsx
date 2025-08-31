@@ -223,17 +223,20 @@ const ChatList: React.FC = () => {
 
   // Действия с чатами
   const handleDeleteChat = (chatId: string) => {
+    console.log('handleDeleteChat called with chatId:', chatId);
     const chat = chats.find(c => c.id === chatId);
     const otherParticipantName = chat ? getOtherParticipantName(chat) : 'пользователем';
     
     if (confirm(`Вы уверены, что хотите удалить чат с ${otherParticipantName}? Это действие нельзя отменить.`)) {
       try {
+        console.log('Deleting chat:', chatId);
         deleteChat(chatId);
         if (selectedChatId === chatId) {
           setSelectedChatId(null);
         }
         setShowChatMenu(null);
         setShowDeleteConfirm(null);
+        console.log('Chat deleted successfully');
       } catch (error) {
         console.error('Error deleting chat:', error);
         alert('Ошибка при удалении чата. Попробуйте еще раз.');
@@ -242,9 +245,11 @@ const ChatList: React.FC = () => {
   };
 
   const handleMarkAsRead = (chatId: string) => {
+    console.log('handleMarkAsRead called with chatId:', chatId);
     try {
       markChatAsRead(chatId);
       setShowChatMenu(null);
+      console.log('Chat marked as read successfully');
     } catch (error) {
       console.error('Error marking chat as read:', error);
       alert('Ошибка при отметке чата как прочитанного.');
@@ -252,6 +257,7 @@ const ChatList: React.FC = () => {
   };
 
   const handleClearMessages = (chatId: string) => {
+    console.log('handleClearMessages called with chatId:', chatId);
     const chat = chats.find(c => c.id === chatId);
     const messageCount = chat?.messages?.length || 0;
     
@@ -263,8 +269,10 @@ const ChatList: React.FC = () => {
     
     if (confirm(`Вы уверены, что хотите очистить все ${messageCount} сообщений в этом чате? Это действие нельзя отменить.`)) {
       try {
+        console.log('Clearing messages for chat:', chatId);
         clearChatMessages(chatId);
         setShowChatMenu(null);
+        console.log('Messages cleared successfully');
       } catch (error) {
         console.error('Error clearing messages:', error);
         alert('Ошибка при очистке сообщений.');
@@ -273,6 +281,7 @@ const ChatList: React.FC = () => {
   };
 
   const handleArchiveChat = (chatId: string) => {
+    console.log('handleArchiveChat called with chatId:', chatId);
     try {
       archiveChat(chatId);
       setShowChatMenu(null);
@@ -280,6 +289,7 @@ const ChatList: React.FC = () => {
       if (selectedChatId === chatId) {
         setSelectedChatId(null);
       }
+      console.log('Chat archived successfully');
     } catch (error) {
       console.error('Error archiving chat:', error);
       alert('Ошибка при архивировании чата.');
@@ -287,9 +297,11 @@ const ChatList: React.FC = () => {
   };
 
   const handleUnarchiveChat = (chatId: string) => {
+    console.log('handleUnarchiveChat called with chatId:', chatId);
     try {
       unarchiveChat(chatId);
       setShowChatMenu(null);
+      console.log('Chat unarchived successfully');
     } catch (error) {
       console.error('Error unarchiving chat:', error);
       alert('Ошибка при восстановлении чата.');
@@ -313,13 +325,17 @@ const ChatList: React.FC = () => {
   };
 
   const handleShowProfile = (chatId: string) => {
+    console.log('handleShowProfile called with chatId:', chatId);
     try {
       const chat = chats.find(c => c.id === chatId);
+      console.log('Found chat:', chat);
       if (chat) {
         const otherId = getOtherParticipantId(chat);
+        console.log('Other participant ID:', otherId);
         if (otherId) {
           setProfileUserId(otherId);
           setShowProfileModal(true);
+          console.log('Profile modal opened for user:', otherId);
         } else {
           alert('Не удалось определить пользователя для показа профиля.');
         }
@@ -521,6 +537,7 @@ const ChatList: React.FC = () => {
                       {/* Menu Button */}
                       <button
                         onClick={(e) => {
+                          console.log('Menu button clicked for chat:', chat.id);
                           e.stopPropagation();
                           setShowChatMenu(showChatMenu === chat.id ? null : chat.id);
                         }}
@@ -535,6 +552,7 @@ const ChatList: React.FC = () => {
                       <div className="absolute right-2 top-12 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10 min-w-[180px]">
                         <button
                           onClick={(e) => {
+                            console.log('Profile button clicked for chat:', chat.id);
                             e.preventDefault();
                             e.stopPropagation();
                             handleShowProfile(chat.id);
@@ -546,6 +564,7 @@ const ChatList: React.FC = () => {
                         </button>
                         <button
                           onClick={(e) => {
+                            console.log('Mark as read button clicked for chat:', chat.id);
                             e.preventDefault();
                             e.stopPropagation();
                             handleMarkAsRead(chat.id);
@@ -557,6 +576,7 @@ const ChatList: React.FC = () => {
                         </button>
                         <button
                           onClick={(e) => {
+                            console.log('Archive button clicked for chat:', chat.id);
                             e.preventDefault();
                             e.stopPropagation();
                             handleArchiveChat(chat.id);
@@ -569,6 +589,7 @@ const ChatList: React.FC = () => {
                         {chat.archived && (
                           <button
                             onClick={(e) => {
+                              console.log('Unarchive button clicked for chat:', chat.id);
                               e.preventDefault();
                               e.stopPropagation();
                               handleUnarchiveChat(chat.id);
@@ -581,6 +602,7 @@ const ChatList: React.FC = () => {
                         )}
                         <button
                           onClick={(e) => {
+                            console.log('Clear messages button clicked for chat:', chat.id);
                             e.preventDefault();
                             e.stopPropagation();
                             handleClearMessages(chat.id);
@@ -593,6 +615,7 @@ const ChatList: React.FC = () => {
                         <hr className="my-1" />
                         <button
                           onClick={(e) => {
+                            console.log('Delete chat button clicked for chat:', chat.id);
                             e.preventDefault();
                             e.stopPropagation();
                             handleDeleteChat(chat.id);
