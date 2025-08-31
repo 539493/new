@@ -1068,6 +1068,19 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         });
       });
 
+      // Все уведомления пользователя отмечены как прочитанные
+      newSocket.on('allNotificationsMarkedAsRead', (data: { userId: string }) => {
+        setNotifications(prev => {
+          const updated = prev.map(n => 
+            n.userId === data.userId 
+              ? { ...n, isRead: true, readAt: new Date().toISOString() }
+              : n
+          );
+          saveToStorage('tutoring_notifications', updated);
+          return updated;
+        });
+      });
+
       return () => {
         newSocket.close();
         socketRef.current = null;
@@ -1938,6 +1951,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
             saveToStorage('tutoring_notifications', updated);
             return updated;
           });
+          
+          if (socketRef.current && isConnected) {
+            socketRef.current.emit('markAllNotificationsAsRead', userId);
+          }
         },
         deleteNotification: (notificationId: string) => {
           setNotifications(prev => {

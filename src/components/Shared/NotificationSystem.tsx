@@ -62,6 +62,8 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({ className = '' 
         return <Heart className="w-5 h-5 text-red-500" />;
       case 'comment':
         return <MessageCircle className="w-5 h-5 text-green-500" />;
+      case 'new_message':
+        return <MessageCircle className="w-5 h-5 text-blue-500" />;
       case 'follow':
         return <Users className="w-5 h-5 text-purple-500" />;
       case 'lesson_reminder':
@@ -96,9 +98,14 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({ className = '' 
       markNotificationAsRead(notification.id);
     }
     
-    // Здесь можно добавить навигацию к соответствующему контенту
-    if (notification.data?.postId) {
+    // Навигация к соответствующему контенту
+    if (notification.type === 'new_message' && notification.data?.chatId) {
+      // Открываем чат
+      window.location.href = `#chat-${notification.data.chatId}`;
+      setIsOpen(false);
+    } else if (notification.data?.postId) {
       // Навигация к посту
+      // Здесь можно добавить навигацию к посту
     }
   };
 

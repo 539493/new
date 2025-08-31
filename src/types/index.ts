@@ -185,7 +185,7 @@ export interface Post {
 export interface Notification {
   id: string;
   userId: string;
-  type: 'new_post' | 'reaction' | 'comment' | 'follow' | 'lesson_reminder' | 'system';
+  type: 'new_post' | 'reaction' | 'comment' | 'new_message' | 'follow' | 'lesson_reminder' | 'system';
   title: string;
   message: string;
   data?: any;

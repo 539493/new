@@ -411,12 +411,39 @@ io.on('connection', (socket) => {
       saveServerData();
       
       console.log(`Message saved to chat ${chatId}:`, message.content);
+      
+      // Отправляем сообщение всем клиентам
+      io.emit('receiveMessage', data);
+      
+      // Создаем уведомление для получателя, если он не отправитель
+      if (message.receiverId && message.receiverId !== message.senderId) {
+        const notification = {
+          id: `notification_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          userId: message.receiverId,
+          type: 'new_message',
+          title: 'Новое сообщение',
+          message: `${message.senderName} написал вам сообщение`,
+          data: {
+            chatId: chatId,
+            senderId: message.senderId,
+            senderName: message.senderName,
+            messageId: message.id
+          },
+          isRead: false,
+          createdAt: new Date().toISOString()
+        };
+        
+        notifications.push(notification);
+        saveServerData();
+        
+        // Отправляем уведомление конкретному пользователю
+        io.to(`notifications_${message.receiverId}`).emit('newNotification', notification);
+        
+        console.log(`Notification sent to ${message.receiverId} for message from ${message.senderId}`);
+      }
     } else {
       console.error(`Chat not found: ${chatId}`);
     }
-    
-    // Отправляем сообщение всем клиентам
-    io.emit('receiveMessage', data);
   });
 
   // Обработка завершения урока
@@ -900,6 +927,18 @@ io.on('connection', (socket) => {
       
       socket.emit('notificationMarkedAsRead', { notificationId });
     }
+  });
+
+  // Отметка всех уведомлений пользователя как прочитанных
+  socket.on('markAllNotificationsAsRead', (userId) => {
+    const userNotifications = notifications.filter(n => n.userId === userId);
+    userNotifications.forEach(notification => {
+      notification.isRead = true;
+      notification.readAt = new Date().toISOString();
+    });
+    saveServerData();
+    
+    socket.emit('allNotificationsMarkedAsRead', { userId });
   });
 
   // Обработка удаления чата
