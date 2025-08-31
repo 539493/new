@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: tutoring-platform-am88
+    name: tutoring-platform-1756666331
     env: node
     buildCommand: npm install --legacy-peer-deps && npm run build
     startCommand: npm start
