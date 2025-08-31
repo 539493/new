@@ -1454,11 +1454,28 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   };
 
   const sendMessage = (chatId: string, senderId: string, senderName: string, content: string) => {
+    // Находим чат и определяем получателя
+    const chat = chats.find(c => c.id === chatId);
+    if (!chat) {
+      console.error('Chat not found:', chatId);
+      return;
+    }
+    
+    // Определяем получателя (другой участник чата)
+    const receiverId = chat.participants.find(id => id !== senderId);
+    const receiverName = chat.participantNames.find((name, index) => chat.participants[index] !== senderId);
+    
+    if (!receiverId) {
+      console.error('Receiver not found in chat participants');
+      return;
+    }
+    
     const newMessage = {
       id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       senderId,
       senderName,
-      receiverId: '', // Will be set based on chat participants
+      receiverId,
+      receiverName: receiverName || 'Неизвестный пользователь',
       content,
       timestamp: new Date().toISOString(),
       isRead: false,

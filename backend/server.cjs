@@ -327,7 +327,25 @@ io.on('connection', (socket) => {
 
   // Обработка создания нового чата
   socket.on('createChat', (newChat) => {
+    // Проверяем, не существует ли уже такой чат
+    const existingChat = chats.find(chat => 
+      chat.participants.includes(newChat.participants[0]) && 
+      chat.participants.includes(newChat.participants[1])
+    );
+    
+    if (existingChat) {
+      console.log(`Chat already exists: ${existingChat.id}`);
+      // Отправляем существующий чат обратно
+      io.emit('chatCreated', existingChat);
+      return;
+    }
+    
     chats.push(newChat);
+    
+    // Сохраняем данные на сервере
+    saveServerData();
+    
+    console.log(`New chat created: ${newChat.id} between ${newChat.participantNames.join(' and ')}`);
     
     // Отправляем новый чат всем подключенным клиентам
     io.emit('chatCreated', newChat);
@@ -381,6 +399,23 @@ io.on('connection', (socket) => {
   // Обработка отправки сообщений в чате
   socket.on('sendMessage', (data) => {
     // data: { chatId, message }
+    const { chatId, message } = data;
+    
+    // Находим чат и добавляем сообщение
+    const chatIndex = chats.findIndex(chat => chat.id === chatId);
+    if (chatIndex !== -1) {
+      chats[chatIndex].messages.push(message);
+      chats[chatIndex].lastMessage = message;
+      
+      // Сохраняем данные на сервере
+      saveServerData();
+      
+      console.log(`Message saved to chat ${chatId}:`, message.content);
+    } else {
+      console.error(`Chat not found: ${chatId}`);
+    }
+    
+    // Отправляем сообщение всем клиентам
     io.emit('receiveMessage', data);
   });
 
