@@ -14,11 +14,13 @@
     "deploy:check": "./scripts/check-deploy-status.sh",
     "deploy:test": "echo 'Testing deployment...' && git add . && git commit -m 'Test auto-deploy' && git push origin main",
     "deploy:render": "./scripts/deploy-to-render.sh",
+    "deploy:force": "./scripts/force-deploy.sh",
     "sync:render": "node scripts/sync-data-to-render.js",
     "install:render": "npm install --legacy-peer-deps",
     "build:render": "npm install --legacy-peer-deps && npm run build",
     "render:build": "npm install --legacy-peer-deps && npm run build",
-    "render:start": "cd backend && node production-server.cjs"
+    "render:start": "cd backend && node production-server.cjs",
+    "render:deploy": "git add . && git commit -m 'Render deploy' && git push origin main"
   },
   "dependencies": {
     "@tailwindcss/aspect-ratio": "^0.4.2",
