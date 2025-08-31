@@ -2,13 +2,11 @@ services:
   - type: web
     name: tutoring-platform-am88
     env: node
-    buildCommand: npm run build
+    buildCommand: npm install --legacy-peer-deps && npm run build
     startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 10000
-    healthCheckPath: /api/health
-    autoDeploy: true
-    branch: main 
+    healthCheckPath: /api/health 
