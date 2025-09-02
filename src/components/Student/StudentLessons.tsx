@@ -13,7 +13,6 @@ import {
   Star, 
   TrendingUp, 
   Award, 
-  BookOpen, 
   Zap,
   CheckCircle,
   PlayCircle,
@@ -244,11 +243,6 @@ const StudentLessons: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Заголовок страницы */}
         <div className="text-center mb-12">
-          <div className="inline-flex items-center space-x-2 bg-white px-6 py-3 rounded-full shadow-lg mb-6">
-            <BookOpen className="h-6 w-6 text-blue-600" />
-            <span className="text-blue-600 font-semibold">Образовательная платформа</span>
-          </div>
-          
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
             Мои уроки
           </h1>
