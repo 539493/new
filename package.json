@@ -25,7 +25,8 @@
     "test:server": "node scripts/test-server-start.js",
     "check:502": "./scripts/check-502-fix.sh",
     "test:render": "./scripts/test-render-service.sh",
-    "test:registration": "./scripts/test-registration-flow.sh"
+    "test:registration": "./scripts/test-registration-flow.sh",
+    "test:socket": "node scripts/test-socket-connection.js"
   },
   "dependencies": {
     "@tailwindcss/aspect-ratio": "^0.4.2",

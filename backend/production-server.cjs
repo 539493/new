@@ -22,7 +22,8 @@ const allowedOrigins = [
   "https://tutoring-platform.vercel.app",
   "https://tutoring-platform.onrender.com",
   "https://tutoring-platform-*.onrender.com",
-  "https://tutoring-platform-am88.onrender.com"
+  "https://tutoring-platform-am88.onrender.com",
+  "https://tutoring-platform-1756666331-zjfl.onrender.com"
 ];
 
 app.use(cors({
@@ -77,7 +78,11 @@ const io = new Server(server, {
     },
     credentials: true,
     methods: ["GET", "POST"]
-  }
+  },
+  transports: ['websocket', 'polling'],
+  allowEIO3: true,
+  pingTimeout: 60000,
+  pingInterval: 25000
 });
 
 // Функции для работы с данными
@@ -397,7 +402,22 @@ app.get('/api/health', (req, res) => {
     status: 'ok',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-    version: '1.0.0'
+    version: '1.0.0',
+    socketConnections: io.engine.clientsCount,
+    transports: io.engine.clientsCount > 0 ? Object.keys(io.engine.clients) : []
+  });
+});
+
+// Socket.IO connection test endpoint
+app.get('/api/socket-test', (req, res) => {
+  res.json({
+    status: 'socket_available',
+    connections: io.engine.clientsCount,
+    transports: ['websocket', 'polling'],
+    cors: {
+      allowedOrigins: allowedOrigins,
+      currentOrigin: req.headers.origin || 'unknown'
+    }
   });
 });
 
@@ -426,14 +446,25 @@ if (fs.existsSync(distPath)) {
 
 // WebSocket обработчики
 io.on('connection', (socket) => {
+  console.log(`🔌 Новое Socket.IO подключение: ${socket.id}`);
+  console.log(`📊 Всего подключений: ${io.engine.clientsCount}`);
+  
   // Отправляем все профили преподавателей новому клиенту
   socket.emit('teacherProfiles', teacherProfiles);
   
   // Отправляем все профили студентов новому клиенту
   socket.emit('studentProfiles', studentProfiles);
   
+  // Отправляем статус подключения
+  socket.emit('connectionStatus', { 
+    status: 'connected', 
+    socketId: socket.id,
+    timestamp: new Date().toISOString()
+  });
+  
   socket.on('disconnect', () => {
-    // Клиент отключился
+    console.log(`🔌 Socket.IO отключение: ${socket.id}`);
+    console.log(`📊 Осталось подключений: ${io.engine.clientsCount}`);
   });
   
   // Обработка регистрации пользователя
@@ -655,6 +686,30 @@ io.on('connection', (socket) => {
     console.log('Sending all lessons to client');
     socket.emit('allLessons', lessons);
   });
+  
+  // Обработка проверки статуса подключения
+  socket.on('ping', () => {
+    socket.emit('pong', { 
+      timestamp: new Date().toISOString(),
+      serverTime: Date.now()
+    });
+  });
+  
+  // Обработка запроса статуса сервера
+  socket.on('getServerStatus', () => {
+    socket.emit('serverStatus', {
+      status: 'online',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      connections: io.engine.clientsCount,
+      dataStats: {
+        teachers: Object.keys(teacherProfiles).length,
+        students: Object.keys(studentProfiles).length,
+        slots: timeSlots.length,
+        lessons: lessons.length
+      }
+    });
+  });
 });
 
 // Запуск сервера
@@ -667,4 +722,6 @@ server.listen(PORT, HOST, () => {
   console.log(`🌐 Health check available at: http://${HOST}:${PORT}/api/health`);
   console.log(`🔍 Root endpoint: http://${HOST}:${PORT}/`);
   console.log(`📁 Dist path: ${distPath} (exists: ${fs.existsSync(distPath)})`);
+  console.log(`🔌 Socket.IO server ready with CORS origins: ${allowedOrigins.join(', ')}`);
+  console.log(`🌍 CORS enabled for: ${allowedOrigins.filter(o => o.includes('onrender.com')).join(', ')}`);
 });
