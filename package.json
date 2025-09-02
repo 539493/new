@@ -22,7 +22,8 @@
     "render:start": "cd backend && node production-server.cjs",
     "render:deploy": "git add . && git commit -m 'Render deploy' && git push origin main",
     "render:new": "./scripts/create-new-render-service.sh",
-    "test:server": "node scripts/test-server-start.js"
+    "test:server": "node scripts/test-server-start.js",
+    "check:502": "./scripts/check-502-fix.sh"
   },
   "dependencies": {
     "@tailwindcss/aspect-ratio": "^0.4.2",
