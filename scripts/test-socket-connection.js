@@ -27,15 +27,15 @@ try {
 
 // Test 2: Test Socket.IO connection
 console.log('\n2️⃣ Testing Socket.IO connection...');
+let connected = false;
+let connectionError = null;
+
 try {
   const socket = io(SERVICE_URL, {
     transports: ['websocket', 'polling'],
     timeout: 10000,
     forceNew: true
   });
-
-  let connected = false;
-  let connectionError = null;
 
   socket.on('connect', () => {
     console.log('   ✅ Socket.IO connected successfully!');
