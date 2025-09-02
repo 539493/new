@@ -391,24 +391,36 @@ app.get('/health', (req, res) => {
   });
 });
 
+// API health check endpoint for Render
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    version: '1.0.0'
+  });
+});
+
+// Root endpoint for service verification
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'Nauchi API Server',
+    status: 'running',
+    note: 'API server is operational',
+    connectedClients: io.engine.clientsCount,
+    timeSlots: timeSlots.length,
+    lessons: lessons.length,
+    teachers: Object.keys(teacherProfiles).length,
+    students: Object.keys(studentProfiles).length,
+    health: '/health',
+    apiHealth: '/api/health'
+  });
+});
+
 // Fallback для SPA - должен быть последним
 if (fs.existsSync(distPath)) {
   app.get('*', (req, res) => {
     res.sendFile(path.join(distPath, 'index.html'));
-  });
-} else {
-  // Если нет статических файлов, показываем API статус
-  app.get('/', (req, res) => {
-    res.json({ 
-      message: 'Nauchi API Server',
-      status: 'running',
-      note: 'Frontend files not found, serving API only',
-      connectedClients: io.engine.clientsCount,
-      timeSlots: timeSlots.length,
-      lessons: lessons.length,
-      teachers: Object.keys(teacherProfiles).length,
-      students: Object.keys(studentProfiles).length
-    });
   });
 }
 
@@ -652,4 +664,7 @@ const HOST = process.env.HOST || '0.0.0.0';
 server.listen(PORT, HOST, () => {
   console.log(`🚀 Nauchi API server running on port ${PORT}`);
   console.log(`📡 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🌐 Health check available at: http://${HOST}:${PORT}/api/health`);
+  console.log(`🔍 Root endpoint: http://${HOST}:${PORT}/`);
+  console.log(`📁 Dist path: ${distPath} (exists: ${fs.existsSync(distPath)})`);
 });
