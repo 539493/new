@@ -70,10 +70,10 @@ const StudentLessons: React.FC = () => {
 
   const getFormatIcon = (format: string): JSX.Element => {
     switch (format) {
-      case 'online': return <Video className="h-5 w-5" />;
-      case 'offline': return <MapPin className="h-5 w-5" />;
-      case 'mini-group': return <Users className="h-5 w-5" />;
-      default: return <Video className="h-5 w-5" />;
+      case 'online': return <Video className="h-4 w-4" />;
+      case 'offline': return <MapPin className="h-4 w-4" />;
+      case 'mini-group': return <Users className="h-4 w-4" />;
+      default: return <Video className="h-4 w-4" />;
     }
   };
 
@@ -106,17 +106,17 @@ const StudentLessons: React.FC = () => {
   const LessonCard = ({ lesson, isScheduled }: { lesson: any; isScheduled: boolean }) => (
     <div className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-blue-200">
       {/* Header с градиентом */}
-      <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 p-6 text-white relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -translate-y-16 translate-x-16"></div>
-        <div className="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-10 rounded-full translate-y-12 -translate-x-12"></div>
+      <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 p-4 text-white relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-24 h-24 bg-white opacity-10 rounded-full -translate-y-12 translate-x-12"></div>
+        <div className="absolute bottom-0 left-0 w-16 h-16 bg-white opacity-10 rounded-full translate-y-8 -translate-x-8"></div>
         
         <div className="relative z-10">
-          <div className="flex items-start justify-between mb-4">
+          <div className="flex items-start justify-between mb-3">
             <div className="flex-1">
-              <h3 className="text-xl font-bold mb-2">{lesson.subject}</h3>
+              <h3 className="text-lg font-bold mb-1">{lesson.subject}</h3>
               <div className="flex items-center space-x-2">
-                <User className="h-5 w-5 text-blue-200" />
-                <span className="text-blue-100 font-medium">{lesson.teacherName}</span>
+                <User className="h-4 w-4 text-blue-200" />
+                <span className="text-blue-100 text-sm font-medium">{lesson.teacherName}</span>
               </div>
             </div>
             {getStatusBadge(lesson.status)}
@@ -125,11 +125,11 @@ const StudentLessons: React.FC = () => {
           <div className="flex items-center space-x-3 text-blue-100">
             <div className="flex items-center space-x-2">
               {getFormatIcon(lesson.format)}
-              <span className="text-sm font-medium">{getFormatLabel(lesson.format)}</span>
+              <span className="text-xs font-medium">{getFormatLabel(lesson.format)}</span>
             </div>
             {lesson.lessonType === 'trial' && (
               <div className="flex items-center space-x-1 bg-yellow-400 bg-opacity-20 px-2 py-1 rounded-full">
-                <Star className="h-4 w-4 text-yellow-300" />
+                <Star className="h-3 w-3 text-yellow-300" />
                 <span className="text-yellow-200 text-xs font-medium">Пробный</span>
               </div>
             )}
@@ -138,11 +138,11 @@ const StudentLessons: React.FC = () => {
       </div>
 
       {/* Основная информация */}
-      <div className="p-6">
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-xl">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Calendar className="h-5 w-5 text-blue-600" />
+      <div className="p-4">
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <div className="flex items-center space-x-2 p-2 bg-gray-50 rounded-lg">
+            <div className="p-1.5 bg-blue-100 rounded-md">
+              <Calendar className="h-4 w-4 text-blue-600" />
             </div>
             <div>
               <p className="text-xs text-gray-500 font-medium">Дата</p>
@@ -150,9 +150,9 @@ const StudentLessons: React.FC = () => {
             </div>
           </div>
           
-          <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-xl">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <Clock className="h-5 w-5 text-purple-600" />
+          <div className="flex items-center space-x-2 p-2 bg-gray-50 rounded-lg">
+            <div className="p-1.5 bg-purple-100 rounded-md">
+              <Clock className="h-4 w-4 text-purple-600" />
             </div>
             <div>
               <p className="text-xs text-gray-500 font-medium">Время</p>
@@ -163,10 +163,10 @@ const StudentLessons: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-2">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <Timer className="h-5 w-5 text-green-600" />
+            <div className="p-1.5 bg-green-100 rounded-md">
+              <Timer className="h-4 w-4 text-green-600" />
             </div>
             <div>
               <p className="text-xs text-gray-500 font-medium">Длительность</p>
@@ -176,46 +176,46 @@ const StudentLessons: React.FC = () => {
           
           <div className="text-right">
             <p className="text-xs text-gray-500 font-medium">Стоимость</p>
-            <p className="text-2xl font-bold text-gray-900">{lesson.price}₽</p>
+            <p className="text-xl font-bold text-gray-900">{lesson.price}₽</p>
           </div>
         </div>
 
         {/* Действия для запланированных уроков */}
         {isScheduled && (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {/* Основные действия */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={() => handleOpenChat(lesson.teacherId, lesson.teacherName)}
-                className="flex items-center justify-center space-x-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl font-medium hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                className="flex items-center justify-center space-x-1 px-3 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg text-sm font-medium hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
               >
-                <MessageCircle className="h-5 w-5" />
+                <MessageCircle className="h-4 w-4" />
                 <span>Чат</span>
               </button>
               
               {lesson.format === 'online' && (
-                <button className="flex items-center justify-center space-x-2 px-4 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl font-medium hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
-                  <Video className="h-5 w-5" />
+                <button className="flex items-center justify-center space-x-1 px-3 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg text-sm font-medium hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5">
+                  <Video className="h-4 w-4" />
                   <span>Видеозвонок</span>
                 </button>
               )}
             </div>
             
             {/* Дополнительные действия */}
-            <div className="flex space-x-3 pt-3 border-t border-gray-100">
+            <div className="flex space-x-2 pt-2 border-t border-gray-100">
               <button
                 onClick={() => openRescheduleModal(lesson)}
-                className="flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 text-orange-600 bg-orange-50 hover:bg-orange-100 rounded-xl font-medium transition-all duration-200 border border-orange-200 hover:border-orange-300"
+                className="flex-1 flex items-center justify-center space-x-1 px-3 py-2 text-orange-600 bg-orange-50 hover:bg-orange-100 rounded-lg text-sm font-medium transition-all duration-200 border border-orange-200 hover:border-orange-300"
               >
-                <Edit className="h-4 w-4" />
+                <Edit className="h-3 w-3" />
                 <span>Перенести</span>
               </button>
               
               <button
                 onClick={() => handleCancelLesson(lesson.id)}
-                className="flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 text-red-600 bg-red-50 hover:bg-red-100 rounded-xl font-medium transition-all duration-200 border border-red-200 hover:border-red-300"
+                className="flex-1 flex items-center justify-center space-x-1 px-3 py-2 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg text-sm font-medium transition-all duration-200 border border-red-200 hover:border-red-300"
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-3 w-3" />
                 <span>Отменить</span>
               </button>
             </div>
@@ -224,9 +224,9 @@ const StudentLessons: React.FC = () => {
 
         {/* Информация для завершенных уроков */}
         {!isScheduled && (
-          <div className="flex items-center justify-center space-x-2 py-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
-            <CheckCircle className="h-5 w-5 text-green-600" />
-            <span className="text-green-700 font-medium">Урок успешно завершен</span>
+          <div className="flex items-center justify-center space-x-2 py-2 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
+            <CheckCircle className="h-4 w-4 text-green-600" />
+            <span className="text-green-700 text-sm font-medium">Урок успешно завершен</span>
           </div>
         )}
       </div>
@@ -242,85 +242,85 @@ const StudentLessons: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Заголовок страницы */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
             Мои уроки
           </h1>
           
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
             Управляйте вашими запланированными и завершенными уроками. 
             Отслеживайте прогресс и достигайте новых высот в обучении.
           </p>
         </div>
 
         {/* Статистика */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-            <div className="flex items-center space-x-4">
-              <div className="p-3 bg-blue-100 rounded-xl">
-                <Calendar className="h-8 w-8 text-blue-600" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Calendar className="h-6 w-6 text-blue-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{scheduledLessons.length}</p>
-                <p className="text-gray-600">Запланировано</p>
+                <p className="text-xl font-bold text-gray-900">{scheduledLessons.length}</p>
+                <p className="text-sm text-gray-600">Запланировано</p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-            <div className="flex items-center space-x-4">
-              <div className="p-3 bg-green-100 rounded-xl">
-                <CheckCircle className="h-8 w-8 text-green-600" />
+          <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <CheckCircle className="h-6 w-6 text-green-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{completedLessons.length}</p>
-                <p className="text-gray-600">Завершено</p>
+                <p className="text-xl font-bold text-gray-900">{completedLessons.length}</p>
+                <p className="text-sm text-gray-600">Завершено</p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-            <div className="flex items-center space-x-4">
-              <div className="p-3 bg-purple-100 rounded-xl">
-                <TrendingUp className="h-8 w-8 text-purple-600" />
+          <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <TrendingUp className="h-6 w-6 text-purple-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{userLessons.length}</p>
-                <p className="text-gray-600">Всего уроков</p>
+                <p className="text-xl font-bold text-gray-900">{userLessons.length}</p>
+                <p className="text-sm text-gray-600">Всего уроков</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Запланированные уроки */}
-        <div className="mb-16">
-          <div className="flex items-center space-x-4 mb-8">
-            <div className="p-3 bg-blue-100 rounded-xl">
-              <Calendar className="h-8 w-8 text-blue-600" />
+        <div className="mb-12">
+          <div className="flex items-center space-x-3 mb-6">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <Calendar className="h-6 w-6 text-blue-600" />
             </div>
             <div>
-              <h2 className="text-3xl font-bold text-gray-900">Запланированные уроки</h2>
-              <p className="text-gray-600">Ваши предстоящие занятия</p>
+              <h2 className="text-2xl font-bold text-gray-900">Запланированные уроки</h2>
+              <p className="text-sm text-gray-600">Ваши предстоящие занятия</p>
             </div>
           </div>
           
           {scheduledLessons.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {scheduledLessons.map((lesson) => (
                 <LessonCard key={lesson.id} lesson={lesson} isScheduled={true} />
               ))}
             </div>
           ) : (
-            <div className="text-center py-16 bg-white rounded-2xl shadow-lg border border-gray-100">
-              <div className="mx-auto h-20 w-20 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center mb-6">
-                <Calendar className="h-10 w-10 text-blue-600" />
+            <div className="text-center py-12 bg-white rounded-xl shadow-md border border-gray-100">
+              <div className="mx-auto h-16 w-16 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center mb-4">
+                <Calendar className="h-8 w-8 text-blue-600" />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-3">Нет запланированных уроков</h3>
-              <p className="text-gray-600 mb-6 max-w-md mx-auto">
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Нет запланированных уроков</h3>
+              <p className="text-sm text-gray-600 mb-4 max-w-sm mx-auto">
                 Забронируйте свой первый урок на главной странице и начните свой путь к знаниям
               </p>
-              <button className="inline-flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
-                <Zap className="h-5 w-5" />
+              <button className="inline-flex items-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+                <Zap className="h-4 w-4" />
                 <span>Забронировать урок</span>
               </button>
             </div>
@@ -328,34 +328,34 @@ const StudentLessons: React.FC = () => {
         </div>
 
         {/* Завершенные уроки */}
-        <div className="mb-16">
-          <div className="flex items-center space-x-4 mb-8">
-            <div className="p-3 bg-green-100 rounded-xl">
-              <Award className="h-8 w-8 text-green-600" />
+        <div className="mb-12">
+          <div className="flex items-center space-x-3 mb-6">
+            <div className="p-2 bg-green-100 rounded-lg">
+              <Award className="h-6 w-6 text-green-600" />
             </div>
             <div>
-              <h2 className="text-3xl font-bold text-gray-900">Завершенные уроки</h2>
-              <p className="text-gray-600">Ваши достижения и пройденный материал</p>
+              <h2 className="text-2xl font-bold text-gray-900">Завершенные уроки</h2>
+              <p className="text-sm text-gray-600">Ваши достижения и пройденный материал</p>
             </div>
           </div>
           
           {completedLessons.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {completedLessons.map((lesson) => (
                 <LessonCard key={lesson.id} lesson={lesson} isScheduled={false} />
               ))}
             </div>
           ) : (
-            <div className="text-center py-16 bg-white rounded-2xl shadow-lg border border-gray-100">
-              <div className="mx-auto h-20 w-20 bg-gradient-to-br from-green-100 to-emerald-100 rounded-full flex items-center justify-center mb-6">
-                <Award className="h-10 w-10 text-green-600" />
+            <div className="text-center py-12 bg-white rounded-xl shadow-md border border-gray-100">
+              <div className="mx-auto h-16 w-16 bg-gradient-to-br from-green-100 to-emerald-100 rounded-full flex items-center justify-center mb-4">
+                <Award className="h-8 w-8 text-green-600" />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-3">Нет завершенных уроков</h3>
-              <p className="text-gray-600 mb-6 max-w-md mx-auto">
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Нет завершенных уроков</h3>
+              <p className="text-sm text-gray-600 mb-4 max-w-sm mx-auto">
                 После завершения уроков здесь будут отображаться ваши достижения и прогресс
               </p>
-              <div className="inline-flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-medium">
-                <Target className="h-5 w-5" />
+              <div className="inline-flex items-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg font-medium">
+                <Target className="h-4 w-4" />
                 <span>Достижения появятся здесь</span>
               </div>
             </div>
@@ -363,14 +363,14 @@ const StudentLessons: React.FC = () => {
         </div>
 
         {/* Призыв к действию */}
-        <div className="text-center py-16 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 rounded-3xl text-white shadow-2xl">
-          <div className="max-w-2xl mx-auto px-6">
-            <h3 className="text-3xl font-bold mb-4">Готовы к следующему уроку?</h3>
-            <p className="text-xl text-blue-100 mb-8">
+        <div className="text-center py-12 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 rounded-2xl text-white shadow-xl">
+          <div className="max-w-xl mx-auto px-6">
+            <h3 className="text-2xl font-bold mb-3">Готовы к следующему уроку?</h3>
+            <p className="text-lg text-blue-100 mb-6">
               Продолжайте обучение и достигайте новых высот вместе с нашими преподавателями
             </p>
-            <button className="inline-flex items-center space-x-3 px-8 py-4 bg-white text-blue-600 rounded-xl font-bold text-lg hover:bg-gray-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
-              <PlayCircle className="h-6 w-6" />
+            <button className="inline-flex items-center space-x-2 px-6 py-3 bg-white text-blue-600 rounded-lg font-semibold text-base hover:bg-gray-50 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+              <PlayCircle className="h-5 w-5" />
               <span>Найти преподавателя</span>
             </button>
           </div>
