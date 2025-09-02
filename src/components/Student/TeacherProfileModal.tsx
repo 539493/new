@@ -38,7 +38,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useData } from '../../contexts/DataContext';
 import { TeacherProfile, TimeSlot } from '../../types';
 
-const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001';
+const SERVER_URL = import.meta.env.VITE_SERVER_URL || (import.meta.env.PROD ? 'https://tutoring-platform-1756666331-zjfl.onrender.com' : 'http://localhost:3001');
 
 interface TeacherProfileModalProps {
   teacher: any;

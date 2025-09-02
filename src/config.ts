@@ -3,12 +3,12 @@ const isProd = import.meta.env.PROD;
 
 // URL сервера
 export const SERVER_URL = isProd 
-  ? 'https://tutoring-platform-am88.onrender.com' 
+  ? 'https://tutoring-platform-1756666331-zjfl.onrender.com' 
   : 'http://localhost:3001';
 
 // URL WebSocket
 export const WEBSOCKET_URL = isProd 
-  ? 'https://tutoring-platform-am88.onrender.com' 
+  ? 'https://tutoring-platform-1756666331-zjfl.onrender.com' 
   : 'http://localhost:3001';
 
 // URL внешнего сервиса видео чата

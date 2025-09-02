@@ -396,11 +396,16 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     // Проверяем, доступен ли сервер перед подключением
     const checkServerAvailability = async () => {
       try {
-        const response = await fetch(`${SERVER_URL}/`, { 
+        const response = await fetch(`${SERVER_URL}/api/health`, { 
           method: 'GET',
           signal: AbortSignal.timeout(5000) // 5 секунд timeout
         });
-        return response.ok;
+        if (response.ok) {
+          const healthData = await response.json();
+          console.log('Server health check passed:', healthData);
+          return true;
+        }
+        return false;
       } catch (error) {
         console.warn('Server not available, working in offline mode:', error);
         return false;
@@ -417,6 +422,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         return;
       }
 
+      console.log('Server is available, initializing Socket.IO connection...');
+
       const newSocket = io(SERVER_URL, {
         ...SOCKET_CONFIG,
         reconnection: true,
@@ -429,7 +436,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
       newSocket.on('connect', () => {
         setIsConnected(true);
-        console.log('Connected to server');
+        console.log('✅ Connected to server via Socket.IO');
+        console.log(`🌐 Server URL: ${SERVER_URL}`);
+        console.log(`🔌 Socket ID: ${newSocket.id}`);
         
         // Загружаем пользователей и уроки с сервера при подключении
         loadUsersFromServer();
@@ -457,13 +466,23 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
       newSocket.on('disconnect', () => {
         setIsConnected(false);
-        console.log('Disconnected from server');
+        console.log('🔌 Disconnected from server');
+      });
+
+      newSocket.on('reconnect', (attemptNumber) => {
+        setIsConnected(true);
+        console.log(`🔄 Reconnected to server after ${attemptNumber} attempts`);
+      });
+
+      newSocket.on('reconnect_attempt', (attemptNumber) => {
+        console.log(`🔄 Reconnection attempt ${attemptNumber}`);
       });
 
       // Добавляем обработку ошибок подключения
       newSocket.on('connect_error', (error) => {
         setIsConnected(false);
-        console.warn('Connection error, working in offline mode:', error);
+        console.warn('❌ Socket.IO connection error:', error);
+        console.warn('🔧 Working in offline mode until reconnection...');
         
         // При ошибке подключения загружаем начальные данные
         loadInitialData();
