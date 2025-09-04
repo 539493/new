@@ -19,7 +19,8 @@ import {
   Clock,
   Star,
   Settings,
-  Plus
+  Plus,
+  X
 } from 'lucide-react';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -32,6 +33,7 @@ const ChatList: React.FC = () => {
   const { 
     chats, 
     sendMessage, 
+    sendMessageToUser,
     allUsers, 
     setAllUsers, 
     teacherProfiles, 
@@ -59,6 +61,8 @@ const ChatList: React.FC = () => {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
   const [showArchivedChats, setShowArchivedChats] = useState(false);
+  const [showNewChatModal, setShowNewChatModal] = useState(false);
+  const [newChatMessage, setNewChatMessage] = useState('');
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -193,6 +197,36 @@ const ChatList: React.FC = () => {
     sendMessage(selectedChatId, user.id, user.name, newMessage.trim());
     setNewMessage('');
     setIsTyping(false);
+  };
+
+  // Отправка сообщения новому пользователю
+  const handleSendMessageToUser = (receiverId: string, receiverName: string) => {
+    if (!newChatMessage.trim() || !user) return;
+
+    console.log('🔍 ChatList handleSendMessageToUser DEBUG:');
+    console.log('- Sender:', { id: user.id, name: user.name });
+    console.log('- Receiver:', { id: receiverId, name: receiverName });
+    console.log('- Message:', newChatMessage.trim());
+
+    // Отправляем сообщение пользователю (автоматически создается чат)
+    const chatId = sendMessageToUser(
+      user.id,
+      user.name,
+      receiverId,
+      receiverName,
+      newChatMessage.trim()
+    );
+
+    console.log('- Chat created/opened with ID:', chatId);
+
+    // Выбираем созданный чат
+    setSelectedChatId(chatId);
+    
+    // Очищаем форму и закрываем модальное окно
+    setNewChatMessage('');
+    setShowNewChatModal(false);
+    
+    console.log('🔍 END ChatList handleSendMessageToUser DEBUG');
   };
 
   // Обработка нажатия Enter
@@ -487,8 +521,8 @@ const ChatList: React.FC = () => {
       <div className="flex-1 flex overflow-hidden">
         {/* Chat List Sidebar */}
         <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
-          {/* Search */}
-          <div className="p-4 border-b border-gray-200">
+          {/* Search and New Chat */}
+          <div className="p-4 border-b border-gray-200 space-y-3">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
@@ -499,6 +533,13 @@ const ChatList: React.FC = () => {
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
               />
             </div>
+            <button
+              onClick={() => setShowNewChatModal(true)}
+              className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-2 rounded-lg font-semibold hover:from-green-700 hover:to-green-800 transition-all duration-200 flex items-center justify-center space-x-2"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Новый чат</span>
+            </button>
           </div>
 
           {/* Chat List */}
@@ -982,6 +1023,67 @@ const ChatList: React.FC = () => {
                   </div>
                 );
               })()}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* New Chat Modal */}
+      {showNewChatModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 max-h-[80vh] overflow-hidden">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-gray-900">Новый чат</h2>
+                <button
+                  onClick={() => setShowNewChatModal(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {/* Message Input */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Сообщение
+                </label>
+                <textarea
+                  value={newChatMessage}
+                  onChange={(e) => setNewChatMessage(e.target.value)}
+                  placeholder="Введите ваше сообщение..."
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  rows={3}
+                />
+              </div>
+
+              {/* User List */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Выберите получателя
+                </label>
+                <div className="max-h-60 overflow-y-auto border border-gray-300 rounded-lg">
+                  {allUsers
+                    .filter(u => u.id !== user?.id)
+                    .map((userItem) => (
+                      <button
+                        key={userItem.id}
+                        onClick={() => handleSendMessageToUser(userItem.id, userItem.name)}
+                        className="w-full p-3 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0 flex items-center space-x-3"
+                      >
+                        <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
+                          {userItem.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <div className="font-medium text-gray-900">{userItem.name}</div>
+                          <div className="text-sm text-gray-500 capitalize">{userItem.role === 'teacher' ? 'Преподаватель' : 'Ученик'}</div>
+                        </div>
+                      </button>
+                    ))}
+                </div>
+              </div>
             </div>
           </div>
         </div>

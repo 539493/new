@@ -17,6 +17,7 @@ interface DataContextType {
   rescheduleLesson: (lessonId: string, newDate: string, newStartTime: string) => void;
   getFilteredSlots: (filters: FilterOptions) => TimeSlot[];
   sendMessage: (chatId: string, senderId: string, senderName: string, content: string) => void;
+  sendMessageToUser: (senderId: string, senderName: string, receiverId: string, receiverName: string, content: string) => string;
   getOrCreateChat: (participant1Id: string, participant2Id: string, participant1Name: string, participant2Name: string) => string;
   clearAllData: () => void;
   isConnected: boolean;
@@ -1535,6 +1536,24 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     }
   };
 
+  // Новая функция для отправки сообщения любому пользователю с автоматическим созданием чата
+  const sendMessageToUser = (senderId: string, senderName: string, receiverId: string, receiverName: string, content: string): string => {
+    console.log('🔍 sendMessageToUser DEBUG:');
+    console.log('- Sender:', { id: senderId, name: senderName });
+    console.log('- Receiver:', { id: receiverId, name: receiverName });
+    console.log('- Content:', content);
+    
+    // Создаем или находим чат между пользователями
+    const chatId = getOrCreateChat(senderId, receiverId, senderName, receiverName);
+    console.log('- Chat ID:', chatId);
+    
+    // Отправляем сообщение в созданный/найденный чат
+    sendMessage(chatId, senderId, senderName, content);
+    
+    console.log('🔍 END sendMessageToUser DEBUG');
+    return chatId;
+  };
+
   const completeLesson = (lessonId: string) => {
     if (socketRef.current && isConnected) {
       socketRef.current.emit('lessonCompleted', { lessonId });
@@ -1910,6 +1929,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         rescheduleLesson,
         getFilteredSlots,
         sendMessage,
+        sendMessageToUser,
         getOrCreateChat,
         clearAllData,
         isConnected,

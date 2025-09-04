@@ -21,7 +21,7 @@ interface StudentHomeProps {
 }
 
 const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
-  const { getFilteredSlots, bookLesson, timeSlots, isConnected, allUsers, refreshUsers, refreshAllData, forceSyncData, getOrCreateChat, sendMessage } = useData();
+  const { getFilteredSlots, bookLesson, timeSlots, isConnected, allUsers, refreshUsers, refreshAllData, forceSyncData, getOrCreateChat, sendMessage, sendMessageToUser } = useData();
   const { user } = useAuth();
   
   const [filters, setFilters] = useState<FilterOptions>({});
@@ -746,21 +746,22 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
     console.log('- Found teacher:', teacher);
     
     if (teacher && user) {
-      console.log('- Creating chat between:', { 
+      console.log('- Sending message to teacher:', { 
         studentId: user.id, 
         teacherId: teacherId, 
         studentName: user.name, 
         teacherName: teacher.name 
       });
       
-      // Создаем или открываем чат с преподавателем
-      const chatId = getOrCreateChat(user.id, teacherId, user.name, teacher.name);
-      console.log('- Created/found chat ID:', chatId);
-      
-      // Отправляем первое приветственное сообщение
-      setTimeout(() => {
-        sendMessage(chatId, user.id, user.name, `Привет! Меня зовут ${user.name}. Можете ли вы помочь мне с обучением?`);
-      }, 100);
+      // Отправляем сообщение преподавателю (автоматически создается чат)
+      const chatId = sendMessageToUser(
+        user.id, 
+        user.name, 
+        teacherId, 
+        teacher.name, 
+        `Привет! Меня зовут ${user.name}. Можете ли вы помочь мне с обучением?`
+      );
+      console.log('- Message sent, chat ID:', chatId);
       
       // Переключаемся на вкладку чатов
       setActiveTab('chats');
