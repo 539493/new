@@ -263,6 +263,24 @@ io.on('connection', (socket) => {
     socket.emit('allSlots', timeSlots);
   });
 
+  // Обработка подключения к комнате уведомлений
+  socket.on('joinNotifications', (data) => {
+    const { userId } = data;
+    if (userId) {
+      socket.join(`notifications_${userId}`);
+      console.log(`User ${userId} joined notifications room`);
+    }
+  });
+
+  // Обработка отключения от комнаты уведомлений
+  socket.on('leaveNotifications', (data) => {
+    const { userId } = data;
+    if (userId) {
+      socket.leave(`notifications_${userId}`);
+      console.log(`User ${userId} left notifications room`);
+    }
+  });
+
   // Обработка запроса всех пользователей
   socket.on('requestAllUsers', () => {
     const users = [];
@@ -327,6 +345,8 @@ io.on('connection', (socket) => {
 
   // Обработка создания нового чата
   socket.on('createChat', (newChat) => {
+    console.log('createChat event received:', newChat);
+    
     // Проверяем, не существует ли уже такой чат
     const existingChat = chats.find(chat => 
       chat.participants.includes(newChat.participants[0]) && 
@@ -349,6 +369,24 @@ io.on('connection', (socket) => {
     
     // Отправляем новый чат всем подключенным клиентам
     io.emit('chatCreated', newChat);
+  });
+
+  // Обработка создания уведомлений
+  socket.on('createNotification', (notification) => {
+    console.log('createNotification event received:', notification);
+    
+    // Добавляем уведомление в массив
+    notifications.push(notification);
+    
+    // Сохраняем данные на сервере
+    saveServerData();
+    
+    console.log(`Notification created: ${notification.id} for user ${notification.userId}`);
+    
+    // Отправляем уведомление конкретному пользователю
+    io.to(`notifications_${notification.userId}`).emit('newNotification', notification);
+    
+    console.log(`Notification sent to user ${notification.userId}`);
   });
 
   // Обработка бронирования слота
@@ -398,12 +436,31 @@ io.on('connection', (socket) => {
 
   // Обработка отправки сообщений в чате
   socket.on('sendMessage', (data) => {
+    console.log('sendMessage event received:', data);
+    
     // data: { chatId, message }
     const { chatId, message } = data;
+    
+    if (!chatId || !message) {
+      console.error('Invalid sendMessage data:', data);
+      return;
+    }
     
     // Находим чат и добавляем сообщение
     const chatIndex = chats.findIndex(chat => chat.id === chatId);
     if (chatIndex !== -1) {
+      // Инициализируем массив сообщений, если его нет
+      if (!chats[chatIndex].messages) {
+        chats[chatIndex].messages = [];
+      }
+      
+      // Проверяем, нет ли уже такого сообщения
+      const messageExists = chats[chatIndex].messages.some(msg => msg.id === message.id);
+      if (messageExists) {
+        console.log('Message already exists in chat, skipping:', message.id);
+        return;
+      }
+      
       chats[chatIndex].messages.push(message);
       chats[chatIndex].lastMessage = message;
       
@@ -411,9 +468,11 @@ io.on('connection', (socket) => {
       saveServerData();
       
       console.log(`Message saved to chat ${chatId}:`, message.content);
+      console.log(`Total messages in chat: ${chats[chatIndex].messages.length}`);
       
       // Отправляем сообщение всем клиентам
       io.emit('receiveMessage', data);
+      console.log('Message broadcasted to all clients');
       
       // Создаем уведомление для получателя, если он не отправитель
       if (message.receiverId && message.receiverId !== message.senderId) {
@@ -440,9 +499,12 @@ io.on('connection', (socket) => {
         io.to(`notifications_${message.receiverId}`).emit('newNotification', notification);
         
         console.log(`Notification sent to ${message.receiverId} for message from ${message.senderId}`);
+      } else {
+        console.log('No notification needed - same sender and receiver or missing receiverId');
       }
     } else {
       console.error(`Chat not found: ${chatId}`);
+      console.log('Available chats:', chats.map(c => ({ id: c.id, participants: c.participants })));
     }
   });
 

@@ -460,6 +460,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           if (user) {
             socketRef.current.emit('requestUserNotifications', user.id);
             socketRef.current.emit('subscribeNotifications', user.id);
+            // Подключаемся к комнате уведомлений
+            socketRef.current.emit('joinNotifications', { userId: user.id });
+            console.log('Joined notifications room for user:', user.id);
           }
         }
       });
@@ -467,6 +470,12 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       newSocket.on('disconnect', () => {
         setIsConnected(false);
         console.log('🔌 Disconnected from server');
+        
+        // Отключаемся от комнаты уведомлений
+        if (user) {
+          newSocket.emit('leaveNotifications', { userId: user.id });
+          console.log('Left notifications room for user:', user.id);
+        }
       });
 
       newSocket.on('reconnect', (attemptNumber) => {
@@ -603,18 +612,34 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       });
 
       newSocket.on('receiveMessage', (data: { chatId: string, message: any }) => {
-        setChats(prev => prev.map(chat => {
-          if (chat.id === data.chatId) {
-            const updatedChat = {
-              ...chat,
-              messages: [...chat.messages, data.message],
-              lastMessage: data.message,
-            };
-            saveToStorage('tutoring_chats', prev.map(c => c.id === chat.id ? updatedChat : c));
-            return updatedChat;
-          }
-          return chat;
-        }));
+        console.log('receiveMessage event received:', data);
+        setChats(prev => {
+          const updated = prev.map(chat => {
+            if (chat.id === data.chatId) {
+              // Проверяем, нет ли уже такого сообщения
+              const messageExists = chat.messages?.some(msg => msg.id === data.message.id);
+              if (messageExists) {
+                console.log('Message already exists, skipping:', data.message.id);
+                return chat;
+              }
+              
+              const updatedChat = {
+                ...chat,
+                messages: [...(chat.messages || []), data.message],
+                lastMessage: data.message,
+              };
+              console.log('Updated chat with new message:', updatedChat.id);
+              return updatedChat;
+            }
+            return chat;
+          });
+          
+          // Сохраняем обновленные чаты
+          saveToStorage('tutoring_chats', updated);
+          console.log('Chats updated and saved after receiving message');
+          
+          return updated;
+        });
       });
 
       // Обработчики событий чатов
@@ -1444,11 +1469,14 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   };
 
   const getOrCreateChat = (participant1Id: string, participant2Id: string, participant1Name: string, participant2Name: string): string => {
+    console.log('getOrCreateChat called:', { participant1Id, participant2Id, participant1Name, participant2Name });
+    
     const existingChat = chats.find(chat => 
       chat.participants.includes(participant1Id) && chat.participants.includes(participant2Id)
     );
 
     if (existingChat) {
+      console.log('Found existing chat:', existingChat.id);
       return existingChat.id;
     }
 
@@ -1459,14 +1487,18 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       messages: [],
     };
 
+    console.log('Creating new chat:', newChat);
+
     setChats(prev => {
       const updated = [...prev, newChat];
       saveToStorage('tutoring_chats', updated);
+      console.log('New chat saved to localStorage');
       return updated;
     });
 
     // Отправляем новый чат на сервер для других клиентов
     if (socketRef.current && isConnected) {
+      console.log('Sending new chat to server');
       socketRef.current.emit('createChat', newChat);
       
       // Создаем уведомление для репетитора о новом чате
@@ -1481,13 +1513,18 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         data: { chatId: newChat.id, studentId: participant1Id, studentName: participant1Name }
       };
       
+      console.log('Sending notification for new chat:', notification);
       socketRef.current.emit('createNotification', notification);
+    } else {
+      console.error('Socket not connected, cannot send chat to server');
     }
 
     return newChat.id;
   };
 
   const sendMessage = (chatId: string, senderId: string, senderName: string, content: string) => {
+    console.log('sendMessage called:', { chatId, senderId, senderName, content });
+    
     // Находим чат и определяем получателя
     const chat = chats.find(c => c.id === chatId);
     if (!chat) {
@@ -1495,14 +1532,18 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       return;
     }
     
+    console.log('Found chat:', chat);
+    
     // Определяем получателя (другой участник чата)
     const receiverId = chat.participants.find(id => id !== senderId);
     const receiverName = chat.participantNames.find((name, index) => chat.participants[index] !== senderId);
     
     if (!receiverId) {
-      console.error('Receiver not found in chat participants');
+      console.error('Receiver not found in chat participants:', chat.participants);
       return;
     }
+    
+    console.log('Message receiver:', { receiverId, receiverName });
     
     const newMessage = {
       id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -1515,23 +1556,36 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       isRead: false,
     };
 
+    console.log('Created message:', newMessage);
+
     // Добавляем сообщение локально сразу для мгновенного отображения
-    setChats(prev => prev.map(chat => {
-      if (chat.id === chatId) {
-        const updatedChat = {
-          ...chat,
-          messages: [...chat.messages, newMessage],
-          lastMessage: newMessage,
-        };
-        saveToStorage('tutoring_chats', prev.map(c => c.id === chat.id ? updatedChat : c));
-        return updatedChat;
-      }
-      return chat;
-    }));
+    setChats(prev => {
+      const updated = prev.map(chat => {
+        if (chat.id === chatId) {
+          const updatedChat = {
+            ...chat,
+            messages: [...(chat.messages || []), newMessage],
+            lastMessage: newMessage,
+          };
+          return updatedChat;
+        }
+        return chat;
+      });
+      
+      // Сохраняем обновленные чаты в localStorage
+      saveToStorage('tutoring_chats', updated);
+      console.log('Updated chats saved to localStorage');
+      
+      return updated;
+    });
 
     // Отправляем сообщение на сервер для других клиентов
     if (socketRef.current && isConnected) {
+      console.log('Sending message to server:', { chatId, message: newMessage });
       socketRef.current.emit('sendMessage', { chatId, message: newMessage });
+    } else {
+      console.error('Socket not connected or not available');
+      console.log('Socket state:', { socket: socketRef.current, isConnected });
     }
   };
 
