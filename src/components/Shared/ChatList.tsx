@@ -472,13 +472,13 @@ const ChatList: React.FC = () => {
   const unreadCount = getUnreadCount();
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="h-[calc(100vh-80px)] bg-gray-50 flex flex-col">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0">
+      <div className="bg-white border-b border-gray-200 px-6 py-3 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">МОИ ЧАТЫ</h1>
-            <p className="text-gray-600 text-sm">
+            <h1 className="text-xl font-bold text-gray-900">МОИ ЧАТЫ</h1>
+            <p className="text-gray-600 text-xs">
               {unreadCount > 0 
                 ? `${unreadCount} непрочитанных сообщений` 
                 : 'Общайтесь с преподавателями и учениками'
@@ -522,7 +522,7 @@ const ChatList: React.FC = () => {
         {/* Chat List Sidebar */}
         <div className="w-80 bg-white border-r border-gray-200 flex flex-col flex-shrink-0">
           {/* Search and New Chat */}
-          <div className="p-4 border-b border-gray-200 space-y-3 flex-shrink-0">
+          <div className="p-3 border-b border-gray-200 space-y-2 flex-shrink-0">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
