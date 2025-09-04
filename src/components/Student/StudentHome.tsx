@@ -737,11 +737,25 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
   };
 
   const handleMessage = (teacherId: string) => {
+    console.log('🔍 StudentHome handleMessage DEBUG:');
+    console.log('- Student user:', { id: user?.id, name: user?.name, role: user?.role });
+    console.log('- Target teacher ID:', teacherId);
+    
     // Находим преподавателя
     const teacher = allUsers.find(user => user.id === teacherId);
+    console.log('- Found teacher:', teacher);
+    
     if (teacher && user) {
+      console.log('- Creating chat between:', { 
+        studentId: user.id, 
+        teacherId: teacherId, 
+        studentName: user.name, 
+        teacherName: teacher.name 
+      });
+      
       // Создаем или открываем чат с преподавателем
       const chatId = getOrCreateChat(user.id, teacherId, user.name, teacher.name);
+      console.log('- Created/found chat ID:', chatId);
       
       // Отправляем первое приветственное сообщение
       setTimeout(() => {
@@ -750,7 +764,10 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
       
       // Переключаемся на вкладку чатов
       setActiveTab('chats');
+    } else {
+      console.log('❌ Teacher not found or user not available');
     }
+    console.log('🔍 END StudentHome DEBUG');
     setShowTeacherProfilePage(false);
   };
 

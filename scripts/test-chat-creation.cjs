@@ -6,7 +6,7 @@
 
 const io = require('socket.io-client');
 
-const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3000';
+const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3001';
 
 console.log('🧪 Тестирование создания чатов...');
 console.log(`📡 Подключение к серверу: ${SERVER_URL}`);

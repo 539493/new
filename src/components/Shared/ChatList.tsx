@@ -148,7 +148,25 @@ const ChatList: React.FC = () => {
 
   // Фильтрация чатов
   const userChats = chats.filter(chat => chat.participants.includes(user?.id || ''));
-  console.log('ChatList: All chats:', chats.length, 'User chats:', userChats.length, 'User ID:', user?.id);
+  
+  console.log('🔍 ChatList DEBUG INFO:');
+  console.log('- Current user:', { id: user?.id, name: user?.name, role: user?.role });
+  console.log('- All chats count:', chats.length);
+  console.log('- User chats count:', userChats.length);
+  
+  // Показываем детальную информацию о каждом чате
+  if (chats.length > 0) {
+    console.log('- All chats details:');
+    chats.forEach((chat, index) => {
+      console.log(`  Chat ${index + 1}:`, {
+        id: chat.id,
+        participants: chat.participants,
+        participantNames: chat.participantNames,
+        includesUser: chat.participants.includes(user?.id || ''),
+        messagesCount: chat.messages?.length || 0
+      });
+    });
+  }
   
   const filteredChats = userChats.filter(chat => {
     // Показываем архивированные чаты только если включен соответствующий флаг
@@ -161,7 +179,8 @@ const ChatList: React.FC = () => {
     return otherParticipantName?.toLowerCase().includes(searchTerm.toLowerCase());
   });
   
-  console.log('ChatList: Filtered chats:', filteredChats.length);
+  console.log('- Filtered chats count:', filteredChats.length);
+  console.log('🔍 END DEBUG INFO');
 
   const selectedChat = selectedChatId 
     ? chats.find(chat => chat.id === selectedChatId)
