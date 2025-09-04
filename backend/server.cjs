@@ -263,35 +263,7 @@ io.on('connection', (socket) => {
     socket.emit('allSlots', timeSlots);
   });
 
-  // Обработка подключения к комнате уведомлений
-  socket.on('joinNotifications', (data) => {
-    const { userId } = data;
-    if (userId) {
-      socket.join(`notifications_${userId}`);
-      console.log(`User ${userId} joined notifications room`);
-    }
-  });
 
-  // Обработка отключения от комнаты уведомлений
-  socket.on('leaveNotifications', (data) => {
-    const { userId } = data;
-    if (userId) {
-      socket.leave(`notifications_${userId}`);
-      console.log(`User ${userId} left notifications room`);
-    }
-  });
-
-  // Обработка подключения к общей комнате
-  socket.on('joinRoom', (roomId) => {
-    socket.join(roomId);
-    console.log(`Socket ${socket.id} joined room: ${roomId}`);
-  });
-
-  // Обработка отключения от общей комнаты
-  socket.on('leaveRoom', (roomId) => {
-    socket.leave(roomId);
-    console.log(`Socket ${socket.id} left room: ${roomId}`);
-  });
 
   // Обработка запроса всех пользователей
   socket.on('requestAllUsers', () => {
@@ -357,8 +329,6 @@ io.on('connection', (socket) => {
 
   // Обработка создания нового чата
   socket.on('createChat', (newChat) => {
-    console.log('createChat event received:', newChat);
-    
     // Проверяем, не существует ли уже такой чат
     const existingChat = chats.find(chat => 
       chat.participants.includes(newChat.participants[0]) && 
@@ -366,7 +336,6 @@ io.on('connection', (socket) => {
     );
     
     if (existingChat) {
-      console.log(`Chat already exists: ${existingChat.id}`);
       // Отправляем существующий чат обратно
       io.emit('chatCreated', existingChat);
       return;
@@ -381,10 +350,6 @@ io.on('connection', (socket) => {
     
     // Отправляем новый чат всем подключенным клиентам
     io.emit('chatCreated', newChat);
-    
-    // Также отправляем в общую комнату для гарантии доставки
-    io.to('all_users').emit('chatCreated', newChat);
-    console.log('Chat created event sent to all_users room');
   });
 
   // Обработка создания уведомлений
@@ -452,31 +417,12 @@ io.on('connection', (socket) => {
 
   // Обработка отправки сообщений в чате
   socket.on('sendMessage', (data) => {
-    console.log('sendMessage event received:', data);
-    
     // data: { chatId, message }
     const { chatId, message } = data;
-    
-    if (!chatId || !message) {
-      console.error('Invalid sendMessage data:', data);
-      return;
-    }
     
     // Находим чат и добавляем сообщение
     const chatIndex = chats.findIndex(chat => chat.id === chatId);
     if (chatIndex !== -1) {
-      // Инициализируем массив сообщений, если его нет
-      if (!chats[chatIndex].messages) {
-        chats[chatIndex].messages = [];
-      }
-      
-      // Проверяем, нет ли уже такого сообщения
-      const messageExists = chats[chatIndex].messages.some(msg => msg.id === message.id);
-      if (messageExists) {
-        console.log('Message already exists in chat, skipping:', message.id);
-        return;
-      }
-      
       chats[chatIndex].messages.push(message);
       chats[chatIndex].lastMessage = message;
       
@@ -484,11 +430,9 @@ io.on('connection', (socket) => {
       saveServerData();
       
       console.log(`Message saved to chat ${chatId}:`, message.content);
-      console.log(`Total messages in chat: ${chats[chatIndex].messages.length}`);
       
       // Отправляем сообщение всем клиентам
       io.emit('receiveMessage', data);
-      console.log('Message broadcasted to all clients');
       
       // Создаем уведомление для получателя, если он не отправитель
       if (message.receiverId && message.receiverId !== message.senderId) {
@@ -505,7 +449,7 @@ io.on('connection', (socket) => {
             messageId: message.id
           },
           isRead: false,
-          createdAt: new Date().toISOString()
+          timestamp: new Date().toISOString()
         };
         
         notifications.push(notification);
@@ -513,14 +457,7 @@ io.on('connection', (socket) => {
         
         // Отправляем уведомление конкретному пользователю
         io.to(`notifications_${message.receiverId}`).emit('newNotification', notification);
-        
-        console.log(`Notification sent to ${message.receiverId} for message from ${message.senderId}`);
-      } else {
-        console.log('No notification needed - same sender and receiver or missing receiverId');
       }
-    } else {
-      console.error(`Chat not found: ${chatId}`);
-      console.log('Available chats:', chats.map(c => ({ id: c.id, participants: c.participants })));
     }
   });
 
