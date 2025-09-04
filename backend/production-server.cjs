@@ -154,11 +154,14 @@ let {
   lessons,
   chats,
   overbookingRequests,
-  posts
+  posts,
+  notifications
 } = loadServerData();
 
 // Инициализируем уведомления, если их нет
-let notifications = [];
+if (!notifications) {
+  notifications = [];
+}
 
 // Обслуживание статических файлов фронтенда (если они есть)
 const distPath = path.join(__dirname, '..', 'dist');
@@ -802,11 +805,13 @@ io.on('connection', (socket) => {
           timestamp: new Date().toISOString()
         };
         
-        notifications.push(notification);
-        saveServerData();
-        
-        // Отправляем уведомление конкретному пользователю
-        io.to(`notifications_${message.receiverId}`).emit('newNotification', notification);
+        if (notifications) {
+          notifications.push(notification);
+          saveServerData();
+          
+          // Отправляем уведомление конкретному пользователю
+          io.to(`notifications_${message.receiverId}`).emit('newNotification', notification);
+        }
       }
     }
   });
@@ -816,17 +821,21 @@ io.on('connection', (socket) => {
     console.log('createNotification event received:', notification);
     
     // Добавляем уведомление в массив
-    notifications.push(notification);
-    
-    // Сохраняем данные на сервере
-    saveServerData();
-    
-    console.log(`Notification created: ${notification.id} for user ${notification.userId}`);
-    
-    // Отправляем уведомление конкретному пользователю
-    io.to(`notifications_${notification.userId}`).emit('newNotification', notification);
-    
-    console.log(`Notification sent to user ${notification.userId}`);
+    if (notifications) {
+      notifications.push(notification);
+      
+      // Сохраняем данные на сервере
+      saveServerData();
+      
+      console.log(`Notification created: ${notification.id} for user ${notification.userId}`);
+      
+      // Отправляем уведомление конкретному пользователю
+      io.to(`notifications_${notification.userId}`).emit('newNotification', notification);
+      
+      console.log(`Notification sent to user ${notification.userId}`);
+    } else {
+      console.error('Notifications array is not initialized');
+    }
   });
 
   // Обработка удаления чата
