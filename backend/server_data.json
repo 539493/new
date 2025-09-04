@@ -59,6 +59,39 @@
         "timestamp": "2025-09-04T15:19:27.804Z",
         "isRead": false
       }
+    },
+    {
+      "id": "chat_1757000599116_restored",
+      "participants": [
+        "test_student_restored",
+        "test_teacher_restored"
+      ],
+      "participantNames": [
+        "Тестовый Ученик (Восстановлено)",
+        "Тестовый Репетитор (Восстановлено)"
+      ],
+      "messages": [
+        {
+          "id": "msg_1757000599231",
+          "senderId": "test_student_restored",
+          "senderName": "Тестовый Ученик (Восстановлено)",
+          "receiverId": "test_teacher_restored",
+          "receiverName": "Тестовый Репетитор (Восстановлено)",
+          "content": "Привет! Это тест восстановленной логики.",
+          "timestamp": "2025-09-04T15:43:19.231Z",
+          "isRead": false
+        }
+      ],
+      "lastMessage": {
+        "id": "msg_1757000599231",
+        "senderId": "test_student_restored",
+        "senderName": "Тестовый Ученик (Восстановлено)",
+        "receiverId": "test_teacher_restored",
+        "receiverName": "Тестовый Репетитор (Восстановлено)",
+        "content": "Привет! Это тест восстановленной логики.",
+        "timestamp": "2025-09-04T15:43:19.231Z",
+        "isRead": false
+      }
     }
   ],
   "posts": [],
@@ -92,6 +125,21 @@
       },
       "isRead": false,
       "createdAt": "2025-09-04T15:19:27.812Z"
+    },
+    {
+      "id": "notification_1757000599234_2r1y98w23",
+      "userId": "test_teacher_restored",
+      "type": "new_message",
+      "title": "Новое сообщение",
+      "message": "Тестовый Ученик (Восстановлено) написал вам сообщение",
+      "data": {
+        "chatId": "chat_1757000599116_restored",
+        "senderId": "test_student_restored",
+        "senderName": "Тестовый Ученик (Восстановлено)",
+        "messageId": "msg_1757000599231"
+      },
+      "isRead": false,
+      "createdAt": "2025-09-04T15:43:19.234Z"
     }
   ]
 }
