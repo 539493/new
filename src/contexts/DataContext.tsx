@@ -604,21 +604,18 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       });
 
       newSocket.on('receiveMessage', (data: { chatId: string, message: any }) => {
-        setChats(prev => {
-          const updated = prev.map(chat => {
-            if (chat.id === data.chatId) {
-              return {
-                ...chat,
-                messages: [...chat.messages, data.message],
-                lastMessage: data.message,
-              };
-            }
-            return chat;
-          });
-          // Сохраняем в localStorage только один раз после обновления
-          saveToStorage('tutoring_chats', updated);
-          return updated;
-        });
+        setChats(prev => prev.map(chat => {
+          if (chat.id === data.chatId) {
+            const updatedChat = {
+              ...chat,
+              messages: [...chat.messages, data.message],
+              lastMessage: data.message,
+            };
+            saveToStorage('tutoring_chats', prev.map(c => c.id === chat.id ? updatedChat : c));
+            return updatedChat;
+          }
+          return chat;
+        }));
       });
 
       // Обработчики событий чатов

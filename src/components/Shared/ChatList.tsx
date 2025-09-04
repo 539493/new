@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   MessageCircle, 
   Send, 
@@ -45,8 +45,7 @@ const ChatList: React.FC = () => {
     archiveChat,
     unarchiveChat,
     getOrCreateChat,
-    loadChatsFromServer,
-    socketRef
+    loadChatsFromServer
   } = useData();
   const { user } = useAuth();
   
@@ -67,33 +66,16 @@ const ChatList: React.FC = () => {
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { socketRef } = useData();
 
   // Автоматическая прокрутка к последнему сообщению
-  const scrollToBottom = useCallback(() => {
+  const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, []);
+  };
 
   useEffect(() => {
     scrollToBottom();
-  }, [selectedChatId, selectedChatMessages.length, scrollToBottom]);
-
-  // Мемоизируем отфильтрованные чаты
-  const filteredChats = useMemo(() => {
-    if (!user) return [];
-    
-    const userChats = chats.filter(chat => 
-      chat.participants.includes(user.id) && 
-      (showArchivedChats ? chat.archived : !chat.archived)
-    );
-
-    if (!searchTerm) return userChats;
-
-    return userChats.filter(chat => {
-      const otherParticipant = chat.participantNames.find(name => name !== user.name);
-      return otherParticipant?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-             chat.lastMessage?.content?.toLowerCase().includes(searchTerm.toLowerCase());
-    });
-  }, [chats, user, searchTerm, showArchivedChats]);
+  }, [selectedChatId, chats]);
 
   // Загружаем чаты при монтировании компонента
   useEffect(() => {
@@ -168,10 +150,13 @@ const ChatList: React.FC = () => {
     return user || null;
   };
 
+  // Фильтрация чатов
+  const userChats = chats.filter(chat => chat.participants.includes(user?.id || ''));
+  
   console.log('🔍 ChatList DEBUG INFO:');
   console.log('- Current user:', { id: user?.id, name: user?.name, role: user?.role });
   console.log('- All chats count:', chats.length);
-  console.log('- User chats count:', filteredChats.length);
+  console.log('- User chats count:', userChats.length);
   
   // Показываем детальную информацию о каждом чате
   if (chats.length > 0) {
@@ -187,36 +172,35 @@ const ChatList: React.FC = () => {
     });
   }
   
+  const filteredChats = userChats.filter(chat => {
+    // Показываем архивированные чаты только если включен соответствующий флаг
+    if (chat.archived && !showArchivedChats) return false;
+    if (!chat.archived && showArchivedChats) return false;
+    
+    const otherParticipantName = chat.participantNames.find(name => 
+      name !== user?.name
+    );
+    return otherParticipantName?.toLowerCase().includes(searchTerm.toLowerCase());
+  });
   
   console.log('- Filtered chats count:', filteredChats.length);
   console.log('🔍 END DEBUG INFO');
 
-  const selectedChat = useMemo(() => {
-    return selectedChatId ? chats.find(chat => chat.id === selectedChatId) : null;
-  }, [selectedChatId, chats]);
-
-  // Мемоизируем сообщения выбранного чата
-  const selectedChatMessages = useMemo(() => {
-    return selectedChat?.messages || [];
-  }, [selectedChat]);
+  const selectedChat = selectedChatId 
+    ? chats.find(chat => chat.id === selectedChatId)
+    : null;
 
   // Отправка сообщения
-  const handleSendMessage = useCallback(() => {
+  const handleSendMessage = () => {
     if (!newMessage.trim() || !selectedChatId || !user) return;
 
     sendMessage(selectedChatId, user.id, user.name, newMessage.trim());
     setNewMessage('');
     setIsTyping(false);
-  }, [newMessage, selectedChatId, user, sendMessage]);
-
-  // Мемоизируем список пользователей для нового чата
-  const availableUsers = useMemo(() => {
-    if (!user || !allUsers) return [];
-    return allUsers.filter(u => u.id !== user.id);
-  }, [allUsers, user]);
+  };
 
   // Отправка сообщения новому пользователю
-  const handleSendMessageToUser = useCallback((receiverId: string, receiverName: string) => {
+  const handleSendMessageToUser = (receiverId: string, receiverName: string) => {
     if (!newChatMessage.trim() || !user) return;
 
     console.log('🔍 ChatList handleSendMessageToUser DEBUG:');
@@ -243,7 +227,7 @@ const ChatList: React.FC = () => {
     setShowNewChatModal(false);
     
     console.log('🔍 END ChatList handleSendMessageToUser DEBUG');
-  }, [newChatMessage, user, sendMessageToUser]);
+  };
 
   // Обработка нажатия Enter
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -802,8 +786,8 @@ const ChatList: React.FC = () => {
 
               {/* Messages */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
-                {selectedChatMessages && selectedChatMessages.length > 0 ? (
-                  selectedChatMessages.map((message: any) => (
+                {selectedChat.messages && selectedChat.messages.length > 0 ? (
+                  selectedChat.messages.map((message: any) => (
                     <div
                       key={message.id}
                       className={`flex ${message.senderId === user?.id ? 'justify-end' : 'justify-start'}`}
@@ -1081,7 +1065,9 @@ const ChatList: React.FC = () => {
                   Выберите получателя
                 </label>
                 <div className="max-h-60 overflow-y-auto border border-gray-300 rounded-lg">
-                  {availableUsers.map((userItem) => (
+                  {allUsers
+                    .filter(u => u.id !== user?.id)
+                    .map((userItem) => (
                       <button
                         key={userItem.id}
                         onClick={() => handleSendMessageToUser(userItem.id, userItem.name)}
