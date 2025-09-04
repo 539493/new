@@ -472,12 +472,12 @@ const ChatList: React.FC = () => {
   const unreadCount = getUnreadCount();
 
   return (
-    <div className="h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
+      <div className="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Мои чаты</h1>
+            <h1 className="text-2xl font-bold text-gray-900">МОИ ЧАТЫ</h1>
             <p className="text-gray-600 text-sm">
               {unreadCount > 0 
                 ? `${unreadCount} непрочитанных сообщений` 
@@ -518,11 +518,11 @@ const ChatList: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden min-h-0">
         {/* Chat List Sidebar */}
-        <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
+        <div className="w-80 bg-white border-r border-gray-200 flex flex-col flex-shrink-0">
           {/* Search and New Chat */}
-          <div className="p-4 border-b border-gray-200 space-y-3">
+          <div className="p-4 border-b border-gray-200 space-y-3 flex-shrink-0">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
@@ -728,7 +728,7 @@ const ChatList: React.FC = () => {
         </div>
 
         {/* Chat Window */}
-        <div className="flex-1 flex flex-col bg-white">
+        <div className="flex-1 flex flex-col bg-white min-h-0">
           {selectedChat ? (
             <>
               {/* Chat Header */}
@@ -785,7 +785,7 @@ const ChatList: React.FC = () => {
               </div>
 
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+              <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 min-h-0">
                 {selectedChat.messages && selectedChat.messages.length > 0 ? (
                   selectedChat.messages.map((message: any) => (
                     <div
@@ -822,7 +822,7 @@ const ChatList: React.FC = () => {
               </div>
 
               {/* Message Input */}
-              <div className="p-4 border-t border-gray-200 bg-white">
+              <div className="p-4 border-t border-gray-200 bg-white flex-shrink-0">
                 <div className="flex items-end space-x-3">
                   <div className="flex-1 relative">
                     <textarea
