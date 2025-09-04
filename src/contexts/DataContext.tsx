@@ -423,6 +423,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       }
 
       console.log('Server is available, initializing Socket.IO connection...');
+      console.log('SERVER_URL for WebSocket:', SERVER_URL);
+      console.log('SOCKET_CONFIG:', SOCKET_CONFIG);
 
       const newSocket = io(SERVER_URL, {
         ...SOCKET_CONFIG,
@@ -1945,7 +1947,14 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   const loadChatsFromServer = async () => {
     try {
       console.log('Loading chats from server...');
-      const response = await fetch(`${SERVER_URL}/api/sync`);
+      console.log('SERVER_URL:', SERVER_URL);
+      const url = `${SERVER_URL}/api/sync`;
+      console.log('Fetching from URL:', url);
+      
+      const response = await fetch(url);
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
+      
       if (response.ok) {
         const data = await response.json();
         console.log('Server sync data received:', {
@@ -1959,6 +1968,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         }
       } else {
         console.error('Failed to load chats from server:', response.status);
+        const text = await response.text();
+        console.error('Response text:', text);
       }
     } catch (error) {
       console.warn('Error loading chats from server:', error);
