@@ -1445,14 +1445,21 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   };
 
   const getOrCreateChat = (participant1Id: string, participant2Id: string, participant1Name: string, participant2Name: string): string => {
+    console.log('🔍 getOrCreateChat DEBUG:');
+    console.log('- Participant 1:', { id: participant1Id, name: participant1Name });
+    console.log('- Participant 2:', { id: participant2Id, name: participant2Name });
+    console.log('- Current chats count:', chats.length);
+    
     const existingChat = chats.find(chat => 
       chat.participants.includes(participant1Id) && chat.participants.includes(participant2Id)
     );
 
     if (existingChat) {
+      console.log('✅ Found existing chat:', existingChat.id);
       return existingChat.id;
     }
 
+    console.log('🆕 Creating new chat...');
     const newChat: Chat = {
       id: `chat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       participants: [participant1Id, participant2Id],
@@ -1460,14 +1467,18 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       messages: [],
     };
 
+    console.log('📝 New chat created:', newChat.id);
+
     setChats(prev => {
       const updated = [...prev, newChat];
       saveToStorage('tutoring_chats', updated);
+      console.log('💾 Chat saved to localStorage, total chats:', updated.length);
       return updated;
     });
 
     // Отправляем новый чат на сервер для других клиентов
     if (socketRef.current && isConnected) {
+      console.log('📡 Sending chat to server...');
       socketRef.current.emit('createChat', newChat);
       
       // Создаем уведомление для репетитора о новом чате
@@ -1483,27 +1494,44 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       };
       
       socketRef.current.emit('createNotification', notification);
+      console.log('📬 Notification sent to server');
+    } else {
+      console.log('⚠️ Socket not connected, chat not sent to server');
     }
 
+    console.log('🔍 END getOrCreateChat DEBUG');
     return newChat.id;
   };
 
   const sendMessage = (chatId: string, senderId: string, senderName: string, content: string) => {
+    console.log('🔍 sendMessage DEBUG:');
+    console.log('- Chat ID:', chatId);
+    console.log('- Sender:', { id: senderId, name: senderName });
+    console.log('- Content:', content);
+    
     // Находим чат и определяем получателя
     const chat = chats.find(c => c.id === chatId);
     if (!chat) {
-      console.error('Chat not found:', chatId);
+      console.error('❌ Chat not found:', chatId);
       return;
     }
+    
+    console.log('✅ Chat found:', { 
+      id: chat.id, 
+      participants: chat.participants, 
+      participantNames: chat.participantNames 
+    });
     
     // Определяем получателя (другой участник чата)
     const receiverId = chat.participants.find(id => id !== senderId);
     const receiverName = chat.participantNames.find((name, index) => chat.participants[index] !== senderId);
     
     if (!receiverId) {
-      console.error('Receiver not found in chat participants');
+      console.error('❌ Receiver not found in chat participants');
       return;
     }
+    
+    console.log('📬 Receiver:', { id: receiverId, name: receiverName });
     
     const newMessage = {
       id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -1516,6 +1544,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       isRead: false,
     };
 
+    console.log('📝 Message created:', newMessage.id);
+
     // Добавляем сообщение локально сразу для мгновенного отображения
     setChats(prev => prev.map(chat => {
       if (chat.id === chatId) {
@@ -1525,6 +1555,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           lastMessage: newMessage,
         };
         saveToStorage('tutoring_chats', prev.map(c => c.id === chat.id ? updatedChat : c));
+        console.log('💾 Message saved locally, total messages in chat:', updatedChat.messages.length);
         return updatedChat;
       }
       return chat;
@@ -1532,8 +1563,14 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
     // Отправляем сообщение на сервер для других клиентов
     if (socketRef.current && isConnected) {
+      console.log('📡 Sending message to server...');
       socketRef.current.emit('sendMessage', { chatId, message: newMessage });
+      console.log('✅ Message sent to server');
+    } else {
+      console.log('⚠️ Socket not connected, message not sent to server');
     }
+    
+    console.log('🔍 END sendMessage DEBUG');
   };
 
   // Новая функция для отправки сообщения любому пользователю с автоматическим созданием чата
@@ -1543,13 +1580,25 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     console.log('- Receiver:', { id: receiverId, name: receiverName });
     console.log('- Content:', content);
     
+    // Проверяем, что все параметры переданы
+    if (!senderId || !senderName || !receiverId || !receiverName || !content) {
+      console.error('❌ Missing required parameters for sendMessageToUser');
+      return '';
+    }
+    
     // Создаем или находим чат между пользователями
     const chatId = getOrCreateChat(senderId, receiverId, senderName, receiverName);
     console.log('- Chat ID:', chatId);
     
+    if (!chatId) {
+      console.error('❌ Failed to create or find chat');
+      return '';
+    }
+    
     // Отправляем сообщение в созданный/найденный чат
     sendMessage(chatId, senderId, senderName, content);
     
+    console.log('✅ Message sent successfully to chat:', chatId);
     console.log('🔍 END sendMessageToUser DEBUG');
     return chatId;
   };
@@ -1901,18 +1950,26 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
   const loadChatsFromServer = async () => {
     try {
+      console.log('🔄 Loading chats from server:', `${SERVER_URL}/api/sync`);
       const response = await fetch(`${SERVER_URL}/api/sync`);
+      
       if (response.ok) {
-        const data = await response.json();
-        if (data.chats) {
-          setChats(data.chats);
-          saveToStorage('tutoring_chats', data.chats);
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const data = await response.json();
+          if (data.chats) {
+            console.log('✅ Loaded chats from server:', data.chats.length);
+            setChats(data.chats);
+            saveToStorage('tutoring_chats', data.chats);
+          }
+        } else {
+          console.warn('⚠️ Server returned non-JSON response, using local chats');
         }
       } else {
-        console.error('Failed to load chats from server:', response.status);
+        console.error('❌ Failed to load chats from server:', response.status, response.statusText);
       }
     } catch (error) {
-      console.warn('Error loading chats from server:', error);
+      console.warn('⚠️ Error loading chats from server, using local chats:', error);
     }
   };
 
