@@ -463,6 +463,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
             // Подключаемся к комнате уведомлений
             socketRef.current.emit('joinNotifications', { userId: user.id });
             console.log('Joined notifications room for user:', user.id);
+            
+            // Также подключаемся к общей комнате для получения всех событий
+            socketRef.current.emit('joinRoom', 'all_users');
+            console.log('Joined all_users room');
           }
         }
       });
@@ -600,14 +604,18 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
       // Слушаем новые чаты
       newSocket.on('chatCreated', (newChat: Chat) => {
+        console.log('chatCreated event received:', newChat);
         setChats(prev => {
           const exists = prev.find(chat => chat.id === newChat.id);
           if (!exists) {
+            console.log('Adding new chat to state:', newChat.id);
             const updated = [...prev, newChat];
             saveToStorage('tutoring_chats', updated);
             return updated;
+          } else {
+            console.log('Chat already exists, skipping:', newChat.id);
+            return prev;
           }
-          return prev;
         });
       });
 
@@ -1936,13 +1944,21 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
   const loadChatsFromServer = async () => {
     try {
+      console.log('Loading chats from server...');
       const response = await fetch(`${SERVER_URL}/api/sync`);
       if (response.ok) {
         const data = await response.json();
+        console.log('Server sync data received:', {
+          chatsCount: data.chats?.length || 0,
+          chats: data.chats
+        });
         if (data.chats) {
           setChats(data.chats);
           saveToStorage('tutoring_chats', data.chats);
+          console.log('Chats loaded from server and saved to localStorage');
         }
+      } else {
+        console.error('Failed to load chats from server:', response.status);
       }
     } catch (error) {
       console.warn('Error loading chats from server:', error);

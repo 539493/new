@@ -281,6 +281,18 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Обработка подключения к общей комнате
+  socket.on('joinRoom', (roomId) => {
+    socket.join(roomId);
+    console.log(`Socket ${socket.id} joined room: ${roomId}`);
+  });
+
+  // Обработка отключения от общей комнаты
+  socket.on('leaveRoom', (roomId) => {
+    socket.leave(roomId);
+    console.log(`Socket ${socket.id} left room: ${roomId}`);
+  });
+
   // Обработка запроса всех пользователей
   socket.on('requestAllUsers', () => {
     const users = [];
@@ -369,6 +381,10 @@ io.on('connection', (socket) => {
     
     // Отправляем новый чат всем подключенным клиентам
     io.emit('chatCreated', newChat);
+    
+    // Также отправляем в общую комнату для гарантии доставки
+    io.to('all_users').emit('chatCreated', newChat);
+    console.log('Chat created event sent to all_users room');
   });
 
   // Обработка создания уведомлений

@@ -76,6 +76,7 @@ const ChatList: React.FC = () => {
   // Загружаем чаты при монтировании компонента
   useEffect(() => {
     if (user) {
+      console.log('ChatList: Loading chats for user:', user.id);
       loadChatsFromServer();
     }
   }, [user, loadChatsFromServer]);
@@ -147,6 +148,8 @@ const ChatList: React.FC = () => {
 
   // Фильтрация чатов
   const userChats = chats.filter(chat => chat.participants.includes(user?.id || ''));
+  console.log('ChatList: All chats:', chats.length, 'User chats:', userChats.length, 'User ID:', user?.id);
+  
   const filteredChats = userChats.filter(chat => {
     // Показываем архивированные чаты только если включен соответствующий флаг
     if (chat.archived && !showArchivedChats) return false;
@@ -157,6 +160,8 @@ const ChatList: React.FC = () => {
     );
     return otherParticipantName?.toLowerCase().includes(searchTerm.toLowerCase());
   });
+  
+  console.log('ChatList: Filtered chats:', filteredChats.length);
 
   const selectedChat = selectedChatId 
     ? chats.find(chat => chat.id === selectedChatId)
