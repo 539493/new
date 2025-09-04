@@ -306,39 +306,65 @@ const ProfileForm: React.FC = () => {
         </div>
       </div>
       {/* Блок 'О себе' */}
-      <div className="bg-white rounded-2xl shadow p-4 mb-6 text-sm flex flex-col gap-2 card-gradient">
-        <h3 className="text-base font-bold text-gray-900 mb-2">О себе</h3>
-        <div className="text-gray-700 whitespace-pre-line leading-relaxed mb-2">
+      <div className="bg-white rounded-2xl shadow p-6 mb-6 card-gradient">
+        <h3 className="text-lg font-bold text-gray-900 mb-4">О себе</h3>
+        
+        {/* Описание */}
+        <div className="text-gray-700 whitespace-pre-line leading-relaxed mb-4 text-sm">
           {user.role === 'student' ? studentProfile.bio || '—' : user.profile?.bio || '—'}
         </div>
         
         {/* Информация для ученика */}
         {user.role === 'student' && (
-          <div className="flex flex-col gap-2">
-            <div><span className="text-xs font-semibold text-gray-500">Предметы:</span> <span className="text-base text-gray-900">{studentProfile.subjects?.join(', ') || '—'}</span></div>
+          <div className="space-y-4">
+            {/* Предметы */}
+            {studentProfile.subjects && studentProfile.subjects.length > 0 && (
+              <div className="border-l-4 border-blue-500 pl-4">
+                <h4 className="text-sm font-semibold text-gray-600 mb-2">Предметы</h4>
+                <div className="flex flex-wrap gap-2">
+                  {studentProfile.subjects.map((subject, index) => (
+                    <span key={index} className="bg-blue-50 text-blue-700 text-sm px-3 py-1 rounded-lg border border-blue-200">
+                      {subject}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
             
-            {/* Дополнительная информация ученика */}
+            {/* Основная информация */}
             {(studentProfile.age || studentProfile.school || studentProfile.city) && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
-                {studentProfile.age && (
-                  <div><span className="text-xs font-semibold text-gray-500">Возраст:</span> <span className="text-base text-gray-900">{studentProfile.age} лет</span></div>
-                )}
-                {studentProfile.school && (
-                  <div><span className="text-xs font-semibold text-gray-500">Школа:</span> <span className="text-base text-gray-900">{studentProfile.school}</span></div>
-                )}
-                {studentProfile.city && (
-                  <div><span className="text-xs font-semibold text-gray-500">Город:</span> <span className="text-base text-gray-900">{studentProfile.city}</span></div>
-                )}
+              <div className="border-l-4 border-green-500 pl-4">
+                <h4 className="text-sm font-semibold text-gray-600 mb-2">Основная информация</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {studentProfile.age && (
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <div className="text-xs text-gray-500 mb-1">Возраст</div>
+                      <div className="text-sm font-medium text-gray-900">{studentProfile.age} лет</div>
+                    </div>
+                  )}
+                  {studentProfile.school && (
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <div className="text-xs text-gray-500 mb-1">Школа</div>
+                      <div className="text-sm font-medium text-gray-900">{studentProfile.school}</div>
+                    </div>
+                  )}
+                  {studentProfile.city && (
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <div className="text-xs text-gray-500 mb-1">Город</div>
+                      <div className="text-sm font-medium text-gray-900">{studentProfile.city}</div>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
             
             {/* Цели обучения */}
             {studentProfile.goals && studentProfile.goals.length > 0 && (
-              <div className="mt-2">
-                <span className="text-xs font-semibold text-gray-500">Цели обучения:</span>
-                <div className="flex flex-wrap gap-1 mt-1">
+              <div className="border-l-4 border-purple-500 pl-4">
+                <h4 className="text-sm font-semibold text-gray-600 mb-2">Цели обучения</h4>
+                <div className="flex flex-wrap gap-2">
                   {studentProfile.goals.map((goal, index) => (
-                    <span key={index} className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                    <span key={index} className="bg-purple-100 text-purple-700 text-sm px-3 py-1 rounded-lg border border-purple-200">
                       {goal}
                     </span>
                   ))}
@@ -348,11 +374,11 @@ const ProfileForm: React.FC = () => {
             
             {/* Интересы */}
             {studentProfile.interests && studentProfile.interests.length > 0 && (
-              <div className="mt-2">
-                <span className="text-xs font-semibold text-gray-500">Интересы:</span>
-                <div className="flex flex-wrap gap-1 mt-1">
+              <div className="border-l-4 border-green-500 pl-4">
+                <h4 className="text-sm font-semibold text-gray-600 mb-2">Интересы</h4>
+                <div className="flex flex-wrap gap-2">
                   {studentProfile.interests.map((interest, index) => (
-                    <span key={index} className="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+                    <span key={index} className="bg-green-100 text-green-700 text-sm px-3 py-1 rounded-lg border border-green-200">
                       {interest}
                     </span>
                   ))}
@@ -362,59 +388,65 @@ const ProfileForm: React.FC = () => {
             
             {/* Стиль обучения и уровень */}
             {(studentProfile.learningStyle || studentProfile.experience) && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
-                {studentProfile.learningStyle && (
-                  <div>
-                    <span className="text-xs font-semibold text-gray-500">Стиль обучения:</span>
-                    <span className="text-base text-gray-900 ml-1">
-                      {studentProfile.learningStyle === 'visual' ? 'Визуальный' :
-                       studentProfile.learningStyle === 'auditory' ? 'Аудиальный' :
-                       studentProfile.learningStyle === 'kinesthetic' ? 'Кинестетический' :
-                       'Смешанный'}
-                    </span>
-                  </div>
-                )}
-                {studentProfile.experience && (
-                  <div>
-                    <span className="text-xs font-semibold text-gray-500">Уровень:</span>
-                    <span className="text-base text-gray-900 ml-1">
-                      {studentProfile.experience === 'beginner' ? 'Начинающий' :
-                       studentProfile.experience === 'intermediate' ? 'Средний' :
-                       'Продвинутый'}
-                    </span>
-                  </div>
-                )}
+              <div className="border-l-4 border-orange-500 pl-4">
+                <h4 className="text-sm font-semibold text-gray-600 mb-2">Особенности обучения</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {studentProfile.learningStyle && (
+                    <div className="bg-orange-50 rounded-lg p-3">
+                      <div className="text-xs text-gray-500 mb-1">Стиль обучения</div>
+                      <div className="text-sm font-medium text-gray-900">
+                        {studentProfile.learningStyle === 'visual' ? 'Визуальный' :
+                         studentProfile.learningStyle === 'auditory' ? 'Аудиальный' :
+                         studentProfile.learningStyle === 'kinesthetic' ? 'Кинестетический' :
+                         'Смешанный'}
+                      </div>
+                    </div>
+                  )}
+                  {studentProfile.experience && (
+                    <div className="bg-orange-50 rounded-lg p-3">
+                      <div className="text-xs text-gray-500 mb-1">Уровень знаний</div>
+                      <div className="text-sm font-medium text-gray-900">
+                        {studentProfile.experience === 'beginner' ? 'Начинающий' :
+                         studentProfile.experience === 'intermediate' ? 'Средний' :
+                         'Продвинутый'}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
             
             {/* Предпочтения по форматам и длительности */}
             {((studentProfile.preferredFormats && studentProfile.preferredFormats.length > 0) || 
               (studentProfile.preferredDurations && studentProfile.preferredDurations.length > 0)) && (
-              <div className="mt-2">
-                {studentProfile.preferredFormats && studentProfile.preferredFormats.length > 0 && (
-                  <div className="mb-1">
-                    <span className="text-xs font-semibold text-gray-500">Форматы:</span>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {studentProfile.preferredFormats.map((format, index) => (
-                        <span key={index} className="inline-block bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">
-                          {format === 'online' ? 'Онлайн' : format === 'offline' ? 'Оффлайн' : 'Мини-группа'}
-                        </span>
-                      ))}
+              <div className="border-l-4 border-indigo-500 pl-4">
+                <h4 className="text-sm font-semibold text-gray-600 mb-2">Предпочтения</h4>
+                <div className="space-y-3">
+                  {studentProfile.preferredFormats && studentProfile.preferredFormats.length > 0 && (
+                    <div>
+                      <div className="text-xs text-gray-500 mb-2">Форматы занятий</div>
+                      <div className="flex flex-wrap gap-2">
+                        {studentProfile.preferredFormats.map((format, index) => (
+                          <span key={index} className="bg-indigo-100 text-indigo-700 text-sm px-3 py-1 rounded-lg border border-indigo-200">
+                            {format === 'online' ? 'Онлайн' : format === 'offline' ? 'Оффлайн' : 'Мини-группа'}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
-                {studentProfile.preferredDurations && studentProfile.preferredDurations.length > 0 && (
-                  <div>
-                    <span className="text-xs font-semibold text-gray-500">Длительность:</span>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {studentProfile.preferredDurations.map((duration, index) => (
-                        <span key={index} className="inline-block bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full">
-                          {duration} мин
-                        </span>
-                      ))}
+                  )}
+                  {studentProfile.preferredDurations && studentProfile.preferredDurations.length > 0 && (
+                    <div>
+                      <div className="text-xs text-gray-500 mb-2">Длительность занятий</div>
+                      <div className="flex flex-wrap gap-2">
+                        {studentProfile.preferredDurations.map((duration, index) => (
+                          <span key={index} className="bg-indigo-100 text-indigo-700 text-sm px-3 py-1 rounded-lg border border-indigo-200">
+                            {duration} мин
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -422,12 +454,36 @@ const ProfileForm: React.FC = () => {
         
         {/* Информация для преподавателя */}
         {user.role === 'teacher' && (
-          <div className="flex flex-col gap-1">
-            <div><span className="text-xs font-semibold text-gray-500">Предметы:</span> <span className="text-base text-gray-900">{user.profile?.subjects?.join(', ') || '—'}</span></div>
-            <div><span className="text-xs font-semibold text-gray-500">Классы:</span> <span className="text-base text-gray-900">{(user.profile as TeacherProfile)?.grades?.join(', ') || '—'}</span></div>
-            <div><span className="text-xs font-semibold text-gray-500">Страна:</span> <span className="text-base text-gray-900">{(user.profile as TeacherProfile)?.country || '—'}</span></div>
+          <div className="space-y-4">
+            <div className="border-l-4 border-blue-500 pl-4">
+              <h4 className="text-sm font-semibold text-gray-600 mb-2">Предметы</h4>
+              <div className="flex flex-wrap gap-2">
+                {user.profile?.subjects?.map((subject, index) => (
+                  <span key={index} className="bg-blue-50 text-blue-700 text-sm px-3 py-1 rounded-lg border border-blue-200">
+                    {subject}
+                  </span>
+                )) || <span className="text-gray-500 text-sm">—</span>}
+              </div>
+            </div>
+            
+            <div className="border-l-4 border-green-500 pl-4">
+              <h4 className="text-sm font-semibold text-gray-600 mb-2">Классы</h4>
+              <div className="flex flex-wrap gap-2">
+                {(user.profile as TeacherProfile)?.grades?.map((grade, index) => (
+                  <span key={index} className="bg-green-50 text-green-700 text-sm px-3 py-1 rounded-lg border border-green-200">
+                    {grade}
+                  </span>
+                )) || <span className="text-gray-500 text-sm">—</span>}
+              </div>
+            </div>
+            
             {(user.profile as TeacherProfile)?.experience && (
-              <div className="mt-2"><span className="text-xs font-semibold text-gray-500">Опыт:</span> <span className="text-base text-gray-900">{(user.profile as TeacherProfile).experience}</span></div>
+              <div className="border-l-4 border-orange-500 pl-4">
+                <h4 className="text-sm font-semibold text-gray-600 mb-2">Опыт</h4>
+                <div className="bg-orange-50 rounded-lg p-3">
+                  <div className="text-sm font-medium text-gray-900">{(user.profile as TeacherProfile).experience}</div>
+                </div>
+              </div>
             )}
           </div>
         )}
