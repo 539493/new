@@ -25,7 +25,8 @@ import {
   Play,
   Image as ImageIcon,
   VideoIcon,
-  FileText
+  FileText,
+  GraduationCap
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useData } from '../../contexts/DataContext';
@@ -68,6 +69,15 @@ const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClos
       case 'experienced': return 'Опытный';
       case 'professional': return 'Профессионал';
       default: return exp;
+    }
+  };
+
+  const getTeacherTypeLabel = (type: string) => {
+    switch (type) {
+      case 'private': return 'Частный преподаватель';
+      case 'school': return 'Преподаватель школы';
+      case 'both': return 'Частный + Школа';
+      default: return 'Частный преподаватель';
     }
   };
 
@@ -528,6 +538,14 @@ const TeacherProfilePage: React.FC<TeacherProfilePageProps> = ({ teacher, onClos
                           </div>
                         </div>
                       )}
+
+                      <div className="flex items-center space-x-3">
+                        <GraduationCap className="w-5 h-5 text-indigo-600" />
+                        <div>
+                          <div className="text-sm text-gray-600">Тип преподавателя</div>
+                          <div className="font-semibold text-gray-900">{getTeacherTypeLabel(profile?.teacherType || 'private')}</div>
+                        </div>
+                      </div>
                     </div>
                     
                     {/* Рейтинг и уроки */}

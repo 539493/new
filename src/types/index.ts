@@ -46,6 +46,7 @@ export interface TeacherProfile {
   avatar?: string;
   rating?: number;
   hourlyRate?: number;
+  teacherType?: 'private' | 'school' | 'both'; // Тип преподавателя
   // Новые поля для соцсети:
   students?: string[]; // id учеников
   lessonsCount?: number; // всего проведённых уроков

@@ -1265,7 +1265,12 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
                       <h3 className="text-xl font-bold text-gray-900 mb-1">
                         {profile?.name || teacher.name || 'Репетитор'}
                       </h3>
-                      <p className="text-sm text-gray-600">Частный преподаватель</p>
+                      <p className="text-sm text-gray-600">
+                        {profile?.teacherType === 'private' ? 'Частный преподаватель' :
+                         profile?.teacherType === 'school' ? 'Преподаватель школы' :
+                         profile?.teacherType === 'both' ? 'Частный + Школа' :
+                         'Частный преподаватель'}
+                      </p>
                     </div>
                     
                     {/* Age and Experience */}

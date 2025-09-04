@@ -182,6 +182,15 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
     }
   };
 
+  const getTeacherTypeLabel = (type: string) => {
+    switch (type) {
+      case 'private': return 'Частный преподаватель';
+      case 'school': return 'Преподаватель школы';
+      case 'both': return 'Частный + Школа';
+      default: return 'Частный преподаватель';
+    }
+  };
+
   const getFormatLabel = (format: string) => {
     switch (format) {
       case 'online': return 'Онлайн';
@@ -472,6 +481,18 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
                     ) : (
                       <span className="text-gray-500">Не указано</span>
                     )}
+                  </div>
+                </div>
+
+                <div>
+                  <span className="text-xs font-semibold text-gray-500 flex items-center">
+                    <GraduationCap className="w-3 h-3 mr-1" />
+                    Тип преподавателя:
+                  </span>
+                  <div className="text-sm text-gray-900 mt-1">
+                    <span className="bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full text-xs font-medium">
+                      {getTeacherTypeLabel(profile?.teacherType || 'private')}
+                    </span>
                   </div>
                 </div>
                 

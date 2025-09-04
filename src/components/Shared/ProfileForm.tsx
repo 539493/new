@@ -62,6 +62,7 @@ const ProfileForm: React.FC = () => {
     hourlyRate: 1500,
     age: undefined,
     experienceYears: undefined,
+    teacherType: 'private',
     education: {
       university: '',
       degree: '',
@@ -141,6 +142,7 @@ const ProfileForm: React.FC = () => {
         hourlyRate: 1500,
         age: undefined,
         experienceYears: undefined,
+        teacherType: 'private' as const,
         education: {
           university: '',
           degree: '',
@@ -191,6 +193,15 @@ const ProfileForm: React.FC = () => {
       case 'experienced': return 'Опытный';
       case 'professional': return 'Профессионал';
       default: return exp;
+    }
+  };
+
+  const getTeacherTypeLabel = (type: string) => {
+    switch (type) {
+      case 'private': return 'Частный преподаватель';
+      case 'school': return 'Преподаватель школы';
+      case 'both': return 'Частный + Школа';
+      default: return 'Частный преподаватель';
     }
   };
 
@@ -685,7 +696,7 @@ const ProfileForm: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Опыт преподавания</label>
               <select
@@ -699,6 +710,21 @@ const ProfileForm: React.FC = () => {
               </select>
             </div>
 
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Тип преподавателя</label>
+              <select
+                value={teacherProfile.teacherType || 'private'}
+                onChange={(e) => setTeacherProfile({ ...teacherProfile, teacherType: e.target.value as any })}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="private">Частный преподаватель</option>
+                <option value="school">Преподаватель школы</option>
+                <option value="both">Частный + Школа</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Возраст</label>
               <input
