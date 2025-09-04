@@ -472,7 +472,7 @@ const ChatList: React.FC = () => {
   const unreadCount = getUnreadCount();
 
   return (
-    <div className="h-[calc(100vh-80px)] bg-gray-50 flex flex-col">
+    <div className="h-full bg-gray-50 flex flex-col overflow-hidden">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 px-6 py-3 flex-shrink-0">
         <div className="flex items-center justify-between">

@@ -103,7 +103,7 @@ const AppContent: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-50">
         <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
-        <main className="container mx-auto px-4 py-8">
+        <main className={activeTab === 'chats' ? 'h-[calc(100vh-64px)]' : 'container mx-auto px-4 py-8'}>
           {renderContent()}
         </main>
       </div>
