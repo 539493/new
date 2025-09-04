@@ -92,6 +92,39 @@
         "timestamp": "2025-09-04T15:43:19.231Z",
         "isRead": false
       }
+    },
+    {
+      "id": "test_chat_1757003534234",
+      "participants": [
+        "test_student_chat_1757003534112",
+        "test_teacher_chat_1757003534112"
+      ],
+      "participantNames": [
+        "Тестовый Ученик",
+        "Тестовый Преподаватель"
+      ],
+      "messages": [
+        {
+          "id": "test_msg_1757003534281",
+          "senderId": "test_student_chat_1757003534112",
+          "senderName": "Тестовый Ученик",
+          "receiverId": "test_teacher_chat_1757003534112",
+          "receiverName": "Тестовый Преподаватель",
+          "content": "Привет! Это тестовое сообщение.",
+          "timestamp": "2025-09-04T16:32:14.281Z",
+          "isRead": false
+        }
+      ],
+      "lastMessage": {
+        "id": "test_msg_1757003534281",
+        "senderId": "test_student_chat_1757003534112",
+        "senderName": "Тестовый Ученик",
+        "receiverId": "test_teacher_chat_1757003534112",
+        "receiverName": "Тестовый Преподаватель",
+        "content": "Привет! Это тестовое сообщение.",
+        "timestamp": "2025-09-04T16:32:14.281Z",
+        "isRead": false
+      }
     }
   ],
   "posts": [],
@@ -140,6 +173,21 @@
       },
       "isRead": false,
       "createdAt": "2025-09-04T15:43:19.234Z"
+    },
+    {
+      "id": "notification_1757003534287_0b215g0jr",
+      "userId": "test_teacher_chat_1757003534112",
+      "type": "new_message",
+      "title": "Новое сообщение",
+      "message": "Тестовый Ученик написал вам сообщение",
+      "data": {
+        "chatId": "test_chat_1757003534234",
+        "senderId": "test_student_chat_1757003534112",
+        "senderName": "Тестовый Ученик",
+        "messageId": "test_msg_1757003534281"
+      },
+      "isRead": false,
+      "createdAt": "2025-09-04T16:32:14.288Z"
     }
   ]
 }

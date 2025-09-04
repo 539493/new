@@ -108,7 +108,8 @@ function loadServerData() {
         timeSlots: [],
         lessons: [],
         chats: [],
-        posts: []
+        posts: [],
+        notifications: []
       };
     }
   } catch (error) {
@@ -120,7 +121,8 @@ function loadServerData() {
       timeSlots: [],
       lessons: [],
       chats: [],
-      posts: []
+      posts: [],
+      notifications: []
     };
   }
 }
@@ -134,7 +136,8 @@ function saveServerData(data) {
       lessons,
       chats,
       overbookingRequests,
-      posts
+      posts,
+      notifications
     };
     
     fs.writeFileSync(DATA_FILE, JSON.stringify(dataToSave, null, 2));
@@ -153,6 +156,9 @@ let {
   overbookingRequests,
   posts
 } = loadServerData();
+
+// Инициализируем уведомления, если их нет
+let notifications = [];
 
 // Обслуживание статических файлов фронтенда (если они есть)
 const distPath = path.join(__dirname, '..', 'dist');
@@ -419,6 +425,26 @@ app.get('/api/socket-test', (req, res) => {
       currentOrigin: req.headers.origin || 'unknown'
     }
   });
+});
+
+// API endpoint для синхронизации данных
+app.get('/api/sync', (req, res) => {
+  try {
+    const syncData = {
+      timeSlots: timeSlots,
+      lessons: lessons,
+      chats: chats,
+      posts: posts,
+      teacherProfiles: teacherProfiles,
+      studentProfiles: studentProfiles,
+      overbookingRequests: overbookingRequests || []
+    };
+    
+    res.json(syncData);
+  } catch (error) {
+    console.error('Error in /api/sync:', error);
+    res.status(500).json({ error: 'Failed to sync data' });
+  }
 });
 
 // Root endpoint for service verification
@@ -709,6 +735,155 @@ io.on('connection', (socket) => {
         lessons: lessons.length
       }
     });
+  });
+
+  // ===== ОБРАБОТЧИКИ ДЛЯ ЧАТОВ =====
+  
+  // Обработка создания нового чата
+  socket.on('createChat', (newChat) => {
+    console.log('Creating new chat:', newChat.id);
+    
+    // Проверяем, не существует ли уже такой чат
+    const existingChat = chats.find(chat => 
+      chat.participants.includes(newChat.participants[0]) && 
+      chat.participants.includes(newChat.participants[1])
+    );
+    
+    if (existingChat) {
+      // Отправляем существующий чат обратно
+      io.emit('chatCreated', existingChat);
+      return;
+    }
+    
+    chats.push(newChat);
+    
+    // Сохраняем данные на сервере
+    saveServerData();
+    
+    console.log(`New chat created: ${newChat.id} between ${newChat.participantNames.join(' and ')}`);
+    
+    // Отправляем новый чат всем подключенным клиентам
+    io.emit('chatCreated', newChat);
+  });
+
+  // Обработка отправки сообщений в чате
+  socket.on('sendMessage', (data) => {
+    const { chatId, message } = data;
+    
+    // Находим чат и добавляем сообщение
+    const chatIndex = chats.findIndex(chat => chat.id === chatId);
+    if (chatIndex !== -1) {
+      chats[chatIndex].messages.push(message);
+      chats[chatIndex].lastMessage = message;
+      
+      // Сохраняем данные на сервере
+      saveServerData();
+      
+      console.log(`Message saved to chat ${chatId}:`, message.content);
+      
+      // Отправляем сообщение всем клиентам
+      io.emit('receiveMessage', data);
+      
+      // Создаем уведомление для получателя, если он не отправитель
+      if (message.receiverId && message.receiverId !== message.senderId) {
+        const notification = {
+          id: `notification_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          userId: message.receiverId,
+          type: 'new_message',
+          title: 'Новое сообщение',
+          message: `${message.senderName} написал вам сообщение`,
+          data: {
+            chatId: chatId,
+            senderId: message.senderId,
+            senderName: message.senderName,
+            messageId: message.id
+          },
+          isRead: false,
+          timestamp: new Date().toISOString()
+        };
+        
+        notifications.push(notification);
+        saveServerData();
+        
+        // Отправляем уведомление конкретному пользователю
+        io.to(`notifications_${message.receiverId}`).emit('newNotification', notification);
+      }
+    }
+  });
+
+  // Обработка создания уведомлений
+  socket.on('createNotification', (notification) => {
+    console.log('createNotification event received:', notification);
+    
+    // Добавляем уведомление в массив
+    notifications.push(notification);
+    
+    // Сохраняем данные на сервере
+    saveServerData();
+    
+    console.log(`Notification created: ${notification.id} for user ${notification.userId}`);
+    
+    // Отправляем уведомление конкретному пользователю
+    io.to(`notifications_${notification.userId}`).emit('newNotification', notification);
+    
+    console.log(`Notification sent to user ${notification.userId}`);
+  });
+
+  // Обработка удаления чата
+  socket.on('deleteChat', (data) => {
+    const { chatId } = data;
+    const chatIndex = chats.findIndex(chat => chat.id === chatId);
+    if (chatIndex !== -1) {
+      chats.splice(chatIndex, 1);
+      saveServerData();
+      io.emit('chatDeleted', { chatId });
+    }
+  });
+
+  // Обработка отметки чата как прочитанного
+  socket.on('markChatAsRead', (data) => {
+    const { chatId } = data;
+    const chat = chats.find(chat => chat.id === chatId);
+    if (chat) {
+      chat.messages.forEach(message => {
+        message.isRead = true;
+      });
+      saveServerData();
+      io.emit('chatMarkedAsRead', { chatId });
+    }
+  });
+
+  // Обработка очистки сообщений чата
+  socket.on('clearChatMessages', (data) => {
+    const { chatId } = data;
+    const chat = chats.find(chat => chat.id === chatId);
+    if (chat) {
+      chat.messages = [];
+      saveServerData();
+      io.emit('chatMessagesCleared', { chatId });
+    }
+  });
+
+  // Обработка архивирования чата
+  socket.on('archiveChat', (data) => {
+    const { chatId } = data;
+    const chat = chats.find(chat => chat.id === chatId);
+    if (chat) {
+      chat.archived = true;
+      saveServerData();
+      io.emit('chatArchived', { chatId });
+    }
+  });
+
+  // Обработка восстановления чата из архива
+  socket.on('unarchiveChat', (data) => {
+    const { chatId } = data;
+    const chat = chats.find(chat => chat.id === chatId);
+    if (chat) {
+      chat.archived = false;
+      saveServerData();
+      io.emit('chatUnarchived', { chatId });
+    }
   });
 });
 
