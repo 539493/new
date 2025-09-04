@@ -45,7 +45,8 @@ const ChatList: React.FC = () => {
     archiveChat,
     unarchiveChat,
     getOrCreateChat,
-    loadChatsFromServer
+    loadChatsFromServer,
+    socketRef
   } = useData();
   const { user } = useAuth();
   
@@ -66,7 +67,6 @@ const ChatList: React.FC = () => {
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { socketRef } = useData();
 
   // Автоматическая прокрутка к последнему сообщению
   const scrollToBottom = useCallback(() => {
