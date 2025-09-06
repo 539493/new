@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, Star, Users, MapPin, BookOpen, RefreshCw, Wifi, WifiOff, Heart, MoreHorizontal, Calendar as CalendarIcon, Share2, Award, MessageCircle, X, Clock } from 'lucide-react';
+import { Search, Filter, MapPin, BookOpen, RefreshCw, Wifi, WifiOff, Heart, Calendar as CalendarIcon, Share2, MessageCircle, X } from 'lucide-react';
 import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
 import { ru } from 'date-fns/locale';
@@ -21,12 +21,12 @@ interface StudentHomeProps {
 }
 
 const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
-  const { getFilteredSlots, bookLesson, timeSlots, isConnected, allUsers, refreshUsers, refreshAllData, forceSyncData, getOrCreateChat, sendMessage, sendMessageToUser } = useData();
+  const { bookLesson, timeSlots, isConnected, allUsers, refreshUsers, refreshAllData, forceSyncData, sendMessageToUser } = useData();
   const { user } = useAuth();
   
   const [filters, setFilters] = useState<FilterOptions>({});
   const [showFilters, setShowFilters] = useState(false);
-  const [filteredSlots, setFilteredSlots] = useState<TimeSlot[]>([]);
+  // const [filteredSlots, setFilteredSlots] = useState<TimeSlot[]>([]); // Убрано, так как теперь показываем всех репетиторов
   const [loading, setLoading] = useState(false);
   const [showOverbookingModal, setShowOverbookingModal] = useState(false);
   const [overbookingData, setOverbookingData] = useState({
@@ -141,7 +141,7 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
       socket.current = io(WEBSOCKET_URL);
       
       // Слушаем создание новых слотов
-      socket.current.on('slotCreated', (newSlot: any) => {
+      socket.current.on('slotCreated', () => {
         // Обновляем доступные слоты при получении нового слота
         setTimeout(() => {
           loadAvailableSlots();
@@ -149,7 +149,7 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
       });
       
       // Слушаем регистрацию новых пользователей
-      socket.current.on('userRegistered', (newUser: any) => {
+      socket.current.on('userRegistered', () => {
         // Обновляем данные при регистрации нового пользователя
         setTimeout(() => {
           refreshAllData();
@@ -185,7 +185,7 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
       return true;
     });
     
-    setFilteredSlots(availableSlots);
+    // setFilteredSlots(availableSlots); // Убрано, так как теперь показываем всех репетиторов
     
     return availableSlots;
   };
@@ -256,7 +256,7 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
         });
       }
       
-      setFilteredSlots(results);
+      // setFilteredSlots(results); // Убрано, так как теперь показываем всех репетиторов
       setShowFilters(false);
     } catch (error) {
       console.error('Error applying filters:', error);
@@ -290,15 +290,6 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
     }, 1000);
   };
 
-  const handleBookSlot = (slotId: string) => {
-    if (user) {
-      const slot = timeSlots.find(s => s.id === slotId);
-      if (slot) {
-        setSelectedBookingSlot(slot);
-        setShowBookingModal(true);
-      }
-    }
-  };
 
   const handleConfirmBooking = async (comment: string) => {
     if (user && selectedBookingSlot) {
@@ -334,24 +325,6 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
       case 'experienced': return 'Опытный';
       case 'professional': return 'Профессионал';
       default: return exp;
-    }
-  };
-
-  const getFormatLabel = (format: string) => {
-    switch (format) {
-      case 'online': return 'Онлайн';
-      case 'offline': return 'Оффлайн';
-      case 'mini-group': return 'Мини-группа';
-      default: return format;
-    }
-  };
-
-  const getFormatIcon = (format: string): JSX.Element | null => {
-    switch (format) {
-      case 'online': return null;
-      case 'offline': return <MapPin className="h-4 w-4" />;
-      case 'mini-group': return <Users className="h-4 w-4" />;
-      default: return null;
     }
   };
 
@@ -427,7 +400,7 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
     return result;
   }, [serverTeachers, allUsers, timeSlots]);
 
-  // Фильтруем преподавателей по доступным слотам и поиску
+  // Фильтруем преподавателей по профилю и поиску (НЕ по доступным слотам)
   const filteredTeachers = React.useMemo(() => {
     let teachers = allTeachers;
 
@@ -501,14 +474,9 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
           }
         }
         
-        // Если есть фильтры по дате/времени, проверяем слоты
-        if ((selectedDate || selectedTimeRange) && passedFilters) {
-          const teacherSlots = filteredSlots.filter(slot => slot.teacherId === teacher.id);
-          if (teacherSlots.length === 0) {
-            console.log(`Преподаватель ${teacher.name} отфильтрован: нет подходящих слотов по дате/времени`);
-            passedFilters = false;
-          }
-        }
+        // УБИРАЕМ фильтрацию по дате/времени - показываем всех репетиторов
+        // Если есть фильтры по дате/времени, НЕ фильтруем по слотам
+        // Это позволяет показывать всех репетиторов, даже если у них нет доступных слотов
         
         if (passedFilters) {
           console.log(`Преподаватель ${teacher.name} прошел все фильтры`);
@@ -542,14 +510,8 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
     }
 
     return teachers;
-  }, [allTeachers, filters, selectedDate, selectedTimeRange, filteredSlots, searchQuery]);
+  }, [allTeachers, filters, selectedDate, selectedTimeRange, searchQuery]);
 
-  function getTeacherProfileById(teacherId: string) {
-    const teacher = serverTeachers.find(t => t.id === teacherId) ||
-      allUsers?.find((u: any) => u.id === teacherId && u.role === 'teacher');
-    const profile = teacher && teacher.profile ? teacher.profile : null;
-    return profile;
-  }
 
   // Функция для получения пользователя по id
   function getUserById(userId: string) {
@@ -561,23 +523,10 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
     }
   }
 
-  const [modalSlot, setModalSlot] = useState<any>(null);
   const [selectedTeacher, setSelectedTeacher] = useState<any>(null);
   const [showTeacherModal, setShowTeacherModal] = useState(false);
   const [showTeacherProfilePage, setShowTeacherProfilePage] = useState(false);
-  const [teacherPosts, setTeacherPosts] = useState<any[]>([]);
 
-  // Автоматическая подгрузка постов преподавателя
-  useEffect(() => {
-    if (!selectedTeacher) return;
-    function updatePosts() {
-      const teacher = getUserById(selectedTeacher.id);
-      setTeacherPosts(teacher?.posts || []);
-    }
-    updatePosts();
-    window.addEventListener('storage', updatePosts);
-    return () => window.removeEventListener('storage', updatePosts);
-  }, [selectedTeacher]);
 
   // Автоматическое применение фильтров при их изменении
   React.useEffect(() => {
@@ -780,7 +729,7 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
             Найди своего идеального репетитора
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Изучай профили преподавателей, читай их записи и записывайся на уроки
+            Изучай профили преподавателей, связывайся с ними и записывайся на уроки
           </p>
           </div>
         
@@ -1130,7 +1079,7 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
           </h2>
           <p className="text-gray-500 text-sm">
             {filteredTeachers.length > 0 
-              ? 'Выберите подходящего преподавателя и забронируйте урок'
+              ? 'Выберите подходящего преподавателя для связи или бронирования урока'
               : 'Попробуйте изменить фильтры или воспользоваться овербукингом'
             }
           </p>
@@ -1163,10 +1112,6 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
               // Получаем слоты этого преподавателя из всех слотов (не только отфильтрованных)
               const allTeacherSlots = timeSlots.filter(slot => slot.teacherId === teacher.id);
               const availableTeacherSlots = allTeacherSlots.filter(slot => !slot.isBooked);
-              
-              // Для отображения цены используем все слоты преподавателя
-              const minPrice = allTeacherSlots.length > 0 ? Math.min(...allTeacherSlots.map(slot => slot.price)) : profile?.hourlyRate || 0;
-              const maxPrice = allTeacherSlots.length > 0 ? Math.max(...allTeacherSlots.map(slot => slot.price)) : profile?.hourlyRate || 0;
               
               // Определяем, есть ли доступные слоты у этого преподавателя
               const hasAvailableSlots = availableTeacherSlots.length > 0;
@@ -1217,8 +1162,8 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
                   {/* Avatar - Centered on background, Bigger */}
                   <div className="relative -mt-12 flex justify-center">
                     <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center overflow-hidden border-4 border-white shadow-2xl relative">
-                      {/* Online Status */}
-                      <div className="absolute top-2 right-2 w-5 h-5 bg-green-500 border-2 border-white rounded-full shadow-lg"></div>
+                      {/* Online Status - всегда зеленый для зарегистрированных репетиторов */}
+                      <div className="absolute top-2 right-2 w-5 h-5 bg-green-500 border-2 border-white rounded-full shadow-lg" title="Доступен для контакта"></div>
                       
                       {/* Avatar Image */}
                       {(() => {
@@ -1316,7 +1261,7 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
                           : 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700 shadow-lg hover:shadow-xl transform hover:-translate-y-1'
                       }`}
                     >
-                      {hasAvailableSlots ? 'Забронировать' : 'Профиль'}
+                      {hasAvailableSlots ? 'Забронировать урок' : 'Связаться с репетитором'}
                     </button>
                     
                     <button

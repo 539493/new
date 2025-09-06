@@ -40,3 +40,4 @@ jobs:
         echo "🔗 Commit: ${{ github.sha }}"
         echo "🌐 App URL: https://na-uchi.onrender.com"
         echo "⏱️ Deployment will start automatically on Render..."
+
