@@ -424,19 +424,19 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       }
 
       console.log('Server is available, initializing Socket.IO connection...');
-
-      const newSocket = io(SERVER_URL, {
-        ...SOCKET_CONFIG,
-        reconnection: true,
+    
+    const newSocket = io(SERVER_URL, {
+      ...SOCKET_CONFIG,
+      reconnection: true,
         reconnectionAttempts: 3,
         reconnectionDelay: 2000,
         timeout: 10000,
-      });
+    });
 
-      socketRef.current = newSocket;
+    socketRef.current = newSocket;
 
-      newSocket.on('connect', () => {
-        setIsConnected(true);
+    newSocket.on('connect', () => {
+      setIsConnected(true);
         console.log('✅ Connected to server via Socket.IO');
         console.log(`🌐 Server URL: ${SERVER_URL}`);
         console.log(`🔌 Socket ID: ${newSocket.id}`);
@@ -444,16 +444,16 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         // Загружаем пользователей и уроки с сервера при подключении
         loadUsersFromServer();
         loadLessonsFromServer();
-        
-        // Синхронизируем локальные слоты с сервером при восстановлении соединения
-        const localSlots = loadFromStorage('tutoring_timeSlots', []);
-        if (localSlots.length > 0) {
-          localSlots.forEach((slot: TimeSlot) => {
-            if (socketRef.current) {
-              socketRef.current.emit('createSlot', slot);
-            }
-          });
-        }
+      
+      // Синхронизируем локальные слоты с сервером при восстановлении соединения
+      const localSlots = loadFromStorage('tutoring_timeSlots', []);
+      if (localSlots.length > 0) {
+        localSlots.forEach((slot: TimeSlot) => {
+          if (socketRef.current) {
+            socketRef.current.emit('createSlot', slot);
+          }
+        });
+      }
 
         // Запрашиваем все посты и уведомления
         if (socketRef.current) {
@@ -463,10 +463,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
             socketRef.current.emit('subscribeNotifications', user.id);
           }
         }
-      });
+    });
 
-      newSocket.on('disconnect', () => {
-        setIsConnected(false);
+    newSocket.on('disconnect', () => {
+      setIsConnected(false);
         console.log('🔌 Disconnected from server');
       });
 
@@ -477,45 +477,45 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
       newSocket.on('reconnect_attempt', (attemptNumber) => {
         console.log(`🔄 Reconnection attempt ${attemptNumber}`);
-      });
+    });
 
-      // Добавляем обработку ошибок подключения
-      newSocket.on('connect_error', (error) => {
-        setIsConnected(false);
+    // Добавляем обработку ошибок подключения
+    newSocket.on('connect_error', (error) => {
+      setIsConnected(false);
         console.warn('❌ Socket.IO connection error:', error);
         console.warn('🔧 Working in offline mode until reconnection...');
-        
-        // При ошибке подключения загружаем начальные данные
-        loadInitialData();
+      
+      // При ошибке подключения загружаем начальные данные
+      loadInitialData();
         loadLessonsFromServer();
-      });
+    });
 
-      // Получаем все актуальные данные при подключении
-      newSocket.on('initialData', (data: { timeSlots: TimeSlot[]; lessons: Lesson[]; chats: Chat[] }) => {
-        
-        // Объединяем серверные данные с локальными
-        const currentTimeSlots = loadFromStorage('tutoring_timeSlots', []);
-        const allTimeSlots = [...currentTimeSlots, ...data.timeSlots];
-        
-        // Убираем дубликаты по ID, приоритет у серверных данных
-        const uniqueTimeSlots = allTimeSlots.filter((slot: TimeSlot, index: number, self: TimeSlot[]) => 
-          index === self.findIndex((s: TimeSlot) => s.id === slot.id)
-        );
-        
-        setTimeSlots(uniqueTimeSlots);
-        setLessons(data.lessons);
-        saveToStorage('tutoring_timeSlots', uniqueTimeSlots);
-        saveToStorage('tutoring_lessons', data.lessons);
-        if (data.chats) {
-          setChats(data.chats);
-          saveToStorage('tutoring_chats', data.chats);
-        }
-      });
+    // Получаем все актуальные данные при подключении
+    newSocket.on('initialData', (data: { timeSlots: TimeSlot[]; lessons: Lesson[]; chats: Chat[] }) => {
+      
+      // Объединяем серверные данные с локальными
+      const currentTimeSlots = loadFromStorage('tutoring_timeSlots', []);
+      const allTimeSlots = [...currentTimeSlots, ...data.timeSlots];
+      
+      // Убираем дубликаты по ID, приоритет у серверных данных
+      const uniqueTimeSlots = allTimeSlots.filter((slot: TimeSlot, index: number, self: TimeSlot[]) => 
+        index === self.findIndex((s: TimeSlot) => s.id === slot.id)
+      );
+      
+      setTimeSlots(uniqueTimeSlots);
+      setLessons(data.lessons);
+      saveToStorage('tutoring_timeSlots', uniqueTimeSlots);
+      saveToStorage('tutoring_lessons', data.lessons);
+      if (data.chats) {
+        setChats(data.chats);
+        saveToStorage('tutoring_chats', data.chats);
+      }
+    });
 
-      // Слушаем все слоты при подключении для синхронизации
-      newSocket.on('allSlots', (allSlots: TimeSlot[]) => {
-        setTimeSlots(allSlots);
-        saveToStorage('tutoring_timeSlots', allSlots);
+    // Слушаем все слоты при подключении для синхронизации
+    newSocket.on('allSlots', (allSlots: TimeSlot[]) => {
+      setTimeSlots(allSlots);
+      saveToStorage('tutoring_timeSlots', allSlots);
       });
 
       // Слушаем всех пользователей при подключении для синхронизации
@@ -530,14 +530,14 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         socketRef.current.emit('requestAllUsers');
       }
 
-      // Слушаем обновления слотов от других клиентов
-      newSocket.on('slotCreated', (newSlot: TimeSlot) => {
+    // Слушаем обновления слотов от других клиентов
+    newSocket.on('slotCreated', (newSlot: TimeSlot) => {
         console.log('Slot created via WebSocket:', newSlot);
-        setTimeSlots(prev => {
-          const exists = prev.find(slot => slot.id === newSlot.id);
-          if (!exists) {
-            const updated = [...prev, newSlot];
-            saveToStorage('tutoring_timeSlots', updated);
+      setTimeSlots(prev => {
+        const exists = prev.find(slot => slot.id === newSlot.id);
+        if (!exists) {
+          const updated = [...prev, newSlot];
+          saveToStorage('tutoring_timeSlots', updated);
             console.log('New slot added, total slots:', updated.length);
             return updated;
           } else {
@@ -545,39 +545,39 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
             const updated = prev.map(slot => slot.id === newSlot.id ? newSlot : slot);
             saveToStorage('tutoring_timeSlots', updated);
             console.log('Existing slot updated, total slots:', updated.length);
-            return updated;
-          }
-        });
+          return updated;
+        }
       });
+    });
 
-      // Слушаем обновления бронирования
-      newSocket.on('slotBooked', (data: { slotId: string; lesson: Lesson; bookedStudentId?: string }) => {
+    // Слушаем обновления бронирования
+    newSocket.on('slotBooked', (data: { slotId: string; lesson: Lesson; bookedStudentId?: string }) => {
         console.log('Slot booked via WebSocket:', data);
         setTimeSlots(prev => {
           const updated = prev.map(slot => 
-            slot.id === data.slotId ? { ...slot, isBooked: true, bookedStudentId: data.bookedStudentId || data.lesson.studentId } : slot
-          );
+          slot.id === data.slotId ? { ...slot, isBooked: true, bookedStudentId: data.bookedStudentId || data.lesson.studentId } : slot
+      );
           saveToStorage('tutoring_timeSlots', updated);
           return updated;
         });
-        setLessons(prev => {
-          const exists = prev.find(lesson => lesson.id === data.lesson.id);
-          if (!exists) {
-            const updated = [...prev, data.lesson];
-            saveToStorage('tutoring_lessons', updated);
+      setLessons(prev => {
+        const exists = prev.find(lesson => lesson.id === data.lesson.id);
+        if (!exists) {
+          const updated = [...prev, data.lesson];
+          saveToStorage('tutoring_lessons', updated);
             console.log('New lesson added, total lessons:', updated.length);
-            return updated;
-          }
-          return prev;
-        });
+          return updated;
+        }
+        return prev;
       });
+    });
 
-      // Слушаем отмены бронирования
-      newSocket.on('slotCancelled', (data: { slotId: string; lessonId: string }) => {
+    // Слушаем отмены бронирования
+    newSocket.on('slotCancelled', (data: { slotId: string; lessonId: string }) => {
         console.log('Slot cancelled via WebSocket:', data);
         setTimeSlots(prev => {
           const updated = prev.map(slot => 
-            slot.id === data.slotId ? { ...slot, isBooked: false, bookedStudentId: undefined } : slot
+          slot.id === data.slotId ? { ...slot, isBooked: false, bookedStudentId: undefined } : slot
           );
           saveToStorage('tutoring_timeSlots', updated);
           return updated;
@@ -588,35 +588,35 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           console.log('Lesson removed, total lessons:', updated.length);
           return updated;
         });
-      });
+    });
 
-      // Слушаем новые чаты
-      newSocket.on('chatCreated', (newChat: Chat) => {
-        setChats(prev => {
-          const exists = prev.find(chat => chat.id === newChat.id);
-          if (!exists) {
-            const updated = [...prev, newChat];
-            saveToStorage('tutoring_chats', updated);
-            return updated;
-          }
-          return prev;
-        });
+    // Слушаем новые чаты
+    newSocket.on('chatCreated', (newChat: Chat) => {
+      setChats(prev => {
+        const exists = prev.find(chat => chat.id === newChat.id);
+        if (!exists) {
+          const updated = [...prev, newChat];
+          saveToStorage('tutoring_chats', updated);
+          return updated;
+        }
+        return prev;
       });
+    });
 
-      newSocket.on('receiveMessage', (data: { chatId: string, message: any }) => {
-        setChats(prev => prev.map(chat => {
-          if (chat.id === data.chatId) {
-            const updatedChat = {
-              ...chat,
-              messages: [...chat.messages, data.message],
-              lastMessage: data.message,
-            };
-            saveToStorage('tutoring_chats', prev.map(c => c.id === chat.id ? updatedChat : c));
-            return updatedChat;
-          }
-          return chat;
-        }));
-      });
+    newSocket.on('receiveMessage', (data: { chatId: string, message: any }) => {
+      setChats(prev => prev.map(chat => {
+        if (chat.id === data.chatId) {
+          const updatedChat = {
+            ...chat,
+            messages: [...chat.messages, data.message],
+            lastMessage: data.message,
+          };
+          saveToStorage('tutoring_chats', prev.map(c => c.id === chat.id ? updatedChat : c));
+          return updatedChat;
+        }
+        return chat;
+      }));
+    });
 
       // Обработчики событий чатов
       newSocket.on('chatDeleted', (data: { chatId: string }) => {
@@ -687,16 +687,16 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         });
       });
 
-      // Слушаем удаление слота
-      newSocket.on('slotDeleted', (data: { slotId: string }) => {
+    // Слушаем удаление слота
+    newSocket.on('slotDeleted', (data: { slotId: string }) => {
         console.log('Slot deleted via WebSocket:', data);
-        setTimeSlots(prev => {
-          const updated = prev.filter(slot => slot.id !== data.slotId);
-          saveToStorage('tutoring_timeSlots', updated);
+      setTimeSlots(prev => {
+        const updated = prev.filter(slot => slot.id !== data.slotId);
+        saveToStorage('tutoring_timeSlots', updated);
           console.log('Slot removed, total slots:', updated.length);
-          return updated;
-        });
+        return updated;
       });
+    });
 
       // Слушаем получение всех слотов
       newSocket.on('allSlots', (allSlots: TimeSlot[]) => {
@@ -784,26 +784,26 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         });
       });
 
-      // Добавляем обработку события завершения урока
-      if (socketRef.current) {
-        socketRef.current.on('lessonCompleted', (data: { lesson: any }) => {
-          setLessons(prev => {
-            const updated = prev.map(l => l.id === data.lesson.id ? data.lesson : l);
-            saveToStorage('tutoring_lessons', updated);
-            return updated;
-          });
-          // --- СТАТИСТИКА завершённых уроков ---
-          if (user && user.role === 'teacher' && data.lesson.status === 'completed') {
-            const profile: TeacherProfile = { ...(user.profile as TeacherProfile) };
-            profile.lessonsCount = (profile.lessonsCount || 0) + 1;
-            updateProfile(profile);
-          }
-          // --- КОНЕЦ СТАТИСТИКИ ---
+    // Добавляем обработку события завершения урока
+    if (socketRef.current) {
+      socketRef.current.on('lessonCompleted', (data: { lesson: any }) => {
+        setLessons(prev => {
+          const updated = prev.map(l => l.id === data.lesson.id ? data.lesson : l);
+          saveToStorage('tutoring_lessons', updated);
+          return updated;
         });
-      }
+        // --- СТАТИСТИКА завершённых уроков ---
+        if (user && user.role === 'teacher' && data.lesson.status === 'completed') {
+          const profile: TeacherProfile = { ...(user.profile as TeacherProfile) };
+          profile.lessonsCount = (profile.lessonsCount || 0) + 1;
+          updateProfile(profile);
+        }
+        // --- КОНЕЦ СТАТИСТИКИ ---
+      });
+    }
 
-      newSocket.on('studentProfiles', (profiles: Record<string, StudentProfile>) => {
-        setStudentProfiles(profiles || {});
+    newSocket.on('studentProfiles', (profiles: Record<string, StudentProfile>) => {
+      setStudentProfiles(profiles || {});
         // Обновляем список всех пользователей с профилями студентов
         const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
         const updatedUsers = [...users];
@@ -887,55 +887,55 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         
         localStorage.setItem('tutoring_users', JSON.stringify(updatedUsers));
         setAllUsers(updatedUsers);
-      });
-      newSocket.on('studentProfileUpdated', (data: { studentId: string; profile: StudentProfile }) => {
-        setStudentProfiles(prev => ({ ...prev, [data.studentId]: data.profile }));
-      });
+    });
+    newSocket.on('studentProfileUpdated', (data: { studentId: string; profile: StudentProfile }) => {
+      setStudentProfiles(prev => ({ ...prev, [data.studentId]: data.profile }));
+    });
 
-      // --- Синхронизация профиля преподавателя между устройствами ---
-      newSocket.on('teacherProfileUpdated', (data: { teacherId: string; profile: TeacherProfile }) => {
-        try {
-          const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
-          const updatedUsers = users.map((u: User) =>
-            u.id === data.teacherId ? { ...u, profile: data.profile, avatar: data.profile.avatar } : u
-          );
-          localStorage.setItem('tutoring_users', JSON.stringify(updatedUsers));
-          setAllUsers(updatedUsers);
-        } catch (e) {
-        }
-      });
+    // --- Синхронизация профиля преподавателя между устройствами ---
+    newSocket.on('teacherProfileUpdated', (data: { teacherId: string; profile: TeacherProfile }) => {
+      try {
+        const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
+        const updatedUsers = users.map((u: User) =>
+          u.id === data.teacherId ? { ...u, profile: data.profile, avatar: data.profile.avatar } : u
+        );
+        localStorage.setItem('tutoring_users', JSON.stringify(updatedUsers));
+        setAllUsers(updatedUsers);
+      } catch (e) {
+      }
+    });
 
-      // --- Универсальная синхронизация профиля между устройствами ---
+    // --- Универсальная синхронизация профиля между устройствами ---
       newSocket.on('profileUpdated', (data: { type: string; userId: string; profile: StudentProfile | TeacherProfile } | { id: string; role: string; profile: StudentProfile | TeacherProfile }) => {
-        try {
-          const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
-          let found = false;
+      try {
+        const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
+        let found = false;
           
           // Обрабатываем оба формата данных
           const userId = 'userId' in data ? data.userId : data.id;
           const role = 'type' in data ? data.type : data.role;
           const profile = data.profile;
           
-          const updatedUsers = users.map((u: User) => {
+        const updatedUsers = users.map((u: User) => {
             if (u.id === userId) {
-              found = true;
+            found = true;
               return { ...u, profile: profile, avatar: profile.avatar, name: profile.name || u.name, email: profile.email || u.email };
-            }
-            return u;
-          });
-          if (!found) {
-            // Добавляем нового пользователя, если его не было
-            updatedUsers.push({
+          }
+          return u;
+        });
+        if (!found) {
+          // Добавляем нового пользователя, если его не было
+          updatedUsers.push({
               id: userId,
               role: role,
               profile: profile,
               avatar: profile.avatar,
               name: profile.name || '',
               email: profile.email || ''
-            });
-          }
-          localStorage.setItem('tutoring_users', JSON.stringify(updatedUsers));
-          setAllUsers(updatedUsers);
+          });
+        }
+        localStorage.setItem('tutoring_users', JSON.stringify(updatedUsers));
+        setAllUsers(updatedUsers);
           
           // Обновляем профили в соответствующих состояниях
           if (role === 'teacher') {
@@ -945,7 +945,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           }
           
           console.log('Profile updated via WebSocket:', { userId, role, profile });
-        } catch (e) {
+      } catch (e) {
           console.error('Error processing profileUpdated event:', e);
         }
       });
@@ -1103,10 +1103,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         });
       });
 
-      return () => {
-        newSocket.close();
-        socketRef.current = null;
-      };
+    return () => {
+      newSocket.close();
+      socketRef.current = null;
+    };
     };
 
     initializeConnection();
