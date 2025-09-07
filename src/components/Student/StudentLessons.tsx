@@ -369,7 +369,14 @@ const StudentLessons: React.FC = () => {
             <p className="text-lg text-blue-100 mb-6">
               Продолжайте обучение и достигайте новых высот вместе с нашими преподавателями
             </p>
-            <button className="inline-flex items-center space-x-2 px-6 py-3 bg-white text-blue-600 rounded-lg font-semibold text-base hover:bg-gray-50 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+            <button 
+              onClick={() => {
+                // Переходим на главную страницу (раздел с репетиторами)
+                window.location.href = '/';
+                // Или можно использовать setActiveTab('home') если есть доступ к этой функции
+              }}
+              className="inline-flex items-center space-x-2 px-6 py-3 bg-white text-blue-600 rounded-lg font-semibold text-base hover:bg-gray-50 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+            >
               <PlayCircle className="h-5 w-5" />
               <span>Найти преподавателя</span>
             </button>
