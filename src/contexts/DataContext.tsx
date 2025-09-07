@@ -1737,6 +1737,13 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
   // Функция для обновления профиля преподавателя на сервере
   const updateTeacherProfile = (teacherId: string, profile: TeacherProfile) => {
+    // Сохраняем профиль преподавателя в локальном хранилище
+    setTeacherProfiles(prev => {
+      const updated = { ...prev, [teacherId]: profile };
+      saveToStorage('tutoring_teacherProfiles', updated);
+      return updated;
+    });
+
     if (socketRef.current && isConnected) {
       socketRef.current.emit('updateTeacherProfile', { teacherId, profile });
     }
@@ -1748,6 +1755,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       );
       localStorage.setItem('tutoring_users', JSON.stringify(updatedUsers));
     } catch (e) {
+      console.error('Ошибка обновления списка пользователей:', e);
     }
   };
 

@@ -223,24 +223,50 @@ const ProfileForm: React.FC = () => {
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Проверяем размер файла (максимум 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Размер файла не должен превышать 5MB');
+        return;
+      }
+
+      // Проверяем тип файла
+      if (!file.type.startsWith('image/')) {
+        alert('Пожалуйста, выберите изображение');
+        return;
+      }
+
       const reader = new FileReader();
+      
       reader.onload = (ev) => {
-        const avatarUrl = ev.target?.result as string;
-        
-        if (user.role === 'student') {
-          const updatedProfile = { ...studentProfile, avatar: avatarUrl };
-          setStudentProfile(updatedProfile);
-          // Автоматически сохраняем и синхронизируем
-          updateProfile(updatedProfile);
-          updateStudentProfile(user.id, updatedProfile);
-        } else {
-          const updatedProfile = { ...teacherProfile, avatar: avatarUrl };
-          setTeacherProfile(updatedProfile);
-          // Автоматически сохраняем и синхронизируем
-          updateProfile(updatedProfile);
-          updateTeacherProfile(user.id, { ...updatedProfile, name: user.name, email: user.email });
+        try {
+          const avatarUrl = ev.target?.result as string;
+          
+          if (user.role === 'student') {
+            const updatedProfile = { ...studentProfile, avatar: avatarUrl };
+            setStudentProfile(updatedProfile);
+            // Автоматически сохраняем и синхронизируем
+            updateProfile(updatedProfile);
+            updateStudentProfile(user.id, updatedProfile);
+            console.log('✅ Аватар студента сохранен');
+          } else {
+            const updatedProfile = { ...teacherProfile, avatar: avatarUrl };
+            setTeacherProfile(updatedProfile);
+            // Автоматически сохраняем и синхронизируем
+            updateProfile(updatedProfile);
+            updateTeacherProfile(user.id, { ...updatedProfile, name: user.name, email: user.email });
+            console.log('✅ Аватар преподавателя сохранен');
+          }
+        } catch (error) {
+          console.error('❌ Ошибка при сохранении аватара:', error);
+          alert('Ошибка при сохранении фото. Попробуйте еще раз.');
         }
       };
+
+      reader.onerror = () => {
+        console.error('❌ Ошибка чтения файла');
+        alert('Ошибка при чтении файла. Попробуйте выбрать другое изображение.');
+      };
+
       reader.readAsDataURL(file);
     }
   };
