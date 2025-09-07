@@ -156,6 +156,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   const [teacherProfiles, setTeacherProfiles] = useState<Record<string, TeacherProfile>>(() => {
     const saved = loadFromStorage('tutoring_teacherProfiles', {});
     if (Object.keys(saved).length > 0) {
+      console.log('📱 Загружены локальные профили преподавателей:', Object.keys(saved).length);
       return saved;
     }
     // Если нет сохраненных данных, загружаем начальные
@@ -1194,8 +1195,31 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         try {
           const newUsers = JSON.parse(e.detail.newValue || '[]');
           setAllUsers(newUsers);
+          console.log('🔄 Пользователи обновлены через customStorage:', newUsers.length);
         } catch (error) {
           setAllUsers([]);
+        }
+      }
+      
+      // Обновляем профили преподавателей
+      if (e.detail?.key === 'tutoring_teacherProfiles') {
+        try {
+          const newProfiles = JSON.parse(e.detail.newValue || '{}');
+          setTeacherProfiles(newProfiles);
+          console.log('🔄 Профили преподавателей обновлены через customStorage:', Object.keys(newProfiles).length);
+        } catch (error) {
+          console.error('❌ Ошибка обновления профилей преподавателей:', error);
+        }
+      }
+      
+      // Обновляем профили студентов
+      if (e.detail?.key === 'tutoring_studentProfiles') {
+        try {
+          const newProfiles = JSON.parse(e.detail.newValue || '{}');
+          setStudentProfiles(newProfiles);
+          console.log('🔄 Профили студентов обновлены через customStorage:', Object.keys(newProfiles).length);
+        } catch (error) {
+          console.error('❌ Ошибка обновления профилей студентов:', error);
         }
       }
     };

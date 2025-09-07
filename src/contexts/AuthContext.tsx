@@ -10,6 +10,7 @@ interface AuthContextType {
   logout: () => void;
   updateProfile: (profile: StudentProfile | TeacherProfile) => void;
   clearAllUsers: () => void;
+  deleteAccount: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -326,6 +327,38 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(newUser);
       saveUserToStorage(newUser);
       
+      // Если это преподаватель, сохраняем его профиль в teacherProfiles
+      if (role === 'teacher') {
+        const currentTeacherProfiles = JSON.parse(localStorage.getItem('tutoring_teacherProfiles') || '{}');
+        currentTeacherProfiles[newUser.id] = baseProfile;
+        localStorage.setItem('tutoring_teacherProfiles', JSON.stringify(currentTeacherProfiles));
+        console.log('✅ Профиль преподавателя сохранен локально:', newUser.id);
+        
+        // Отправляем событие для обновления DataContext
+        window.dispatchEvent(new CustomEvent('customStorage', {
+          detail: {
+            key: 'tutoring_teacherProfiles',
+            newValue: JSON.stringify(currentTeacherProfiles)
+          }
+        }));
+      }
+      
+      // Если это студент, сохраняем его профиль в studentProfiles
+      if (role === 'student') {
+        const currentStudentProfiles = JSON.parse(localStorage.getItem('tutoring_studentProfiles') || '{}');
+        currentStudentProfiles[newUser.id] = baseProfile;
+        localStorage.setItem('tutoring_studentProfiles', JSON.stringify(currentStudentProfiles));
+        console.log('✅ Профиль студента сохранен локально:', newUser.id);
+        
+        // Отправляем событие для обновления DataContext
+        window.dispatchEvent(new CustomEvent('customStorage', {
+          detail: {
+            key: 'tutoring_studentProfiles',
+            newValue: JSON.stringify(currentStudentProfiles)
+          }
+        }));
+      }
+      
       // Пытаемся загрузить локальные данные на сервер
       try {
         const localTeacherProfiles = JSON.parse(localStorage.getItem('tutoring_teacherProfiles') || '{}');
@@ -426,8 +459,116 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     localStorage.removeItem('tutoring_currentUser');
   };
 
+  const deleteAccount = async (): Promise<boolean> => {
+    if (!user) {
+      alert('Пользователь не найден');
+      return false;
+    }
+
+    // Подтверждение удаления
+    const confirmed = window.confirm(
+      'Вы уверены, что хотите удалить свой аккаунт? Это действие нельзя отменить. Все ваши данные будут безвозвратно удалены.'
+    );
+    
+    if (!confirmed) {
+      return false;
+    }
+
+    try {
+      // Удаляем пользователя с сервера
+      const response = await fetch(`${SERVER_URL}/api/delete-user`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          role: user.role
+        })
+      });
+
+      if (!response.ok) {
+        console.warn('Не удалось удалить пользователя с сервера, продолжаем локальное удаление');
+      }
+
+      // Удаляем пользователя из локального списка
+      const users = loadUsersFromStorage();
+      const updatedUsers = users.filter(u => u.id !== user.id);
+      saveUsersToStorage(updatedUsers);
+
+      // Удаляем профиль пользователя
+      if (user.role === 'teacher') {
+        const teacherProfiles = JSON.parse(localStorage.getItem('tutoring_teacherProfiles') || '{}');
+        delete teacherProfiles[user.id];
+        localStorage.setItem('tutoring_teacherProfiles', JSON.stringify(teacherProfiles));
+        
+        // Отправляем событие для обновления DataContext
+        window.dispatchEvent(new CustomEvent('customStorage', {
+          detail: {
+            key: 'tutoring_teacherProfiles',
+            newValue: JSON.stringify(teacherProfiles)
+          }
+        }));
+      } else if (user.role === 'student') {
+        const studentProfiles = JSON.parse(localStorage.getItem('tutoring_studentProfiles') || '{}');
+        delete studentProfiles[user.id];
+        localStorage.setItem('tutoring_studentProfiles', JSON.stringify(studentProfiles));
+        
+        // Отправляем событие для обновления DataContext
+        window.dispatchEvent(new CustomEvent('customStorage', {
+          detail: {
+            key: 'tutoring_studentProfiles',
+            newValue: JSON.stringify(studentProfiles)
+          }
+        }));
+      }
+
+      // Удаляем связанные данные пользователя
+      // Удаляем слоты преподавателя
+      const timeSlots = JSON.parse(localStorage.getItem('tutoring_timeSlots') || '[]');
+      const updatedTimeSlots = timeSlots.filter((slot: any) => slot.teacherId !== user.id);
+      localStorage.setItem('tutoring_timeSlots', JSON.stringify(updatedTimeSlots));
+
+      // Удаляем уроки пользователя
+      const lessons = JSON.parse(localStorage.getItem('tutoring_lessons') || '[]');
+      const updatedLessons = lessons.filter((lesson: any) => 
+        lesson.teacherId !== user.id && lesson.studentId !== user.id
+      );
+      localStorage.setItem('tutoring_lessons', JSON.stringify(updatedLessons));
+
+      // Удаляем чаты пользователя
+      const chats = JSON.parse(localStorage.getItem('tutoring_chats') || '[]');
+      const updatedChats = chats.filter((chat: any) => 
+        !chat.participants.includes(user.id)
+      );
+      localStorage.setItem('tutoring_chats', JSON.stringify(updatedChats));
+
+      // Удаляем посты пользователя
+      const posts = JSON.parse(localStorage.getItem('tutoring_posts') || '[]');
+      const updatedPosts = posts.filter((post: any) => post.userId !== user.id);
+      localStorage.setItem('tutoring_posts', JSON.stringify(updatedPosts));
+
+      // Удаляем уведомления пользователя
+      const notifications = JSON.parse(localStorage.getItem('tutoring_notifications') || '[]');
+      const updatedNotifications = notifications.filter((notification: any) => 
+        notification.userId !== user.id
+      );
+      localStorage.setItem('tutoring_notifications', JSON.stringify(updatedNotifications));
+
+      // Выходим из аккаунта
+      logout();
+
+      alert('Аккаунт успешно удален');
+      return true;
+    } catch (error) {
+      console.error('Ошибка при удалении аккаунта:', error);
+      alert('Произошла ошибка при удалении аккаунта');
+      return false;
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, updateProfile, clearAllUsers }}>
+    <AuthContext.Provider value={{ user, login, register, logout, updateProfile, clearAllUsers, deleteAccount }}>
       {children}
     </AuthContext.Provider>
   );

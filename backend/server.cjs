@@ -1280,27 +1280,15 @@ app.get('/api/teachers', (req, res) => {
   console.log('Available teacher profiles:', Object.keys(teacherProfiles));
   
   // Собираем преподавателей из teacherProfiles
-  const teachersFromProfiles = Object.entries(teacherProfiles).map(([id, profile]) => ({
+  const teachers = Object.entries(teacherProfiles).map(([id, profile]) => ({
     id,
     name: profile.name || '',
     avatar: profile.avatar || '',
     profile
   }));
   
-  // Также получаем преподавателей из слотов (если они еще не добавлены)
-  const teachersFromSlots = getTeachersFromSlots();
-  
-  // Объединяем всех преподавателей и убираем дубликаты
-  const allTeachers = [...teachersFromProfiles];
-  
-  teachersFromSlots.forEach(slotTeacher => {
-    if (!allTeachers.find(t => t.id === slotTeacher.id)) {
-      allTeachers.push(slotTeacher);
-    }
-  });
-  
-  console.log(`Returning ${allTeachers.length} teachers (${teachersFromProfiles.length} from profiles, ${teachersFromSlots.length} from slots)`);
-  res.json(allTeachers);
+  console.log('Returning teachers:', teachers);
+  res.json(teachers);
 });
 
 // Endpoint для получения всех пользователей

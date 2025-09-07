@@ -141,6 +141,10 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
   useEffect(() => {
     console.log('🚀 Компонент StudentHome смонтирован, загружаем преподавателей...');
     loadTeachers();
+    
+    // Также загружаем локальные профили преподавателей
+    const localTeacherProfiles = JSON.parse(localStorage.getItem('tutoring_teacherProfiles') || '{}');
+    console.log('📱 Локальные профили преподавателей при монтировании:', Object.keys(localTeacherProfiles).length);
   }, [forceSyncData, refreshUsers]);
 
   // Слушаем изменения в localStorage для обновления списка преподавателей

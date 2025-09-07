@@ -5,7 +5,7 @@
  * Проверяет, что все зарегистрированные преподаватели отображаются независимо от их онлайн статуса
  */
 
-const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+const fetch = require('node-fetch');
 
 const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3001';
 
