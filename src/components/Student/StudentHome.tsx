@@ -21,7 +21,7 @@ interface StudentHomeProps {
 }
 
 const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
-  const { bookLesson, timeSlots, isConnected, allUsers, refreshUsers, refreshAllData, forceSyncData, sendMessageToUser, teacherProfiles } = useData();
+  const { bookLesson, timeSlots, isConnected, allUsers, refreshUsers, refreshAllData, forceSyncData, uploadLocalDataToServer, sendMessageToUser, teacherProfiles } = useData();
   const { user } = useAuth();
   
   const [filters, setFilters] = useState<FilterOptions>({});
@@ -143,6 +143,31 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
     loadTeachers();
   }, [forceSyncData, refreshUsers]);
 
+  // Слушаем изменения в localStorage для обновления списка преподавателей
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'tutoring_users' && e.newValue) {
+        console.log('🔄 Обнаружены изменения в пользователях, обновляем список преподавателей');
+        loadTeachers();
+      }
+    };
+
+    const handleCustomStorage = (e: CustomEvent) => {
+      if (e.detail?.key === 'tutoring_users') {
+        console.log('🔄 Обнаружены кастомные изменения в пользователях, обновляем список преподавателей');
+        loadTeachers();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('customStorage', handleCustomStorage as EventListener);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('customStorage', handleCustomStorage as EventListener);
+    };
+  }, []);
+
   // Дополнительный эффект для загрузки при изменении teacherProfiles
   useEffect(() => {
     console.log('📱 teacherProfiles изменились:', Object.keys(teacherProfiles).length);
@@ -160,6 +185,35 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
       console.log('Force sync completed successfully');
     } catch (error) {
       console.error('Error during force sync:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Функция для обновления списка преподавателей
+  const handleRefreshTeachers = async () => {
+    setLoading(true);
+    try {
+      await loadTeachers();
+      refreshUsers();
+      console.log('✅ Список преподавателей обновлен');
+    } catch (error) {
+      console.error('❌ Ошибка обновления списка преподавателей:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Функция для загрузки локальных данных на сервер
+  const handleUploadLocalData = async () => {
+    setLoading(true);
+    try {
+      const result = await uploadLocalDataToServer();
+      console.log('✅ Локальные данные загружены на сервер:', result);
+      alert(`Локальные данные успешно загружены на сервер!\nЗагружено: ${result.uploaded} новых пользователей\nПропущено: ${result.skipped} существующих`);
+    } catch (error) {
+      console.error('❌ Ошибка загрузки локальных данных:', error);
+      alert('Ошибка загрузки локальных данных на сервер. Проверьте подключение к интернету.');
     } finally {
       setLoading(false);
     }
@@ -870,7 +924,7 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
         </button>
         
         <button
-          onClick={loadTeachers}
+          onClick={handleRefreshTeachers}
           disabled={loading}
           className="group bg-gradient-to-r from-purple-500 to-pink-500 text-white px-5 py-3 rounded-xl font-semibold text-base hover:from-purple-600 hover:to-pink-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center space-x-2 disabled:opacity-50 disabled:transform-none"
         >
@@ -878,8 +932,22 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
             <Users className={`h-5 w-5 ${loading ? 'animate-pulse' : ''}`} />
           </div>
           <div className="text-left">
-            <div className="font-bold">Загрузить</div>
+            <div className="font-bold">Обновить</div>
             <div className="text-xs opacity-90">Репетиторов</div>
+          </div>
+        </button>
+        
+        <button
+          onClick={handleUploadLocalData}
+          disabled={loading}
+          className="group bg-gradient-to-r from-indigo-500 to-blue-500 text-white px-5 py-3 rounded-xl font-semibold text-base hover:from-indigo-600 hover:to-blue-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center space-x-2 disabled:opacity-50 disabled:transform-none"
+        >
+          <div className="p-1.5 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
+            <RefreshCw className={`h-5 w-5 ${loading ? 'animate-pulse' : ''}`} />
+          </div>
+          <div className="text-left">
+            <div className="font-bold">Загрузить</div>
+            <div className="text-xs opacity-90">Локальные</div>
           </div>
         </button>
         

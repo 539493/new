@@ -32,6 +32,7 @@ interface DataContextType {
   refreshUsers: () => void; // Добавляем функцию для обновления пользователей
   refreshAllData: () => void; // Функция для принудительного обновления всех данных
   forceSyncData: () => Promise<void>; // Функция для принудительной синхронизации с сервером
+  uploadLocalDataToServer: () => Promise<any>; // Функция для загрузки локальных данных на сервер
   updateTeacherProfile: (teacherId: string, profile: TeacherProfile) => void;
   socketRef: React.MutableRefObject<Socket | null>;
   loadInitialData: () => void;
@@ -405,6 +406,52 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     } catch (error) {
       console.warn('Error syncing data (continuing with local data):', error);
       // Не выбрасываем ошибку, продолжаем работу с локальными данными
+    }
+  };
+
+  // Функция для загрузки локальных данных на сервер
+  const uploadLocalDataToServer = async () => {
+    try {
+      console.log('📤 Загружаем локальные данные на сервер...');
+      
+      // Получаем локальные данные
+      const localTeacherProfiles = JSON.parse(localStorage.getItem('tutoring_teacherProfiles') || '{}');
+      const localStudentProfiles = JSON.parse(localStorage.getItem('tutoring_studentProfiles') || '{}');
+      const localUsers = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
+      
+      console.log('📊 Локальные данные:');
+      console.log(`   👨‍🏫 Преподаватели: ${Object.keys(localTeacherProfiles).length}`);
+      console.log(`   👨‍🎓 Студенты: ${Object.keys(localStudentProfiles).length}`);
+      console.log(`   👥 Пользователи: ${localUsers.length}`);
+      
+      // Отправляем данные на сервер
+      const response = await fetch(`${SERVER_URL}/api/upload-local-data`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          teacherProfiles: localTeacherProfiles,
+          studentProfiles: localStudentProfiles,
+          users: localUsers
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Ошибка загрузки данных на сервер');
+      }
+      
+      const result = await response.json();
+      console.log('✅ Локальные данные успешно загружены на сервер:', result);
+      
+      // После успешной загрузки синхронизируем данные с сервера
+      await forceSyncData();
+      
+      return result;
+    } catch (error) {
+      console.error('❌ Ошибка загрузки локальных данных на сервер:', error);
+      throw error;
     }
   };
 
@@ -2019,6 +2066,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         refreshUsers, // Добавляем функцию для обновления пользователей
         refreshAllData, // Функция для принудительного обновления всех данных
         forceSyncData, // Добавлено
+        uploadLocalDataToServer, // Функция для загрузки локальных данных на сервер
         teacherProfiles,
         updateTeacherProfile, // добавлено
         socketRef,

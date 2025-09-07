@@ -337,6 +337,14 @@ app.post('/api/register', (req, res) => {
       io.emit('studentProfiles', studentProfiles);
     }
     
+    // Отправляем обновленные данные всем клиентам для синхронизации
+    io.emit('dataUpdated', {
+      type: 'userRegistered',
+      timeSlots: timeSlots,
+      teacherProfiles: teacherProfiles,
+      studentProfiles: studentProfiles
+    });
+    
     res.status(201).json(newUser);
     
   } catch (error) {
@@ -380,6 +388,90 @@ app.get('/api/users/:id', (req, res) => {
   } catch (error) {
     console.error('Error getting user:', error);
     res.status(500).json({ error: 'Failed to get user' });
+  }
+});
+
+// Endpoint для загрузки локальных данных на сервер
+app.post('/api/upload-local-data', (req, res) => {
+  try {
+    const { teacherProfiles: localTeachers, studentProfiles: localStudents, users: localUsers } = req.body;
+    
+    console.log('📤 Получены локальные данные для загрузки:');
+    console.log(`   👨‍🏫 Преподаватели: ${Object.keys(localTeachers || {}).length}`);
+    console.log(`   👨‍🎓 Студенты: ${Object.keys(localStudents || {}).length}`);
+    console.log(`   👥 Пользователи: ${(localUsers || []).length}`);
+    
+    let uploadedCount = 0;
+    let skippedCount = 0;
+    
+    // Загружаем локальных преподавателей
+    if (localTeachers && typeof localTeachers === 'object') {
+      Object.entries(localTeachers).forEach(([id, profile]) => {
+        if (!teacherProfiles[id]) {
+          teacherProfiles[id] = profile;
+          uploadedCount++;
+          console.log(`✅ Загружен преподаватель: ${profile.name || id}`);
+        } else {
+          skippedCount++;
+          console.log(`⏭️ Преподаватель уже существует: ${profile.name || id}`);
+        }
+      });
+    }
+    
+    // Загружаем локальных студентов
+    if (localStudents && typeof localStudents === 'object') {
+      Object.entries(localStudents).forEach(([id, profile]) => {
+        if (!studentProfiles[id]) {
+          studentProfiles[id] = profile;
+          uploadedCount++;
+          console.log(`✅ Загружен студент: ${profile.name || id}`);
+        } else {
+          skippedCount++;
+          console.log(`⏭️ Студент уже существует: ${profile.name || id}`);
+        }
+      });
+    }
+    
+    // Сохраняем данные на сервере
+    saveServerData({
+      teacherProfiles,
+      studentProfiles,
+      timeSlots,
+      lessons,
+      chats,
+      overbookingRequests,
+      posts
+    });
+    
+    // Отправляем уведомление всем подключенным клиентам
+    io.emit('dataUpdated', {
+      type: 'localDataUploaded',
+      timeSlots: timeSlots,
+      teacherProfiles: teacherProfiles,
+      studentProfiles: studentProfiles
+    });
+    
+    // Отправляем обновленные профили
+    io.emit('teacherProfiles', teacherProfiles);
+    io.emit('studentProfiles', studentProfiles);
+    
+    console.log(`🎉 Загрузка завершена: ${uploadedCount} новых, ${skippedCount} пропущено`);
+    
+    res.json({
+      success: true,
+      message: 'Локальные данные успешно загружены на сервер',
+      uploaded: uploadedCount,
+      skipped: skippedCount,
+      totalTeachers: Object.keys(teacherProfiles).length,
+      totalStudents: Object.keys(studentProfiles).length
+    });
+    
+  } catch (error) {
+    console.error('❌ Ошибка загрузки локальных данных:', error);
+    res.status(500).json({ 
+      error: 'Failed to upload local data',
+      details: error.message 
+    });
   }
 });
 

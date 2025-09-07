@@ -188,6 +188,64 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(serverUser);
       saveUserToStorage(serverUser);
       
+      // Принудительно обновляем данные для синхронизации с другими клиентами
+      try {
+        // Запрашиваем обновленные данные с сервера
+        const syncResponse = await fetch(`${SERVER_URL}/api/sync`);
+        if (syncResponse.ok) {
+          const syncData = await syncResponse.json();
+          console.log('✅ Данные синхронизированы после регистрации');
+          
+          // Обновляем localStorage с новыми данными
+          if (syncData.teacherProfiles) {
+            localStorage.setItem('tutoring_teacherProfiles', JSON.stringify(syncData.teacherProfiles));
+          }
+          if (syncData.studentProfiles) {
+            localStorage.setItem('tutoring_studentProfiles', JSON.stringify(syncData.studentProfiles));
+          }
+          
+          // Обновляем список пользователей
+          const allUsers = [];
+          if (syncData.teacherProfiles) {
+            Object.entries(syncData.teacherProfiles).forEach(([id, profile]) => {
+              allUsers.push({
+                id,
+                email: profile.email || '',
+                name: profile.name || '',
+                nickname: profile.nickname || '',
+                role: 'teacher',
+                phone: profile.phone || '',
+                profile: profile
+              });
+            });
+          }
+          if (syncData.studentProfiles) {
+            Object.entries(syncData.studentProfiles).forEach(([id, profile]) => {
+              allUsers.push({
+                id,
+                email: profile.email || '',
+                name: profile.name || '',
+                nickname: profile.nickname || '',
+                role: 'student',
+                phone: profile.phone || '',
+                profile: profile
+              });
+            });
+          }
+          localStorage.setItem('tutoring_users', JSON.stringify(allUsers));
+          
+          // Отправляем кастомное событие для обновления в других компонентах
+          window.dispatchEvent(new CustomEvent('customStorage', {
+            detail: {
+              key: 'tutoring_users',
+              newValue: JSON.stringify(allUsers)
+            }
+          }));
+        }
+      } catch (syncError) {
+        console.warn('⚠️ Не удалось синхронизировать данные после регистрации:', syncError);
+      }
+      
       return true;
     } catch (error) {
       // Fallback к локальной регистрации, если сервер недоступен
@@ -268,7 +326,42 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(newUser);
       saveUserToStorage(newUser);
       
-      alert('Регистрация выполнена локально. Данные будут синхронизированы при подключении к серверу.');
+      // Пытаемся загрузить локальные данные на сервер
+      try {
+        const localTeacherProfiles = JSON.parse(localStorage.getItem('tutoring_teacherProfiles') || '{}');
+        const localStudentProfiles = JSON.parse(localStorage.getItem('tutoring_studentProfiles') || '{}');
+        const localUsers = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
+        
+        // Если есть локальные данные, пытаемся их загрузить на сервер
+        if (Object.keys(localTeacherProfiles).length > 0 || Object.keys(localStudentProfiles).length > 0) {
+          const uploadResponse = await fetch(`${SERVER_URL}/api/upload-local-data`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              teacherProfiles: localTeacherProfiles,
+              studentProfiles: localStudentProfiles,
+              users: localUsers
+            })
+          });
+          
+          if (uploadResponse.ok) {
+            const result = await uploadResponse.json();
+            console.log('✅ Локальные данные загружены на сервер:', result);
+            alert('Регистрация выполнена локально и данные синхронизированы с сервером!');
+          } else {
+            console.warn('⚠️ Не удалось загрузить локальные данные на сервер');
+            alert('Регистрация выполнена локально. Данные будут синхронизированы при подключении к серверу.');
+          }
+        } else {
+          alert('Регистрация выполнена локально. Данные будут синхронизированы при подключении к серверу.');
+        }
+      } catch (uploadError) {
+        console.warn('⚠️ Ошибка загрузки локальных данных на сервер:', uploadError);
+        alert('Регистрация выполнена локально. Данные будут синхронизированы при подключении к серверу.');
+      }
+      
       return true;
     }
   };
