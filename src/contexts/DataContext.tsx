@@ -215,17 +215,20 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   // Функция для загрузки пользователей с сервера
   const loadUsersFromServer = async () => {
     try {
+      console.log('🔄 Загружаем пользователей с сервера...');
       const response = await fetch(`${SERVER_URL}/api/users`);
       
-      
       if (!response.ok) {
+        console.warn('⚠️ Не удалось загрузить пользователей с сервера:', response.status);
         return [];
       }
       
       const serverUsers = await response.json();
+      console.log('✅ Пользователи загружены с сервера:', serverUsers.length);
       
       // Объединяем с локальными пользователями
       const localUsers = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
+      console.log('📱 Локальные пользователи:', localUsers.length);
       
       const allUsers = [...localUsers, ...serverUsers];
       
@@ -234,11 +237,15 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         index === self.findIndex(u => u.id === user.id)
       );
       
+      console.log('✅ Уникальные пользователи:', uniqueUsers.length);
+      console.log('👨‍🏫 Преподаватели:', uniqueUsers.filter(u => u.role === 'teacher').length);
+      console.log('👨‍🎓 Студенты:', uniqueUsers.filter(u => u.role === 'student').length);
       
       setAllUsers(uniqueUsers);
       localStorage.setItem('tutoring_users', JSON.stringify(uniqueUsers));
       return uniqueUsers;
     } catch (error) {
+      console.error('❌ Ошибка загрузки пользователей с сервера:', error);
       return [];
     }
   };
@@ -304,7 +311,11 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   // Функция для принудительной синхронизации всех данных с сервера
   const forceSyncData = async () => {
     try {
-      console.log('Force syncing data from server...');
+      console.log('🔄 Принудительная синхронизация данных с сервера...');
+      
+      // Сначала загружаем пользователей
+      await loadUsersFromServer();
+      
       const response = await fetch(`${SERVER_URL}/api/sync`, {
         method: 'GET',
         headers: {
@@ -315,41 +326,46 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       });
       
       if (!response.ok) {
-        console.warn('Failed to sync data from server:', response.status, response.statusText);
+        console.warn('⚠️ Не удалось синхронизировать данные с сервера:', response.status, response.statusText);
         // Не выбрасываем ошибку, продолжаем работу с локальными данными
         return;
       }
       
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
-        console.warn('Server returned non-JSON response:', contentType);
+        console.warn('⚠️ Сервер вернул не-JSON ответ:', contentType);
         return;
       }
       
       const syncData = await response.json();
+      console.log('✅ Данные синхронизации получены:', Object.keys(syncData));
       
       // Обновляем слоты
       if (syncData.timeSlots) {
         setTimeSlots(syncData.timeSlots);
         saveToStorage('tutoring_timeSlots', syncData.timeSlots);
+        console.log('✅ Слоты обновлены:', syncData.timeSlots.length);
       }
       
       // Обновляем уроки
       if (syncData.lessons) {
         setLessons(syncData.lessons);
         saveToStorage('tutoring_lessons', syncData.lessons);
+        console.log('✅ Уроки обновлены:', syncData.lessons.length);
       }
       
       // Обновляем чаты
       if (syncData.chats) {
         setChats(syncData.chats);
         saveToStorage('tutoring_chats', syncData.chats);
+        console.log('✅ Чаты обновлены:', syncData.chats.length);
       }
       
       // Обновляем посты
       if (syncData.posts) {
         setPosts(syncData.posts);
         saveToStorage('tutoring_posts', syncData.posts);
+        console.log('✅ Посты обновлены:', syncData.posts.length);
       }
       
       // Обновляем пользователей

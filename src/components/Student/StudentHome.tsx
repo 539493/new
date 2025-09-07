@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, MapPin, BookOpen, RefreshCw, Wifi, WifiOff, Heart, Calendar as CalendarIcon, Share2, MessageCircle, X } from 'lucide-react';
+import { Search, Filter, MapPin, BookOpen, RefreshCw, Wifi, WifiOff, Heart, Calendar as CalendarIcon, Share2, MessageCircle, X, Users } from 'lucide-react';
 import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
 import { ru } from 'date-fns/locale';
@@ -73,45 +73,66 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
   // Функция для загрузки преподавателей
   const loadTeachers = async () => {
     try {
+      console.log('🔄 Загружаем всех преподавателей...');
+      
       // Принудительно синхронизируем данные с сервером
       await forceSyncData();
       
-      // Загружаем преподавателей через API /api/teachers
-      const teachersResponse = await fetch(`${SERVER_URL}/api/teachers`);
-      if (teachersResponse.ok) {
-        const contentType = teachersResponse.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-          const teachersData = await teachersResponse.json();
-          console.log('Teachers loaded from server:', teachersData);
-          setServerTeachers(Array.isArray(teachersData) ? teachersData : []);
-        } else {
-          console.warn('Server returned non-JSON response for teachers');
-          setServerTeachers([]);
-        }
-      } else {
-        console.warn('Failed to load teachers from server:', teachersResponse.status);
-        setServerTeachers([]);
-      }
-      
-      // Также загружаем всех пользователей через API /api/users
+      // Загружаем всех пользователей через API /api/users (основной источник)
       const usersResponse = await fetch(`${SERVER_URL}/api/users`);
       if (usersResponse.ok) {
         const contentType = usersResponse.headers.get('content-type');
         if (contentType && contentType.includes('application/json')) {
           const usersData = await usersResponse.json();
-          console.log('Users loaded from server:', usersData);
+          console.log('✅ Все пользователи загружены с сервера:', usersData.length);
+          
+          // Фильтруем только преподавателей
           const teachers = usersData.filter((user: any) => user.role === 'teacher');
-          console.log('Teachers from users API:', teachers);
+          console.log('✅ Преподаватели найдены:', teachers.length, teachers);
+          
+          // Обновляем состояние серверных преподавателей
+          setServerTeachers(teachers);
+          
           // Обновляем allUsers в контексте
           refreshUsers();
+          
+          // Принудительно обновляем данные в контексте
+          refreshAllData();
         } else {
-          console.warn('Server returned non-JSON response for users');
+          console.warn('⚠️ Сервер вернул не-JSON ответ для пользователей');
+          setServerTeachers([]);
         }
       } else {
-        console.warn('Failed to load users from server:', usersResponse.status);
+        console.warn('⚠️ Не удалось загрузить пользователей с сервера:', usersResponse.status);
+        setServerTeachers([]);
       }
+      
+      // Дополнительно загружаем преподавателей через API /api/teachers
+      const teachersResponse = await fetch(`${SERVER_URL}/api/teachers`);
+      if (teachersResponse.ok) {
+        const contentType = teachersResponse.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const teachersData = await teachersResponse.json();
+          console.log('✅ Преподаватели загружены через /api/teachers:', teachersData.length);
+          
+          // Объединяем с уже загруженными данными
+          setServerTeachers(prev => {
+            const combined = [...prev, ...teachersData];
+            const unique = combined.filter((teacher, index, self) => 
+              index === self.findIndex(t => t.id === teacher.id)
+            );
+            console.log('✅ Объединенные преподаватели:', unique.length);
+            return unique;
+          });
+        } else {
+          console.warn('⚠️ Сервер вернул не-JSON ответ для преподавателей');
+        }
+      } else {
+        console.warn('⚠️ Не удалось загрузить преподавателей через /api/teachers:', teachersResponse.status);
+      }
+      
     } catch (error) {
-      console.error('Error loading teachers/users from server:', error);
+      console.error('❌ Ошибка загрузки преподавателей с сервера:', error);
       setServerTeachers([]);
     }
   };
@@ -813,6 +834,20 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
             <div className="text-xs opacity-90">Сервер</div>
           </div>
         </button>
+        
+        <button
+          onClick={loadTeachers}
+          disabled={loading}
+          className="group bg-gradient-to-r from-purple-500 to-pink-500 text-white px-5 py-3 rounded-xl font-semibold text-base hover:from-purple-600 hover:to-pink-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center space-x-2 disabled:opacity-50 disabled:transform-none"
+        >
+          <div className="p-1.5 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
+            <Users className={`h-5 w-5 ${loading ? 'animate-pulse' : ''}`} />
+          </div>
+          <div className="text-left">
+            <div className="font-bold">Загрузить</div>
+            <div className="text-xs opacity-90">Репетиторов</div>
+          </div>
+        </button>
       </div>
 
       {/* Search and Filter */}
@@ -1083,6 +1118,11 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
               : 'Попробуйте изменить фильтры или воспользоваться овербукингом'
             }
           </p>
+          <div className="mt-2 text-xs text-gray-400">
+            Всего загружено: {allTeachers.length} репетиторов | 
+            Серверных: {serverTeachers.length} | 
+            Из контекста: {allUsers?.filter((u: any) => u.role === 'teacher').length || 0}
+          </div>
         </div>
         
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
