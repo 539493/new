@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, ReactNode, useEffect } from
 import { v4 as uuidv4 } from 'uuid';
 import { User, StudentProfile, TeacherProfile } from '../types';
 import { SERVER_URL } from '../config';
+import { useData } from './DataContext';
 
 interface AuthContextType {
   user: User | null;
@@ -88,6 +89,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   });
   
   const [isInitialized, setIsInitialized] = useState(false);
+  
+  // Получаем функцию deleteUserData из DataContext
+  let deleteUserData: ((userId: string) => void) | null = null;
+  try {
+    // Используем try-catch, так как DataContext может быть недоступен
+    const dataContext = React.useContext(require('./DataContext').DataContext);
+    if (dataContext) {
+      deleteUserData = dataContext.deleteUserData;
+    }
+  } catch (error) {
+    // DataContext недоступен, продолжаем без него
+  }
 
   // Инициализация при монтировании
   useEffect(() => {
@@ -523,37 +536,37 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }));
       }
 
-      // Удаляем связанные данные пользователя
-      // Удаляем слоты преподавателя
-      const timeSlots = JSON.parse(localStorage.getItem('tutoring_timeSlots') || '[]');
-      const updatedTimeSlots = timeSlots.filter((slot: any) => slot.teacherId !== user.id);
-      localStorage.setItem('tutoring_timeSlots', JSON.stringify(updatedTimeSlots));
+      // Удаляем связанные данные пользователя через DataContext
+      if (deleteUserData) {
+        deleteUserData(user.id);
+      } else {
+        // Fallback: удаляем данные напрямую из localStorage
+        const timeSlots = JSON.parse(localStorage.getItem('tutoring_timeSlots') || '[]');
+        const updatedTimeSlots = timeSlots.filter((slot: any) => slot.teacherId !== user.id);
+        localStorage.setItem('tutoring_timeSlots', JSON.stringify(updatedTimeSlots));
 
-      // Удаляем уроки пользователя
-      const lessons = JSON.parse(localStorage.getItem('tutoring_lessons') || '[]');
-      const updatedLessons = lessons.filter((lesson: any) => 
-        lesson.teacherId !== user.id && lesson.studentId !== user.id
-      );
-      localStorage.setItem('tutoring_lessons', JSON.stringify(updatedLessons));
+        const lessons = JSON.parse(localStorage.getItem('tutoring_lessons') || '[]');
+        const updatedLessons = lessons.filter((lesson: any) => 
+          lesson.teacherId !== user.id && lesson.studentId !== user.id
+        );
+        localStorage.setItem('tutoring_lessons', JSON.stringify(updatedLessons));
 
-      // Удаляем чаты пользователя
-      const chats = JSON.parse(localStorage.getItem('tutoring_chats') || '[]');
-      const updatedChats = chats.filter((chat: any) => 
-        !chat.participants.includes(user.id)
-      );
-      localStorage.setItem('tutoring_chats', JSON.stringify(updatedChats));
+        const chats = JSON.parse(localStorage.getItem('tutoring_chats') || '[]');
+        const updatedChats = chats.filter((chat: any) => 
+          !chat.participants.includes(user.id)
+        );
+        localStorage.setItem('tutoring_chats', JSON.stringify(updatedChats));
 
-      // Удаляем посты пользователя
-      const posts = JSON.parse(localStorage.getItem('tutoring_posts') || '[]');
-      const updatedPosts = posts.filter((post: any) => post.userId !== user.id);
-      localStorage.setItem('tutoring_posts', JSON.stringify(updatedPosts));
+        const posts = JSON.parse(localStorage.getItem('tutoring_posts') || '[]');
+        const updatedPosts = posts.filter((post: any) => post.userId !== user.id);
+        localStorage.setItem('tutoring_posts', JSON.stringify(updatedPosts));
 
-      // Удаляем уведомления пользователя
-      const notifications = JSON.parse(localStorage.getItem('tutoring_notifications') || '[]');
-      const updatedNotifications = notifications.filter((notification: any) => 
-        notification.userId !== user.id
-      );
-      localStorage.setItem('tutoring_notifications', JSON.stringify(updatedNotifications));
+        const notifications = JSON.parse(localStorage.getItem('tutoring_notifications') || '[]');
+        const updatedNotifications = notifications.filter((notification: any) => 
+          notification.userId !== user.id
+        );
+        localStorage.setItem('tutoring_notifications', JSON.stringify(updatedNotifications));
+      }
 
       // Выходим из аккаунта
       logout();

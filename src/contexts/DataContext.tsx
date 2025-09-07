@@ -61,6 +61,8 @@ interface DataContextType {
   archiveChat: (chatId: string) => void;
   unarchiveChat: (chatId: string) => void;
   loadChatsFromServer: () => Promise<void>;
+  // Функция для удаления всех данных пользователя
+  deleteUserData: (userId: string) => void;
 }
 
 export const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -2060,6 +2062,76 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     }
   };
 
+  // Функция для удаления всех данных пользователя
+  const deleteUserData = (userId: string) => {
+    console.log('🗑️ Удаляем все данные пользователя:', userId);
+    
+    // Удаляем слоты преподавателя
+    setTimeSlots(prev => {
+      const updated = prev.filter(slot => slot.teacherId !== userId);
+      saveToStorage('tutoring_timeSlots', updated);
+      return updated;
+    });
+
+    // Удаляем уроки пользователя
+    setLessons(prev => {
+      const updated = prev.filter(lesson => 
+        lesson.teacherId !== userId && lesson.studentId !== userId
+      );
+      saveToStorage('tutoring_lessons', updated);
+      return updated;
+    });
+
+    // Удаляем чаты пользователя
+    setChats(prev => {
+      const updated = prev.filter(chat => 
+        !chat.participants.includes(userId)
+      );
+      saveToStorage('tutoring_chats', updated);
+      return updated;
+    });
+
+    // Удаляем посты пользователя
+    setPosts(prev => {
+      const updated = prev.filter(post => post.userId !== userId);
+      saveToStorage('tutoring_posts', updated);
+      return updated;
+    });
+
+    // Удаляем уведомления пользователя
+    setNotifications(prev => {
+      const updated = prev.filter(notification => notification.userId !== userId);
+      saveToStorage('tutoring_notifications', updated);
+      return updated;
+    });
+
+    // Удаляем профили пользователя
+    if (user?.role === 'teacher') {
+      setTeacherProfiles(prev => {
+        const updated = { ...prev };
+        delete updated[userId];
+        saveToStorage('tutoring_teacherProfiles', updated);
+        return updated;
+      });
+    } else if (user?.role === 'student') {
+      setStudentProfiles(prev => {
+        const updated = { ...prev };
+        delete updated[userId];
+        saveToStorage('tutoring_studentProfiles', updated);
+        return updated;
+      });
+    }
+
+    // Удаляем пользователя из общего списка
+    setAllUsers(prev => {
+      const updated = prev.filter(u => u.id !== userId);
+      saveToStorage('tutoring_users', updated);
+      return updated;
+    });
+
+    console.log('✅ Все данные пользователя удалены');
+  };
+
   return (
     <DataContext.Provider
       value={{
@@ -2171,6 +2243,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         archiveChat,
         unarchiveChat,
         loadChatsFromServer,
+        deleteUserData,
       }}
     >
       {children}

@@ -10,7 +10,7 @@ import PostCard from './PostCard';
 
 
 const ProfileForm: React.FC = () => {
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile, deleteAccount } = useAuth();
   const { 
     updateStudentProfile, 
     updateTeacherProfile, 
@@ -606,7 +606,12 @@ const ProfileForm: React.FC = () => {
             <svg className="w-4 h-4 text-gray-400 ml-2" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
           </div>
           <div className="flex-1" />
-          <button className="w-full mt-8 mb-2 py-3 rounded-xl bg-red-50 text-red-600 font-bold text-base hover:bg-red-100 transition">Удалить аккаунт</button>
+          <button 
+            onClick={deleteAccount}
+            className="w-full mt-8 mb-2 py-3 rounded-xl bg-red-50 text-red-600 font-bold text-base hover:bg-red-100 transition"
+          >
+            Удалить аккаунт
+          </button>
         </div>
       </Modal>
       {/* --- STORIES --- */}
