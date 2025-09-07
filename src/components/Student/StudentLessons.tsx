@@ -26,7 +26,11 @@ import {
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
 
-const StudentLessons: React.FC = () => {
+interface StudentLessonsProps {
+  setActiveTab: (tab: string) => void;
+}
+
+const StudentLessons: React.FC<StudentLessonsProps> = ({ setActiveTab }) => {
   const { lessons, cancelLesson, rescheduleLesson, getOrCreateChat } = useData();
   const { user } = useAuth();
 
@@ -319,7 +323,13 @@ const StudentLessons: React.FC = () => {
               <p className="text-sm text-gray-600 mb-4 max-w-sm mx-auto">
                 Забронируйте свой первый урок на главной странице и начните свой путь к знаниям
               </p>
-              <button className="inline-flex items-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+              <button 
+                onClick={() => {
+                  console.log('🎯 Переход к главной странице для бронирования урока');
+                  setActiveTab('home');
+                }}
+                className="inline-flex items-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+              >
                 <Zap className="h-4 w-4" />
                 <span>Забронировать урок</span>
               </button>
@@ -371,9 +381,8 @@ const StudentLessons: React.FC = () => {
             </p>
             <button 
               onClick={() => {
-                // Переходим на главную страницу (раздел с репетиторами)
-                window.location.href = '/';
-                // Или можно использовать setActiveTab('home') если есть доступ к этой функции
+                console.log('🔍 Переход к главной странице для поиска преподавателя');
+                setActiveTab('home');
               }}
               className="inline-flex items-center space-x-2 px-6 py-3 bg-white text-blue-600 rounded-lg font-semibold text-base hover:bg-gray-50 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
             >

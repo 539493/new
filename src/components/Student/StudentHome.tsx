@@ -813,52 +813,6 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
 
       {/* Action Buttons */}
       <div className="mb-6 flex flex-wrap justify-center gap-4">
-        {/* Кнопка "Забронировать урок" */}
-        <button
-          onClick={() => {
-            console.log('🎯 Переход к разделу с репетиторами для бронирования урока');
-            // Прокручиваем к разделу с репетиторами
-            setTimeout(() => {
-              const teachersSection = document.querySelector('.grid.grid-cols-1.md\\:grid-cols-2.lg\\:grid-cols-3.xl\\:grid-cols-4');
-              if (teachersSection) {
-                teachersSection.scrollIntoView({ behavior: 'smooth' });
-              }
-            }, 100);
-          }}
-          className="group bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-4 rounded-xl font-semibold text-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center space-x-3"
-        >
-          <div className="p-2 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
-            <BookOpen className="h-6 w-6" />
-          </div>
-          <div className="text-left">
-            <div className="font-bold text-lg">Забронировать урок</div>
-            <div className="text-sm opacity-90">начните свой путь к знаниям</div>
-          </div>
-        </button>
-        
-        {/* Кнопка "Найти преподавателя" */}
-        <button
-          onClick={() => {
-            console.log('🔍 Переход к поиску преподавателей');
-            // Прокручиваем к разделу с репетиторами
-            setTimeout(() => {
-              const teachersSection = document.querySelector('.grid.grid-cols-1.md\\:grid-cols-2.lg\\:grid-cols-3.xl\\:grid-cols-4');
-              if (teachersSection) {
-                teachersSection.scrollIntoView({ behavior: 'smooth' });
-              }
-            }, 100);
-          }}
-          className="group bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-4 rounded-xl font-semibold text-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center space-x-3"
-        >
-          <div className="p-2 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
-            <Users className="h-6 w-6" />
-          </div>
-          <div className="text-left">
-            <div className="font-bold text-lg">Найти преподавателя</div>
-            <div className="text-sm opacity-90">нашими преподавателями</div>
-          </div>
-        </button>
-        
         <button
           onClick={() => setShowOverbookingModal(true)}
           className="group bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white px-6 py-3 rounded-xl font-semibold text-base hover:from-green-600 hover:via-emerald-600 hover:to-teal-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center space-x-2"

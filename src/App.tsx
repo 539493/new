@@ -71,7 +71,7 @@ const AppContent: React.FC = () => {
           case 'calendar':
             return user.role === 'student' ? <StudentCalendar onClose={() => setActiveTab('home')} /> : <TeacherCalendar />;
           case 'lessons':
-            return user.role === 'student' ? <StudentLessons /> : null;
+            return user.role === 'student' ? <StudentLessons setActiveTab={setActiveTab} /> : null;
           case 'students':
             return user.role === 'teacher' ? <TeacherStudents /> : null;
           case 'chats':
