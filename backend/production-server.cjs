@@ -169,17 +169,69 @@ if (fs.existsSync(distPath)) {
   app.use(express.static(distPath));
 }
 
+// Вспомогательная функция для получения уникальных преподавателей из timeSlots
+function getTeachersFromSlots() {
+  const teachersMap = new Map();
+  for (const slot of timeSlots) {
+    if (slot.teacherId && slot.teacherName) {
+      if (!teachersMap.has(slot.teacherId)) {
+        teachersMap.set(slot.teacherId, {
+          id: slot.teacherId,
+          name: slot.teacherName,
+          avatar: slot.teacherAvatar || '',
+          profile: {
+            subjects: slot.subject ? [slot.subject] : [],
+            experience: slot.experience || 'beginner',
+            grades: slot.grades || [],
+            goals: slot.goals || [],
+            lessonTypes: slot.lessonType ? [slot.lessonType] : [],
+            durations: slot.duration ? [slot.duration] : [],
+            formats: slot.format ? [slot.format] : [],
+            offlineAvailable: slot.format === 'offline',
+            city: slot.city || '',
+            overbookingEnabled: true,
+            bio: slot.bio || '',
+            avatar: slot.teacherAvatar || '',
+            rating: slot.rating || 0,
+            hourlyRate: slot.price || 0,
+            students: [],
+            lessonsCount: 0,
+            country: slot.country || '',
+          }
+        });
+      }
+    }
+  }
+  return Array.from(teachersMap.values());
+}
+
 // API endpoints
 app.get('/api/teachers', (req, res) => {
+  console.log('Requesting all teachers');
+  console.log('Available teacher profiles:', Object.keys(teacherProfiles));
+  
   // Собираем преподавателей из teacherProfiles
-  const teachers = Object.entries(teacherProfiles).map(([id, profile]) => ({
+  const teachersFromProfiles = Object.entries(teacherProfiles).map(([id, profile]) => ({
     id,
     name: profile.name || '',
     avatar: profile.avatar || '',
     profile
   }));
   
-  res.json(teachers);
+  // Также получаем преподавателей из слотов (если они еще не добавлены)
+  const teachersFromSlots = getTeachersFromSlots();
+  
+  // Объединяем всех преподавателей и убираем дубликаты
+  const allTeachers = [...teachersFromProfiles];
+  
+  teachersFromSlots.forEach(slotTeacher => {
+    if (!allTeachers.find(t => t.id === slotTeacher.id)) {
+      allTeachers.push(slotTeacher);
+    }
+  });
+  
+  console.log(`Returning ${allTeachers.length} teachers (${teachersFromProfiles.length} from profiles, ${teachersFromSlots.length} from slots)`);
+  res.json(allTeachers);
 });
 
 app.get('/api/users', (req, res) => {
