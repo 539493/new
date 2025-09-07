@@ -26,7 +26,10 @@
     "check:502": "./scripts/check-502-fix.sh",
     "test:render": "./scripts/test-render-service.sh",
     "test:registration": "./scripts/test-registration-flow.sh",
-    "test:socket": "node scripts/test-socket-connection.js"
+    "test:socket": "node scripts/test-socket-connection.js",
+    "nauchi:check": "./scripts/check-nauchi-ready.sh",
+    "nauchi:deploy": "./scripts/deploy-nauchi.sh",
+    "nauchi:status": "echo 'NAUCHI Deployment Status' && ./scripts/check-nauchi-ready.sh"
   },
   "dependencies": {
     "@tailwindcss/aspect-ratio": "^0.4.2",

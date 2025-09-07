@@ -10,3 +10,7 @@ services:
       - key: PORT
         value: 10000
     healthCheckPath: /api/health
+    autoDeploy: true
+    branch: main
+    plan: free
+    region: oregon

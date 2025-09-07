@@ -15,10 +15,12 @@ const allowedOrigins = [
   "http://localhost:3002",
   "http://localhost:3003",
   "http://localhost:3004",
-  "http://localhost:4173", 
+  "http://localhost:4173",
+  "http://localhost:5173", // Vite dev server
   "https://*.vercel.app",
   "https://*.onrender.com",
   "https://na-uchi.onrender.com",
+  "https://nauchi.onrender.com",
   "https://tutoring-platform.vercel.app",
   "https://tutoring-platform.onrender.com",
   "https://tutoring-platform-*.onrender.com",
@@ -61,6 +63,8 @@ const io = new Server(server, {
       // Разрешаем запросы без origin
       if (!origin) return callback(null, true);
       
+      console.log('🔍 Socket.IO CORS check for origin:', origin);
+      
       // Проверяем, соответствует ли origin разрешенным доменам
       const isAllowed = allowedOrigins.some(allowedOrigin => {
         if (allowedOrigin.includes('*')) {
@@ -70,9 +74,12 @@ const io = new Server(server, {
         return allowedOrigin === origin;
       });
       
+      console.log('✅ Socket.IO CORS allowed:', isAllowed);
+      
       if (isAllowed) {
         callback(null, true);
       } else {
+        console.log('❌ Socket.IO CORS rejected for:', origin);
         callback(new Error('Not allowed by CORS'));
       }
     },
@@ -165,8 +172,19 @@ if (!notifications) {
 
 // Обслуживание статических файлов фронтенда (если они есть)
 const distPath = path.join(__dirname, '..', 'dist');
+console.log('🔍 Проверка dist директории:', distPath);
+console.log('📁 Dist существует:', fs.existsSync(distPath));
+
 if (fs.existsSync(distPath)) {
-  app.use(express.static(distPath));
+  console.log('📂 Содержимое dist:', fs.readdirSync(distPath));
+  app.use(express.static(distPath, {
+    maxAge: '1d',
+    etag: true,
+    lastModified: true
+  }));
+  console.log('✅ Статические файлы настроены');
+} else {
+  console.log('⚠️ Dist директория не найдена, статические файлы не будут обслуживаться');
 }
 
 // API endpoints
@@ -561,7 +579,30 @@ app.get('/', (req, res) => {
 // Fallback для SPA - должен быть последним
 if (fs.existsSync(distPath)) {
   app.get('*', (req, res) => {
-    res.sendFile(path.join(distPath, 'index.html'));
+    const indexPath = path.join(distPath, 'index.html');
+    console.log('🔄 SPA fallback для:', req.path, '->', indexPath);
+    
+    if (fs.existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      console.log('❌ index.html не найден в:', indexPath);
+      res.status(404).json({ 
+        error: 'Frontend not built', 
+        path: req.path,
+        distPath: distPath,
+        files: fs.existsSync(distPath) ? fs.readdirSync(distPath) : 'dist not found'
+      });
+    }
+  });
+} else {
+  // Если dist не существует, возвращаем информацию об ошибке
+  app.get('*', (req, res) => {
+    res.status(503).json({ 
+      error: 'Frontend not built', 
+      message: 'Please run npm run build first',
+      distPath: distPath,
+      exists: fs.existsSync(distPath)
+    });
   });
 }
 
