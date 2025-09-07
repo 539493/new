@@ -21,7 +21,7 @@ interface StudentHomeProps {
 }
 
 const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
-  const { bookLesson, timeSlots, isConnected, allUsers, refreshUsers, refreshAllData, forceSyncData, sendMessageToUser } = useData();
+  const { bookLesson, timeSlots, isConnected, allUsers, refreshUsers, refreshAllData, forceSyncData, sendMessageToUser, teacherProfiles } = useData();
   const { user } = useAuth();
   
   const [filters, setFilters] = useState<FilterOptions>({});
@@ -139,8 +139,17 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
 
   // Загружаем преподавателей с сервера при монтировании
   useEffect(() => {
+    console.log('🚀 Компонент StudentHome смонтирован, загружаем преподавателей...');
     loadTeachers();
   }, [forceSyncData, refreshUsers]);
+
+  // Дополнительный эффект для загрузки при изменении teacherProfiles
+  useEffect(() => {
+    console.log('📱 teacherProfiles изменились:', Object.keys(teacherProfiles).length);
+    if (Object.keys(teacherProfiles).length > 0) {
+      console.log('✅ Найдены локальные профили преподавателей:', Object.keys(teacherProfiles));
+    }
+  }, [teacherProfiles]);
 
   // Функция для принудительной синхронизации
   const handleForceSync = async () => {
@@ -351,6 +360,8 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
 
   // Собираем всех преподавателей (не только с доступными слотами)
   const allTeachers: { id: string; name: string; avatar?: string; rating?: number; profile?: any }[] = React.useMemo(() => {
+    console.log('🔄 Собираем всех преподавателей...');
+    
     // Получаем всех преподавателей из разных источников
     const teachersFromServer = serverTeachers.map(teacher => ({
       id: teacher.id,
@@ -359,6 +370,7 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
       rating: teacher.profile?.rating,
       profile: teacher.profile
     }));
+    console.log('📡 Преподаватели с сервера:', teachersFromServer.length);
 
     const teachersFromUsers = allUsers
       ?.filter((u: any) => u.role === 'teacher')
@@ -369,6 +381,17 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
         rating: user.profile?.rating,
         profile: user.profile
       })) || [];
+    console.log('👥 Преподаватели из контекста:', teachersFromUsers.length);
+
+    // Получаем преподавателей из локальных профилей (fallback)
+    const teachersFromProfiles = Object.entries(teacherProfiles).map(([id, profile]: [string, any]) => ({
+      id,
+      name: profile.name || 'Репетитор',
+      avatar: profile.avatar || '',
+      rating: profile.rating,
+      profile: profile
+    }));
+    console.log('📱 Преподаватели из локальных профилей:', teachersFromProfiles.length);
 
     // Также получаем преподавателей из слотов, если они еще не добавлены
     const teachersFromSlots = timeSlots
@@ -389,10 +412,15 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
           hourlyRate: slot.price || 0,
         }
       }));
+    console.log('📅 Преподаватели из слотов:', teachersFromSlots.length);
 
-    // Объединяем и убираем дубликаты, приоритет у тех, у кого есть аватары
+    // Объединяем все источники
+    const allSources = [...teachersFromServer, ...teachersFromUsers, ...teachersFromProfiles, ...teachersFromSlots];
+    console.log('🔄 Всего источников:', allSources.length);
+
+    // Убираем дубликаты, приоритет у тех, у кого есть аватары и полные профили
     const allTeachersMap = new Map();
-    [...teachersFromServer, ...teachersFromUsers, ...teachersFromSlots].forEach(teacher => {
+    allSources.forEach(teacher => {
       const existingTeacher = allTeachersMap.get(teacher.id);
       
       if (!existingTeacher) {
@@ -402,7 +430,11 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
         const newHasAvatar = teacher.avatar && teacher.avatar.trim() !== '' && teacher.avatar !== 'undefined' && teacher.avatar !== 'null';
         const existingHasAvatar = existingTeacher.avatar && existingTeacher.avatar.trim() !== '' && existingTeacher.avatar !== 'undefined' && existingTeacher.avatar !== 'null';
         
-        if (newHasAvatar && !existingHasAvatar) {
+        // Если у нового преподавателя есть полный профиль, заменяем
+        const newHasFullProfile = teacher.profile && teacher.profile.subjects && teacher.profile.subjects.length > 0;
+        const existingHasFullProfile = existingTeacher.profile && existingTeacher.profile.subjects && existingTeacher.profile.subjects.length > 0;
+        
+        if ((newHasAvatar && !existingHasAvatar) || (newHasFullProfile && !existingHasFullProfile)) {
           allTeachersMap.set(teacher.id, teacher);
         }
       }
@@ -411,15 +443,17 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
     const result = Array.from(allTeachersMap.values());
     
     // Отладочная информация
-    console.log('All teachers processed:', result.map(t => ({
+    console.log('✅ Итоговые преподаватели:', result.length);
+    console.log('📊 Детали преподавателей:', result.map(t => ({
       id: t.id,
       name: t.name,
       hasAvatar: !!(t.avatar && t.avatar.trim() !== '' && t.avatar !== 'undefined' && t.avatar !== 'null'),
-      avatar: t.avatar
+      hasProfile: !!(t.profile && t.profile.subjects && t.profile.subjects.length > 0),
+      subjects: t.profile?.subjects || []
     })));
     
     return result;
-  }, [serverTeachers, allUsers, timeSlots]);
+  }, [serverTeachers, allUsers, timeSlots, teacherProfiles]);
 
   // Фильтруем преподавателей по профилю и поиску (НЕ по доступным слотам)
   const filteredTeachers = React.useMemo(() => {
@@ -848,6 +882,23 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
             <div className="text-xs opacity-90">Репетиторов</div>
           </div>
         </button>
+        
+        <button
+          onClick={() => {
+            console.log('🔄 Принудительное обновление компонента...');
+            // Принудительно обновляем компонент
+            window.location.reload();
+          }}
+          className="group bg-gradient-to-r from-orange-500 to-red-500 text-white px-5 py-3 rounded-xl font-semibold text-base hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center space-x-2"
+        >
+          <div className="p-1.5 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
+            <RefreshCw className="h-5 w-5" />
+          </div>
+          <div className="text-left">
+            <div className="font-bold">Обновить</div>
+            <div className="text-xs opacity-90">Страницу</div>
+          </div>
+        </button>
       </div>
 
       {/* Search and Filter */}
@@ -1121,7 +1172,8 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
           <div className="mt-2 text-xs text-gray-400">
             Всего загружено: {allTeachers.length} репетиторов | 
             Серверных: {serverTeachers.length} | 
-            Из контекста: {allUsers?.filter((u: any) => u.role === 'teacher').length || 0}
+            Из контекста: {allUsers?.filter((u: any) => u.role === 'teacher').length || 0} | 
+            Локальных профилей: {Object.keys(teacherProfiles).length}
           </div>
         </div>
         
