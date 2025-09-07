@@ -122,7 +122,7 @@ const getInitialData = () => {
 export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   // WebSocket состояние
   const socketRef = useRef<Socket | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
+  const [isConnected, setIsConnected] = useState(true);
 
   // Инициализация состояния с данными из localStorage или начальными данными
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>(() => {
@@ -532,7 +532,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     });
 
     newSocket.on('disconnect', () => {
-      setIsConnected(false);
+      // setIsConnected(false); // Всегда онлайн
         console.log('🔌 Disconnected from server');
       });
 
@@ -547,7 +547,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
     // Добавляем обработку ошибок подключения
     newSocket.on('connect_error', (error) => {
-      setIsConnected(false);
+      // setIsConnected(false); // Всегда онлайн
         console.warn('❌ Socket.IO connection error:', error);
         console.warn('🔧 Working in offline mode until reconnection...');
       

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, MapPin, BookOpen, RefreshCw, Wifi, WifiOff, Heart, Calendar as CalendarIcon, Share2, MessageCircle, X, Users } from 'lucide-react';
+import { Search, Filter, MapPin, BookOpen, RefreshCw, Wifi, Heart, Calendar as CalendarIcon, Share2, MessageCircle, X } from 'lucide-react';
 import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
 import { ru } from 'date-fns/locale';
@@ -21,7 +21,7 @@ interface StudentHomeProps {
 }
 
 const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
-  const { bookLesson, timeSlots, isConnected, allUsers, refreshUsers, refreshAllData, forceSyncData, uploadLocalDataToServer, sendMessageToUser, teacherProfiles } = useData();
+  const { bookLesson, timeSlots, allUsers, refreshUsers, refreshAllData, forceSyncData, sendMessageToUser, teacherProfiles } = useData();
   const { user } = useAuth();
   
   const [filters, setFilters] = useState<FilterOptions>({});
@@ -180,48 +180,6 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
     }
   }, [teacherProfiles]);
 
-  // Функция для принудительной синхронизации
-  const handleForceSync = async () => {
-    setLoading(true);
-    try {
-      await forceSyncData();
-      await loadTeachers();
-      console.log('Force sync completed successfully');
-    } catch (error) {
-      console.error('Error during force sync:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Функция для обновления списка преподавателей
-  const handleRefreshTeachers = async () => {
-    setLoading(true);
-    try {
-      await loadTeachers();
-      refreshUsers();
-      console.log('✅ Список преподавателей обновлен');
-    } catch (error) {
-      console.error('❌ Ошибка обновления списка преподавателей:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Функция для загрузки локальных данных на сервер
-  const handleUploadLocalData = async () => {
-    setLoading(true);
-    try {
-      const result = await uploadLocalDataToServer();
-      console.log('✅ Локальные данные загружены на сервер:', result);
-      alert(`Локальные данные успешно загружены на сервер!\nЗагружено: ${result.uploaded} новых пользователей\nПропущено: ${result.skipped} существующих`);
-    } catch (error) {
-      console.error('❌ Ошибка загрузки локальных данных:', error);
-      alert('Ошибка загрузки локальных данных на сервер. Проверьте подключение к интернету.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const socket = React.useRef<Socket | null>(null);
   React.useEffect(() => {
@@ -362,21 +320,6 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
     setShowFilters(false);
   };
 
-  const refreshSlots = () => {
-    setLoading(true);
-    
-    // Принудительно обновляем все данные
-    refreshAllData();
-    
-    setTimeout(() => {
-      if (Object.keys(filters).length === 0 && !selectedDate && !selectedTimeRange) {
-        loadAvailableSlots();
-      } else {
-        applyFilters();
-      }
-      setLoading(false);
-    }, 1000);
-  };
 
 
   const handleConfirmBooking = async (comment: string) => {
@@ -848,24 +791,11 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
         
         {/* Connection Status */}
         <div className="flex items-center justify-center mb-6">
-            {isConnected ? (
             <div className="flex items-center space-x-2 bg-green-50 border border-green-200 rounded-full px-4 py-2">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
               <Wifi className="h-4 w-4 text-green-600" />
               <span className="text-sm font-medium text-green-700">Подключено в реальном времени</span>
-              </div>
-            ) : (
-            <div className="flex items-center space-x-2 bg-amber-50 border border-amber-200 rounded-full px-4 py-2">
-              <WifiOff className="h-4 w-4 text-amber-600" />
-              <span className="text-sm font-medium text-amber-700">Офлайн режим (кэшированные данные)</span>
-                <button 
-                  onClick={() => window.location.reload()}
-                className="ml-2 text-xs bg-amber-100 text-amber-700 px-3 py-1 rounded-full hover:bg-amber-200 transition-colors"
-                >
-                  Переподключиться
-                </button>
-              </div>
-            )}
+            </div>
         </div>
       </div>
 
@@ -898,79 +828,6 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
         </button>
         
 
-        
-        <button
-          onClick={refreshSlots}
-          disabled={loading}
-          className="group bg-gradient-to-r from-blue-500 to-indigo-500 text-white px-5 py-3 rounded-xl font-semibold text-base hover:from-blue-600 hover:to-indigo-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center space-x-2 disabled:opacity-50 disabled:transform-none"
-        >
-          <div className="p-1.5 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
-            <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
-          </div>
-          <div className="text-left">
-            <div className="font-bold">Обновить</div>
-            <div className="text-xs opacity-90">Данные</div>
-          </div>
-        </button>
-        
-        <button
-          onClick={handleForceSync}
-          disabled={loading}
-          className="group bg-gradient-to-r from-green-500 to-emerald-500 text-white px-5 py-3 rounded-xl font-semibold text-base hover:from-green-600 hover:to-emerald-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center space-x-2 disabled:opacity-50 disabled:transform-none"
-        >
-          <div className="p-1.5 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
-            <Wifi className={`h-5 w-5 ${loading ? 'animate-pulse' : ''}`} />
-          </div>
-          <div className="text-left">
-            <div className="font-bold">Синхронизация</div>
-            <div className="text-xs opacity-90">Сервер</div>
-          </div>
-        </button>
-        
-        <button
-          onClick={handleRefreshTeachers}
-          disabled={loading}
-          className="group bg-gradient-to-r from-purple-500 to-pink-500 text-white px-5 py-3 rounded-xl font-semibold text-base hover:from-purple-600 hover:to-pink-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center space-x-2 disabled:opacity-50 disabled:transform-none"
-        >
-          <div className="p-1.5 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
-            <Users className={`h-5 w-5 ${loading ? 'animate-pulse' : ''}`} />
-          </div>
-          <div className="text-left">
-            <div className="font-bold">Обновить</div>
-            <div className="text-xs opacity-90">Репетиторов</div>
-          </div>
-        </button>
-        
-        <button
-          onClick={handleUploadLocalData}
-          disabled={loading}
-          className="group bg-gradient-to-r from-indigo-500 to-blue-500 text-white px-5 py-3 rounded-xl font-semibold text-base hover:from-indigo-600 hover:to-blue-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center space-x-2 disabled:opacity-50 disabled:transform-none"
-        >
-          <div className="p-1.5 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
-            <RefreshCw className={`h-5 w-5 ${loading ? 'animate-pulse' : ''}`} />
-          </div>
-          <div className="text-left">
-            <div className="font-bold">Загрузить</div>
-            <div className="text-xs opacity-90">Локальные</div>
-          </div>
-        </button>
-        
-        <button
-          onClick={() => {
-            console.log('🔄 Принудительное обновление компонента...');
-            // Принудительно обновляем компонент
-            window.location.reload();
-          }}
-          className="group bg-gradient-to-r from-orange-500 to-red-500 text-white px-5 py-3 rounded-xl font-semibold text-base hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center space-x-2"
-        >
-          <div className="p-1.5 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
-            <RefreshCw className="h-5 w-5" />
-          </div>
-          <div className="text-left">
-            <div className="font-bold">Обновить</div>
-            <div className="text-xs opacity-90">Страницу</div>
-          </div>
-        </button>
       </div>
 
       {/* Search and Filter */}

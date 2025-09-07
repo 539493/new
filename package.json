@@ -29,7 +29,9 @@
     "test:socket": "node scripts/test-socket-connection.js",
     "nauchi:check": "./scripts/check-nauchi-ready.sh",
     "nauchi:deploy": "./scripts/deploy-nauchi.sh",
-    "nauchi:status": "echo 'NAUCHI Deployment Status' && ./scripts/check-nauchi-ready.sh"
+    "nauchi:status": "echo 'NAUCHI Deployment Status' && ./scripts/check-nauchi-ready.sh",
+    "nauchi:render-check": "./scripts/check-render-deployment.sh",
+    "nauchi:render-status": "echo 'Checking Render deployment...' && ./scripts/check-render-deployment.sh"
   },
   "dependencies": {
     "@tailwindcss/aspect-ratio": "^0.4.2",
