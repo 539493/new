@@ -6,37 +6,22 @@ import {
   Clock, 
   BookOpen, 
   MessageCircle, 
-  Phone, 
-  Mail, 
   X, 
-  Users,
   Award,
-  TrendingUp,
   Bookmark,
-  Eye,
   ThumbsUp,
-  Smile,
-  Send,
-  Play,
-  Image as ImageIcon,
-  VideoIcon,
   FileText,
-  Plus,
-  Settings,
-  Edit,
   GraduationCap,
   Calendar,
   DollarSign,
   Target,
-  Book,
   Globe,
   Heart,
   Share2,
   RefreshCw
 } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
 import { useData } from '../../contexts/DataContext';
-import { TeacherProfile, TimeSlot } from '../../types';
+import { TeacherProfile } from '../../types';
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || (import.meta.env.PROD ? 'https://tutoring-platform-1756666331-zjfl.onrender.com' : 'http://localhost:3001');
 
@@ -53,11 +38,9 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
   onBookLesson,
   onMessage 
 }) => {
-  const { user } = useAuth();
-  const { timeSlots, posts, lessons, refreshUsers } = useData();
+  const { timeSlots, posts, lessons, refreshUsers, forceSyncData } = useData();
   const [isLiked, setIsLiked] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
-  const [activeTab, setActiveTab] = useState<'about' | 'posts' | 'lessons' | 'reviews'>('about');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const refreshTeacherData = async () => {
@@ -77,6 +60,9 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
         
         // Обновляем данные в контексте приложения
         refreshUsers();
+        
+        // Синхронизируем записи с сервера
+        await forceSyncData();
         
         // Обновляем данные в модальном окне
         const updatedTeacher = {
@@ -131,6 +117,9 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
           // Обновляем данные в контексте приложения
           refreshUsers();
           
+          // Синхронизируем записи с сервера
+          await forceSyncData();
+          
           // Обновляем данные в модальном окне
           const updatedTeacher = {
             ...teacher,
@@ -167,11 +156,6 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
   const teacherLessons = lessons.filter(lesson => lesson.teacherId === teacher.id);
   const completedLessons = teacherLessons.filter(lesson => lesson.status === 'completed');
 
-  // Отладочная информация для слотов
-  console.log('Teacher ID:', teacher.id);
-  console.log('All timeSlots:', timeSlots);
-  console.log('Teacher slots:', teacherSlots);
-  console.log('Available slots:', availableSlots);
 
   const getExperienceLabel = (exp: string) => {
     switch (exp) {
@@ -308,7 +292,6 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
               <div className="flex items-center justify-between mb-2">
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900">{teacher.name}</h1>
-                  <p className="text-gray-500">@{teacher.id}</p>
                 </div>
                             <div className="flex items-center space-x-2">
               <button 

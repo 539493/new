@@ -1098,12 +1098,6 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
               : 'Попробуйте изменить фильтры или воспользоваться овербукингом'
             }
           </p>
-          <div className="mt-2 text-xs text-gray-400">
-            Всего загружено: {allTeachers.length} репетиторов | 
-            Серверных: {serverTeachers.length} | 
-            Из контекста: {allUsers?.filter((u: any) => u.role === 'teacher').length || 0} | 
-            Локальных профилей: {Object.keys(teacherProfiles).length}
-          </div>
         </div>
         
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
