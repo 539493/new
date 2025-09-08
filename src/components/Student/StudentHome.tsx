@@ -246,7 +246,7 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
     return availableSlots;
   };
 
-  const applyFilters = () => {
+  const applyFilters = (closeModal = false) => {
     setLoading(true);
     
     try {
@@ -313,7 +313,11 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
       }
       
       // setFilteredSlots(results); // Убрано, так как теперь показываем всех репетиторов
-      setShowFilters(false);
+      
+      // Закрываем модальное окно только если явно указано
+      if (closeModal) {
+        setShowFilters(false);
+      }
     } catch (error) {
       console.error('Error applying filters:', error);
     } finally {
@@ -340,7 +344,7 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
         if (Object.keys(filters).length === 0 && !selectedDate && !selectedTimeRange) {
           loadAvailableSlots();
         } else {
-          applyFilters();
+          applyFilters(false);
         }
       }, 100);
     }
@@ -810,7 +814,7 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
               )}
           </button>
           <button
-            onClick={applyFilters}
+            onClick={() => applyFilters(true)}
             disabled={loading}
               className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2.5 rounded-xl font-medium hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 flex items-center space-x-2 text-sm"
             >
