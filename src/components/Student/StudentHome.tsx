@@ -58,6 +58,7 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTimeRange, setSelectedTimeRange] = useState<{ start: string; end: string } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
 
   const subjects = ['Математика', 'Русский язык', 'Английский язык'];
   const grades = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', 'Студент', 'Взрослый'];
@@ -146,6 +147,15 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
     const localTeacherProfiles = JSON.parse(localStorage.getItem('tutoring_teacherProfiles') || '{}');
     console.log('📱 Локальные профили преподавателей при монтировании:', Object.keys(localTeacherProfiles).length);
   }, [forceSyncData, refreshUsers]);
+
+  // Debouncing для поискового запроса
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300); // 300ms задержка
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // Слушаем изменения в localStorage для обновления списка преподавателей
   useEffect(() => {
@@ -361,8 +371,6 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
 
   // Собираем всех преподавателей (не только с доступными слотами)
   const allTeachers: { id: string; name: string; avatar?: string; rating?: number; profile?: any }[] = React.useMemo(() => {
-    console.log('🔄 Собираем всех преподавателей...');
-    
     // Получаем всех преподавателей из разных источников
     const teachersFromServer = serverTeachers.map(teacher => ({
       id: teacher.id,
@@ -371,7 +379,6 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
       rating: teacher.profile?.rating,
       profile: teacher.profile
     }));
-    console.log('📡 Преподаватели с сервера:', teachersFromServer.length);
 
     const teachersFromUsers = allUsers
       ?.filter((u: any) => u.role === 'teacher')
@@ -382,7 +389,6 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
         rating: user.profile?.rating,
         profile: user.profile
       })) || [];
-    console.log('👥 Преподаватели из контекста:', teachersFromUsers.length);
 
     // Получаем преподавателей из локальных профилей (fallback)
     const teachersFromProfiles = Object.entries(teacherProfiles).map(([id, profile]: [string, any]) => ({
@@ -392,7 +398,6 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
       rating: profile.rating,
       profile: profile
     }));
-    console.log('📱 Преподаватели из локальных профилей:', teachersFromProfiles.length);
 
     // Также получаем преподавателей из слотов, если они еще не добавлены
     const teachersFromSlots = timeSlots
@@ -413,11 +418,9 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
           hourlyRate: slot.price || 0,
         }
       }));
-    console.log('📅 Преподаватели из слотов:', teachersFromSlots.length);
 
     // Объединяем все источники
     const allSources = [...teachersFromServer, ...teachersFromUsers, ...teachersFromProfiles, ...teachersFromSlots];
-    console.log('🔄 Всего источников:', allSources.length);
 
     // Убираем дубликаты, приоритет у тех, у кого есть аватары и полные профили
     const allTeachersMap = new Map();
@@ -441,19 +444,7 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
       }
     });
 
-    const result = Array.from(allTeachersMap.values());
-    
-    // Отладочная информация
-    console.log('✅ Итоговые преподаватели:', result.length);
-    console.log('📊 Детали преподавателей:', result.map(t => ({
-      id: t.id,
-      name: t.name,
-      hasAvatar: !!(t.avatar && t.avatar.trim() !== '' && t.avatar !== 'undefined' && t.avatar !== 'null'),
-      hasProfile: !!(t.profile && t.profile.subjects && t.profile.subjects.length > 0),
-      subjects: t.profile?.subjects || []
-    })));
-    
-    return result;
+    return Array.from(allTeachersMap.values());
   }, [serverTeachers, allUsers, timeSlots, teacherProfiles]);
 
   // Фильтруем преподавателей по профилю и поиску (НЕ по доступным слотам)
@@ -462,91 +453,49 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
 
     // Применяем фильтры по профилям преподавателей
     if (Object.keys(filters).length > 0 || selectedDate || selectedTimeRange) {
-      console.log('Применяем фильтры:', filters);
-      console.log('Всего преподавателей до фильтрации:', allTeachers.length);
-      
       teachers = allTeachers.filter(teacher => {
         const profile = teacher.profile as any;
-        let passedFilters = true;
         
         // Проверяем фильтры по профилю преподавателя
-        if (filters.subject && filters.subject !== '') {
-          // Проверяем, преподает ли преподаватель этот предмет
-          if (!profile?.subjects || !profile.subjects.includes(filters.subject)) {
-            console.log(`Преподаватель ${teacher.name} отфильтрован: не преподает ${filters.subject}`);
-            passedFilters = false;
-          }
+        if (filters.subject && filters.subject !== '' && (!profile?.subjects || !profile.subjects.includes(filters.subject))) {
+          return false;
         }
         
-        if (filters.experience && filters.experience !== '' && passedFilters) {
-          if (profile?.experience !== filters.experience) {
-            console.log(`Преподаватель ${teacher.name} отфильтрован: опыт не совпадает`);
-            passedFilters = false;
-          }
+        if (filters.experience && filters.experience !== '' && profile?.experience !== filters.experience) {
+          return false;
         }
         
-        if (filters.format && filters.format !== '' && passedFilters) {
-          if (!profile?.formats || !profile.formats.includes(filters.format)) {
-            console.log(`Преподаватель ${teacher.name} отфильтрован: формат не совпадает`);
-            passedFilters = false;
-          }
+        if (filters.format && filters.format !== '' && (!profile?.formats || !profile.formats.includes(filters.format))) {
+          return false;
         }
         
-        if (filters.city && filters.city !== '' && passedFilters) {
-          if (!profile?.city || !profile.city.toLowerCase().includes(filters.city.toLowerCase())) {
-            console.log(`Преподаватель ${teacher.name} отфильтрован: город не совпадает`);
-            passedFilters = false;
-          }
+        if (filters.city && filters.city !== '' && (!profile?.city || !profile.city.toLowerCase().includes(filters.city.toLowerCase()))) {
+          return false;
         }
         
-        if (filters.minRating && filters.minRating > 0 && passedFilters) {
-          if ((profile?.rating || 0) < filters.minRating) {
-            console.log(`Преподаватель ${teacher.name} отфильтрован: рейтинг ниже ${filters.minRating}`);
-            passedFilters = false;
-          }
+        if (filters.minRating && filters.minRating > 0 && (profile?.rating || 0) < filters.minRating) {
+          return false;
         }
         
-        if (filters.duration && filters.duration > 0 && passedFilters) {
-          // Проверяем длительность в профиле преподавателя
-          if (!profile?.durations || !profile.durations.includes(filters.duration)) {
-            console.log(`Преподаватель ${teacher.name} отфильтрован: длительность не совпадает`);
-            passedFilters = false;
-          }
+        if (filters.duration && filters.duration > 0 && (!profile?.durations || !profile.durations.includes(filters.duration))) {
+          return false;
         }
         
-        if (filters.grade && filters.grade !== '' && passedFilters) {
-          // Проверяем классы в профиле преподавателя
-          if (!profile?.grades || !profile.grades.includes(filters.grade)) {
-            console.log(`Преподаватель ${teacher.name} отфильтрован: класс не совпадает`);
-            passedFilters = false;
-          }
+        if (filters.grade && filters.grade !== '' && (!profile?.grades || !profile.grades.includes(filters.grade))) {
+          return false;
         }
         
-        if (filters.goals && filters.goals.length > 0 && passedFilters) {
-          // Проверяем цели обучения в профиле преподавателя
-          if (!profile?.goals || !filters.goals.some(goal => profile.goals.includes(goal))) {
-            console.log(`Преподаватель ${teacher.name} отфильтрован: цели не совпадают`);
-            passedFilters = false;
-          }
+        if (filters.goals && filters.goals.length > 0 && (!profile?.goals || !filters.goals.some(goal => profile.goals.includes(goal)))) {
+          return false;
         }
         
-        // УБИРАЕМ фильтрацию по дате/времени - показываем всех репетиторов
-        // Если есть фильтры по дате/времени, НЕ фильтруем по слотам
-        // Это позволяет показывать всех репетиторов, даже если у них нет доступных слотов
-        
-        if (passedFilters) {
-          console.log(`Преподаватель ${teacher.name} прошел все фильтры`);
-        }
-        
-        return passedFilters;
+        return true;
       });
-      
-      console.log('Преподавателей после фильтрации:', teachers.length);
     }
 
     // Применяем поиск по имени преподавателя, предметам или городу
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase().trim();
+    if (debouncedSearchQuery.trim()) {
+      const query = debouncedSearchQuery.toLowerCase().trim();
       teachers = teachers.filter(teacher => {
         const profile = teacher.profile as any;
         
@@ -566,7 +515,7 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
     }
 
     return teachers;
-  }, [allTeachers, filters, selectedDate, selectedTimeRange, searchQuery]);
+  }, [allTeachers, filters, selectedDate, selectedTimeRange, debouncedSearchQuery]);
 
 
   // Функция для получения пользователя по id
