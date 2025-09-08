@@ -158,6 +158,14 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
     // Также загружаем локальные профили преподавателей
     const localTeacherProfiles = JSON.parse(localStorage.getItem('tutoring_teacherProfiles') || '{}');
     console.log('📱 Локальные профили преподавателей при монтировании:', Object.keys(localTeacherProfiles).length);
+    
+    // Периодически обновляем список преподавателей, чтобы они всегда отображались
+    const interval = setInterval(() => {
+      console.log('🔄 Периодическое обновление списка преподавателей (каждые 30 сек)...');
+      loadTeachers();
+    }, 30000); // Обновляем каждые 30 секунд
+    
+    return () => clearInterval(interval);
   }, [forceSyncData, refreshUsers]);
 
   // Debouncing для поискового запроса
@@ -386,6 +394,7 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
   };
 
   // Собираем всех преподавателей (не только с доступными слотами)
+  // ВАЖНО: Преподаватели отображаются всегда, независимо от статуса онлайн
   const allTeachers: { id: string; name: string; avatar?: string; rating?: number; profile?: any }[] = React.useMemo(() => {
     console.log('🔄 Собираем всех преподавателей...');
     console.log('📊 Исходные данные:');
@@ -473,7 +482,7 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
     });
 
     const result = Array.from(allTeachersMap.values());
-    console.log('✅ Итоговые преподаватели:', result.length, result);
+    console.log('✅ Итоговые преподаватели (всегда отображаются):', result.length, result);
     
     return result;
   }, [serverTeachers, allUsers, timeSlots, teacherProfiles]);
@@ -1157,8 +1166,8 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
                   {/* Avatar - Centered on background, Bigger */}
                   <div className="relative -mt-12 flex justify-center">
                     <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center overflow-hidden border-4 border-white shadow-2xl relative">
-                      {/* Online Status - всегда зеленый для зарегистрированных репетиторов */}
-                      <div className="absolute top-2 right-2 w-5 h-5 bg-green-500 border-2 border-white rounded-full shadow-lg" title="Доступен для контакта"></div>
+                      {/* Online Status - всегда зеленый для зарегистрированных репетиторов (отображаются всегда) */}
+                      <div className="absolute top-2 right-2 w-5 h-5 bg-green-500 border-2 border-white rounded-full shadow-lg" title="Доступен для контакта (всегда отображается)"></div>
                       
                       {/* Avatar Image */}
                       {(() => {
