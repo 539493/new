@@ -1,4 +1,28 @@
-
+{
+  "teacherProfiles": {
+    "user_1757355577539_40b4xo9j7": {
+      "id": "user_1757355577539_40b4xo9j7",
+      "email": "test.teacher@example.com",
+      "name": "Тест Преподаватель",
+      "nickname": "test_teacher",
+      "role": "teacher",
+      "phone": "+7-999-123-45-67",
+      "createdAt": "2025-09-08T18:19:37.540Z",
+      "subjects": [],
+      "grades": [],
+      "experience": "beginner",
+      "hourlyRate": 0,
+      "country": "",
+      "city": "",
+      "bio": "",
+      "avatar": "",
+      "rating": 0,
+      "lessonsCount": 0,
+      "studentsCount": 0,
+      "offlineAvailable": false,
+      "overbookingEnabled": true
+    }
+  },
   "studentProfiles": {},
   "overbookingRequests": [],
   "timeSlots": [],
