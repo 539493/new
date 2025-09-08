@@ -75,17 +75,24 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
   const loadTeachers = async () => {
     try {
       console.log('🔄 Загружаем всех преподавателей...');
+      console.log('🌐 SERVER_URL:', SERVER_URL);
       
       // Принудительно синхронизируем данные с сервером
+      console.log('🔄 Синхронизируем данные с сервера...');
       await forceSyncData();
       
       // Загружаем всех пользователей через API /api/users (основной источник)
+      console.log('📡 Запрашиваем пользователей с сервера...');
       const usersResponse = await fetch(`${SERVER_URL}/api/users`);
+      console.log('📡 Ответ сервера:', usersResponse.status, usersResponse.statusText);
+      
       if (usersResponse.ok) {
         const contentType = usersResponse.headers.get('content-type');
+        console.log('📡 Content-Type:', contentType);
+        
         if (contentType && contentType.includes('application/json')) {
           const usersData = await usersResponse.json();
-          console.log('✅ Все пользователи загружены с сервера:', usersData.length);
+          console.log('✅ Все пользователи загружены с сервера:', usersData.length, usersData);
           
           // Фильтруем только преподавателей
           const teachers = usersData.filter((user: any) => user.role === 'teacher');
@@ -109,12 +116,17 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
       }
       
       // Дополнительно загружаем преподавателей через API /api/teachers
+      console.log('📡 Запрашиваем преподавателей через /api/teachers...');
       const teachersResponse = await fetch(`${SERVER_URL}/api/teachers`);
+      console.log('📡 Ответ /api/teachers:', teachersResponse.status, teachersResponse.statusText);
+      
       if (teachersResponse.ok) {
         const contentType = teachersResponse.headers.get('content-type');
+        console.log('📡 Content-Type /api/teachers:', contentType);
+        
         if (contentType && contentType.includes('application/json')) {
           const teachersData = await teachersResponse.json();
-          console.log('✅ Преподаватели загружены через /api/teachers:', teachersData.length);
+          console.log('✅ Преподаватели загружены через /api/teachers:', teachersData.length, teachersData);
           
           // Объединяем с уже загруженными данными
           setServerTeachers(prev => {
@@ -122,7 +134,7 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
             const unique = combined.filter((teacher, index, self) => 
               index === self.findIndex(t => t.id === teacher.id)
             );
-            console.log('✅ Объединенные преподаватели:', unique.length);
+            console.log('✅ Объединенные преподаватели:', unique.length, unique);
             return unique;
           });
         } else {
@@ -316,7 +328,7 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
       
       // Закрываем модальное окно только если явно указано
       if (closeModal) {
-        setShowFilters(false);
+      setShowFilters(false);
       }
     } catch (error) {
       console.error('Error applying filters:', error);
@@ -375,6 +387,13 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
 
   // Собираем всех преподавателей (не только с доступными слотами)
   const allTeachers: { id: string; name: string; avatar?: string; rating?: number; profile?: any }[] = React.useMemo(() => {
+    console.log('🔄 Собираем всех преподавателей...');
+    console.log('📊 Исходные данные:');
+    console.log('- serverTeachers:', serverTeachers.length, serverTeachers);
+    console.log('- allUsers:', allUsers?.length || 0, allUsers);
+    console.log('- teacherProfiles:', Object.keys(teacherProfiles).length, teacherProfiles);
+    console.log('- timeSlots:', timeSlots.length);
+    
     // Получаем всех преподавателей из разных источников
     const teachersFromServer = serverTeachers.map(teacher => ({
       id: teacher.id,
@@ -383,6 +402,7 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
       rating: teacher.profile?.rating,
       profile: teacher.profile
     }));
+    console.log('📡 Преподаватели с сервера:', teachersFromServer.length, teachersFromServer);
 
     const teachersFromUsers = allUsers
       ?.filter((u: any) => u.role === 'teacher')
@@ -393,6 +413,7 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
         rating: user.profile?.rating,
         profile: user.profile
       })) || [];
+    console.log('👥 Преподаватели из allUsers:', teachersFromUsers.length, teachersFromUsers);
 
     // Получаем преподавателей из локальных профилей (fallback)
     const teachersFromProfiles = Object.entries(teacherProfiles).map(([id, profile]: [string, any]) => ({
@@ -402,6 +423,7 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
       rating: profile.rating,
       profile: profile
     }));
+    console.log('📱 Преподаватели из teacherProfiles:', teachersFromProfiles.length, teachersFromProfiles);
 
     // Также получаем преподавателей из слотов, если они еще не добавлены
     const teachersFromSlots = timeSlots
@@ -422,9 +444,11 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
           hourlyRate: slot.price || 0,
         }
       }));
+    console.log('📅 Преподаватели из слотов:', teachersFromSlots.length, teachersFromSlots);
 
     // Объединяем все источники
     const allSources = [...teachersFromServer, ...teachersFromUsers, ...teachersFromProfiles, ...teachersFromSlots];
+    console.log('🔄 Всего источников:', allSources.length);
 
     // Убираем дубликаты, приоритет у тех, у кого есть аватары и полные профили
     const allTeachersMap = new Map();
@@ -448,7 +472,10 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
       }
     });
 
-    return Array.from(allTeachersMap.values());
+    const result = Array.from(allTeachersMap.values());
+    console.log('✅ Итоговые преподаватели:', result.length, result);
+    
+    return result;
   }, [serverTeachers, allUsers, timeSlots, teacherProfiles]);
 
   // Фильтруем преподавателей по профилю и поиску (НЕ по доступным слотам)

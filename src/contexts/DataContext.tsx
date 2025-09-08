@@ -375,17 +375,20 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       // Обновляем пользователей
       const users: User[] = [];
       if (syncData.teacherProfiles) {
+        console.log('👨‍🏫 Обновляем профили преподавателей:', Object.keys(syncData.teacherProfiles).length);
         Object.entries(syncData.teacherProfiles).forEach(([id, profile]) => {
           const teacherProfile = profile as TeacherProfile;
-          users.push({
+          const user = {
             id,
             email: String(teacherProfile.email || ''),
             name: String(teacherProfile.name || ''),
             nickname: String(teacherProfile.nickname || ''),
-            role: 'teacher',
+            role: 'teacher' as const,
             phone: String(teacherProfile.phone || ''),
             profile: teacherProfile
-          });
+          };
+          users.push(user);
+          console.log('👨‍🏫 Добавлен преподаватель:', user.id, user.name, user.email);
         });
       }
       if (syncData.studentProfiles) {
@@ -396,7 +399,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
             email: String(studentProfile.email || ''),
             name: String(studentProfile.name || ''),
             nickname: String(studentProfile.nickname || ''),
-            role: 'student',
+            role: 'student' as const,
             phone: String(studentProfile.phone || ''),
             profile: studentProfile
           });
@@ -405,7 +408,12 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       setAllUsers(users);
       saveToStorage('tutoring_users', users);
       
-      console.log('Data sync completed successfully');
+      console.log('✅ Синхронизация завершена успешно');
+      console.log('📊 Итоговые данные:');
+      console.log('- Всего пользователей:', users.length);
+      console.log('- Преподавателей:', users.filter(u => u.role === 'teacher').length);
+      console.log('- Студентов:', users.filter(u => u.role === 'student').length);
+      console.log('- Пользователи:', users);
     } catch (error) {
       console.warn('Error syncing data (continuing with local data):', error);
       // Не выбрасываем ошибку, продолжаем работу с локальными данными

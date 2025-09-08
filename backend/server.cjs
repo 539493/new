@@ -1294,12 +1294,19 @@ app.get('/api/teachers', (req, res) => {
 // Endpoint для получения всех пользователей
 app.get('/api/users', (req, res) => {
   try {
+    console.log('📡 /api/users endpoint called');
+    console.log('📊 Current data:');
+    console.log('- teacherProfiles keys:', Object.keys(teacherProfiles));
+    console.log('- studentProfiles keys:', Object.keys(studentProfiles));
+    console.log('- teacherProfiles count:', Object.keys(teacherProfiles).length);
+    console.log('- studentProfiles count:', Object.keys(studentProfiles).length);
+    
     // Получаем пользователей из server_data.json
     const users = [];
     
     // Добавляем преподавателей
     Object.entries(teacherProfiles).forEach(([id, profile]) => {
-      users.push({
+      const user = {
         id,
         email: profile.email || '',
         name: profile.name || '',
@@ -1307,12 +1314,14 @@ app.get('/api/users', (req, res) => {
         role: 'teacher',
         phone: profile.phone || '',
         profile: profile
-      });
+      };
+      users.push(user);
+      console.log('👨‍🏫 Added teacher:', user.id, user.name, user.email);
     });
     
     // Добавляем студентов
     Object.entries(studentProfiles).forEach(([id, profile]) => {
-      users.push({
+      const user = {
         id,
         email: profile.email || '',
         name: profile.name || '',
@@ -1320,12 +1329,17 @@ app.get('/api/users', (req, res) => {
         role: 'student',
         phone: profile.phone || '',
         profile: profile
-      });
+      };
+      users.push(user);
+      console.log('👨‍🎓 Added student:', user.id, user.name, user.email);
     });
+    
+    console.log('✅ Total users to return:', users.length);
+    console.log('📤 Sending users:', users);
     
     res.json(users);
   } catch (error) {
-    console.error('Error getting users:', error);
+    console.error('❌ Error getting users:', error);
     res.status(500).json({ error: 'Failed to get users' });
   }
 });
@@ -1344,10 +1358,14 @@ app.get('/api/lessons', (req, res) => {
 // Endpoint для регистрации пользователя
 app.post('/api/register', (req, res) => {
   try {
+    console.log('📝 /api/register endpoint called');
+    console.log('📝 Request body:', req.body);
+    
     const { email, password, name, nickname, role, phone } = req.body;
     
     // Проверяем обязательные поля
     if (!email || !name || !nickname || !role || !phone) {
+      console.log('❌ Missing required fields:', { email: !!email, name: !!name, nickname: !!nickname, role: !!role, phone: !!phone });
       return res.status(400).json({ error: 'Missing required fields' });
     }
     
@@ -1383,6 +1401,8 @@ app.post('/api/register', (req, res) => {
       createdAt: new Date().toISOString()
     };
     
+    console.log('👤 Creating new user:', newUser);
+    
     // Сохраняем в соответствующий профиль
     if (role === 'teacher') {
       teacherProfiles[userId] = {
@@ -1401,6 +1421,7 @@ app.post('/api/register', (req, res) => {
         offlineAvailable: false,
         overbookingEnabled: true
       };
+      console.log('👨‍🏫 Added teacher profile:', userId, teacherProfiles[userId]);
     } else if (role === 'student') {
       studentProfiles[userId] = {
         ...newUser,
@@ -1411,6 +1432,7 @@ app.post('/api/register', (req, res) => {
         city: '',
         bio: ''
       };
+      console.log('👨‍🎓 Added student profile:', userId, studentProfiles[userId]);
     }
     
     // Сохраняем данные на сервере
@@ -1427,6 +1449,7 @@ app.post('/api/register', (req, res) => {
     }
     
     // Отправляем обновленные данные всем клиентам для синхронизации
+    console.log('📡 Emitting dataUpdated event to all clients');
     io.emit('dataUpdated', {
       type: 'userRegistered',
       timeSlots: timeSlots,
@@ -1434,6 +1457,7 @@ app.post('/api/register', (req, res) => {
       studentProfiles: studentProfiles
     });
     
+    console.log('✅ Registration successful, sending response:', newUser);
     res.status(201).json(newUser);
     
   } catch (error) {
