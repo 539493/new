@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node server.cjs",
     "dev": "node server.cjs",
+    "prod": "node production-server.cjs",
     "build": "cd .. && npm run build"
   },
   "dependencies": {
