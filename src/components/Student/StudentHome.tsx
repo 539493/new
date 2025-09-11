@@ -532,18 +532,12 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
 
     let teachers = allTeachers;
 
-    // Если фильтры не используются, показываем только преподавателей с доступными слотами
-    if (!hasActiveFilters) {
-      teachers = allTeachers.filter(teacher => teacherIdsWithSlots.has(teacher.id));
-      console.log('- Показываем только с доступными слотами:', teachers.length);
-    } else {
-      // При активных фильтрах показываем всех преподавателей, соответствующих критериям
-      console.log('- Показываем всех (есть активные фильтры):', teachers.length);
-    }
+    // ВСЕГДА показываем всех преподавателей, независимо от наличия слотов
+    console.log('- Показываем ВСЕХ преподавателей (изменено по запросу):', teachers.length);
 
-    // Применяем фильтры по профилям преподавателей
+    // Применяем фильтры по профилям преподавателей (если есть активные фильтры)
     if (hasActiveFilters) {
-      teachers = allTeachers.filter(teacher => {
+      teachers = teachers.filter(teacher => {
         const profile = teacher.profile as any;
         
         // Проверяем фильтры по профилю преподавателя

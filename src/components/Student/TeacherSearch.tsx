@@ -92,11 +92,8 @@ const TeacherSearch: React.FC<TeacherSearchProps> = ({ onTeacherSelect, onBookLe
     let filtered = teachers.filter(teacher => {
       const profile = teacher.profile as any;
       
-      // Если используются фильтры, показываем всех преподавателей, соответствующих критериям
-      // Если фильтры не используются, показываем только тех, у кого есть доступные слоты
-      if (!hasActiveFilters && !teacherIdsWithSlots.has(teacher.id)) {
-        return false;
-      }
+      // ВСЕГДА показываем всех преподавателей, независимо от наличия слотов
+      // (изменено по запросу пользователя)
       
       // Если фильтры активны, пропускаем проверку слотов и применяем только фильтры
       
