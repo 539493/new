@@ -1,10 +1,10 @@
 services:
   - type: web
-    name: nauchi
+    name: nauchi-tutoring-platform
     env: node
     plan: free
-    buildCommand: npm install --legacy-peer-deps && npm run build
-    startCommand: cd backend && node production-server.cjs
+    buildCommand: npm run render:build
+    startCommand: npm run render:start
     envVars:
       - key: NODE_ENV
         value: production
