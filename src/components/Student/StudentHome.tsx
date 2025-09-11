@@ -393,8 +393,7 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
     }
   };
 
-  // Собираем всех преподавателей (не только с доступными слотами)
-  // ВАЖНО: Преподаватели отображаются всегда, независимо от статуса онлайн
+  // Собираем всех преподавателей (фильтрация по слотам будет в filteredTeachers)
   const allTeachers: { id: string; name: string; avatar?: string; rating?: number; profile?: any }[] = React.useMemo(() => {
     console.log('🔄 Собираем всех преподавателей...');
     console.log('📊 Исходные данные:');
@@ -490,17 +489,28 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
     });
 
     const result = Array.from(allTeachersMap.values());
-    console.log('✅ Итоговые преподаватели (всегда отображаются):', result.length, result);
-    
+    console.log('✅ Итоговый список всех преподавателей:', result.length, result);
     return result;
   }, [serverTeachers, allUsers, timeSlots, teacherProfiles]);
 
-  // Фильтруем преподавателей по профилю и поиску (НЕ по доступным слотам)
+  // Дополнительно фильтруем преподавателей по профилю и поиску
   const filteredTeachers = React.useMemo(() => {
+    // Проверяем, используются ли какие-либо фильтры
+    const hasActiveFilters = Object.keys(filters).length > 0 || selectedDate || selectedTimeRange;
+    
+    // Получаем доступные слоты (не забронированные)
+    const availableSlots = timeSlots.filter(slot => !slot.isBooked);
+    const teacherIdsWithSlots = new Set(availableSlots.map(slot => slot.teacherId));
+
     let teachers = allTeachers;
 
+    // Если фильтры не используются, показываем только преподавателей с доступными слотами
+    if (!hasActiveFilters) {
+      teachers = allTeachers.filter(teacher => teacherIdsWithSlots.has(teacher.id));
+    }
+
     // Применяем фильтры по профилям преподавателей
-    if (Object.keys(filters).length > 0 || selectedDate || selectedTimeRange) {
+    if (hasActiveFilters) {
       teachers = allTeachers.filter(teacher => {
         const profile = teacher.profile as any;
         
@@ -563,7 +573,7 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
     }
 
     return teachers;
-  }, [allTeachers, filters, selectedDate, selectedTimeRange, debouncedSearchQuery]);
+  }, [allTeachers, filters, selectedDate, selectedTimeRange, debouncedSearchQuery, timeSlots]);
 
 
   // Функция для получения пользователя по id

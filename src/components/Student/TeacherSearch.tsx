@@ -39,15 +39,35 @@ const TeacherSearch: React.FC<TeacherSearchProps> = ({ onTeacherSelect, onBookLe
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [favorites, setFavorites] = useState<string[]>([]);
 
-  // Получаем всех преподавателей
+  // Получаем всех преподавателей (фильтрация по слотам будет в filteredTeachers)
   const teachers = useMemo(() => {
     return allUsers.filter(user => user.role === 'teacher');
   }, [allUsers]);
 
   // Фильтруем и сортируем преподавателей
   const filteredTeachers = useMemo(() => {
+    // Проверяем, используются ли какие-либо фильтры
+    const hasActiveFilters = searchQuery || 
+      filters.subject || 
+      filters.experience || 
+      filters.format || 
+      filters.rating > 0 || 
+      filters.city ||
+      filters.priceRange[0] > 0 || 
+      filters.priceRange[1] < 5000;
+
+    // Получаем доступные слоты (не забронированные)
+    const availableSlots = timeSlots.filter(slot => !slot.isBooked);
+    const teacherIdsWithSlots = new Set(availableSlots.map(slot => slot.teacherId));
+
     let filtered = teachers.filter(teacher => {
       const profile = teacher.profile as any;
+      
+      // Если используются фильтры, показываем всех преподавателей, соответствующих критериям
+      // Если фильтры не используются, показываем только тех, у кого есть доступные слоты
+      if (!hasActiveFilters && !teacherIdsWithSlots.has(teacher.id)) {
+        return false;
+      }
       
       // Поиск по имени или предметам
       if (searchQuery) {
@@ -129,7 +149,7 @@ const TeacherSearch: React.FC<TeacherSearchProps> = ({ onTeacherSelect, onBookLe
     });
 
     return filtered;
-  }, [teachers, searchQuery, filters, sortBy, sortOrder]);
+  }, [teachers, searchQuery, filters, sortBy, sortOrder, timeSlots]);
 
   // Получаем доступные слоты для преподавателя
   const getTeacherSlots = (teacherId: string) => {
