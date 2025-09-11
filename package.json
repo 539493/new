@@ -32,7 +32,10 @@
     "nauchi:deploy": "./scripts/deploy-nauchi.sh",
     "nauchi:status": "echo 'NAUCHI Deployment Status' && ./scripts/check-nauchi-ready.sh",
     "nauchi:render-check": "./scripts/check-render-deployment.sh",
-    "nauchi:render-status": "echo 'Checking Render deployment...' && ./scripts/check-render-deployment.sh"
+    "nauchi:render-status": "echo 'Checking Render deployment...' && ./scripts/check-render-deployment.sh",
+    "render:check": "node check-render-connection.cjs",
+    "render:deploy": "git add . && git commit -m 'Deploy to Render' && git push origin main",
+    "render:status": "echo 'Render Server Status:' && node check-render-connection.cjs"
   },
   "dependencies": {
     "@tailwindcss/aspect-ratio": "^0.4.2",

@@ -1,15 +1,11 @@
-// Конфигурация для разных окружений
-const isProd = import.meta.env.PROD;
+// Конфигурация для работы только с Render сервером
+// Всегда используем Render сервер для единой базы данных
 
-// URL сервера
-export const SERVER_URL = isProd 
-  ? 'https://nauchi.onrender.com' 
-  : 'http://localhost:3001';
+// URL сервера - всегда Render
+export const SERVER_URL = 'https://nauchi.onrender.com';
 
-// URL WebSocket
-export const WEBSOCKET_URL = isProd 
-  ? 'https://nauchi.onrender.com' 
-  : 'http://localhost:3001';
+// URL WebSocket - всегда Render
+export const WEBSOCKET_URL = 'https://nauchi.onrender.com';
 
 // URL внешнего сервиса видео чата
 export const EXTERNAL_VIDEO_CHAT_URL = 'https://video-chat-web-lp8d.onrender.com';
@@ -27,5 +23,6 @@ export const SOCKET_CONFIG = {
 export const ENV = {
   isDevelopment: import.meta.env.DEV,
   isProduction: import.meta.env.PROD,
-  isLocalhost: window.location.hostname === 'localhost'
+  isLocalhost: window.location.hostname === 'localhost',
+  isRender: window.location.hostname.includes('onrender.com')
 }; 
