@@ -496,17 +496,31 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
   // Дополнительно фильтруем преподавателей по профилю и поиску
   const filteredTeachers = React.useMemo(() => {
     // Проверяем, используются ли какие-либо фильтры
-    const hasActiveFilters = Object.keys(filters).length > 0 || selectedDate || selectedTimeRange;
+    const hasActiveFilters = Object.keys(filters).length > 0 || selectedDate || selectedTimeRange || debouncedSearchQuery;
     
     // Получаем доступные слоты (не забронированные)
     const availableSlots = timeSlots.filter(slot => !slot.isBooked);
     const teacherIdsWithSlots = new Set(availableSlots.map(slot => slot.teacherId));
+
+    console.log('🔍 Фильтрация преподавателей:');
+    console.log('- hasActiveFilters:', hasActiveFilters);
+    console.log('- filters:', filters);
+    console.log('- selectedDate:', selectedDate);
+    console.log('- selectedTimeRange:', selectedTimeRange);
+    console.log('- debouncedSearchQuery:', debouncedSearchQuery);
+    console.log('- availableSlots:', availableSlots.length);
+    console.log('- teacherIdsWithSlots:', Array.from(teacherIdsWithSlots));
+    console.log('- allTeachers:', allTeachers.length);
 
     let teachers = allTeachers;
 
     // Если фильтры не используются, показываем только преподавателей с доступными слотами
     if (!hasActiveFilters) {
       teachers = allTeachers.filter(teacher => teacherIdsWithSlots.has(teacher.id));
+      console.log('- Показываем только с доступными слотами:', teachers.length);
+    } else {
+      // При активных фильтрах показываем всех преподавателей, соответствующих критериям
+      console.log('- Показываем всех (есть активные фильтры):', teachers.length);
     }
 
     // Применяем фильтры по профилям преподавателей
@@ -572,6 +586,7 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
       });
     }
 
+    console.log('✅ StudentHome - Итоговый результат:', teachers.length, 'преподавателей');
     return teachers;
   }, [allTeachers, filters, selectedDate, selectedTimeRange, debouncedSearchQuery, timeSlots]);
 

@@ -60,6 +60,14 @@ const TeacherSearch: React.FC<TeacherSearchProps> = ({ onTeacherSelect, onBookLe
     const availableSlots = timeSlots.filter(slot => !slot.isBooked);
     const teacherIdsWithSlots = new Set(availableSlots.map(slot => slot.teacherId));
 
+    console.log('🔍 TeacherSearch - Фильтрация преподавателей:');
+    console.log('- hasActiveFilters:', hasActiveFilters);
+    console.log('- searchQuery:', searchQuery);
+    console.log('- filters:', filters);
+    console.log('- availableSlots:', availableSlots.length);
+    console.log('- teacherIdsWithSlots:', Array.from(teacherIdsWithSlots));
+    console.log('- teachers:', teachers.length);
+
     let filtered = teachers.filter(teacher => {
       const profile = teacher.profile as any;
       
@@ -68,6 +76,8 @@ const TeacherSearch: React.FC<TeacherSearchProps> = ({ onTeacherSelect, onBookLe
       if (!hasActiveFilters && !teacherIdsWithSlots.has(teacher.id)) {
         return false;
       }
+      
+      // Если фильтры активны, пропускаем проверку слотов и применяем только фильтры
       
       // Поиск по имени или предметам
       if (searchQuery) {
@@ -129,7 +139,7 @@ const TeacherSearch: React.FC<TeacherSearchProps> = ({ onTeacherSelect, onBookLe
           valueB = profileB?.hourlyRate || 1000;
           break;
         case 'experience':
-          const expOrder = { 'beginner': 1, 'experienced': 2, 'professional': 3 };
+          const expOrder: { [key: string]: number } = { 'beginner': 1, 'experienced': 2, 'professional': 3 };
           valueA = expOrder[profileA?.experience] || 1;
           valueB = expOrder[profileB?.experience] || 1;
           break;
@@ -148,6 +158,7 @@ const TeacherSearch: React.FC<TeacherSearchProps> = ({ onTeacherSelect, onBookLe
       }
     });
 
+    console.log('✅ TeacherSearch - Итоговый результат:', filtered.length, 'преподавателей');
     return filtered;
   }, [teachers, searchQuery, filters, sortBy, sortOrder, timeSlots]);
 

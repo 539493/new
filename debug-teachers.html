@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Teachers Logic</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .debug-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .teacher { margin: 10px 0; padding: 10px; background: #f5f5f5; border-radius: 3px; }
+        .has-slots { background: #d4edda; }
+        .no-slots { background: #f8d7da; }
+        button { margin: 5px; padding: 10px 15px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>Debug Teachers Logic</h1>
+    
+    <div class="debug-section">
+        <h2>Тестовые данные</h2>
+        <div id="test-data"></div>
+    </div>
+    
+    <div class="debug-section">
+        <h2>Контроль</h2>
+        <button onclick="testWithoutFilters()">Без фильтров (только с доступными слотами)</button>
+        <button onclick="testWithSearch()">С поиском (все репетиторы)</button>
+        <button onclick="testWithSubjectFilter()">С фильтром по предмету (все репетиторы)</button>
+    </div>
+    
+    <div class="debug-section">
+        <h2>Результат</h2>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        // Тестовые данные
+        const testTeachers = [
+            { id: '1', name: 'Анна Иванова', role: 'teacher', profile: { subjects: ['Математика'], experience: 'experienced' } },
+            { id: '2', name: 'Петр Петров', role: 'teacher', profile: { subjects: ['Русский язык'], experience: 'beginner' } },
+            { id: '3', name: 'Мария Сидорова', role: 'teacher', profile: { subjects: ['Математика'], experience: 'professional' } },
+            { id: '4', name: 'Иван Козлов', role: 'teacher', profile: { subjects: ['Физика'], experience: 'experienced' } }
+        ];
+
+        const testSlots = [
+            { id: 's1', teacherId: '1', isBooked: false, subject: 'Математика' },
+            { id: 's2', teacherId: '1', isBooked: true, subject: 'Математика' },
+            { id: 's3', teacherId: '3', isBooked: false, subject: 'Математика' }
+            // Учителя 2 и 4 не имеют слотов
+        ];
+
+        function displayTestData() {
+            const container = document.getElementById('test-data');
+            container.innerHTML = `
+                <h3>Преподаватели (${testTeachers.length}):</h3>
+                ${testTeachers.map(t => `<div class="teacher">${t.name} (${t.profile.subjects.join(', ')})</div>`).join('')}
+                
+                <h3>Слоты (${testSlots.length}):</h3>
+                ${testSlots.map(s => `<div class="teacher ${s.isBooked ? 'no-slots' : 'has-slots'}">${s.teacherId} - ${s.subject} ${s.isBooked ? '(забронирован)' : '(свободен)'}</div>`).join('')}
+            `;
+        }
+
+        function filterTeachers(hasActiveFilters, searchQuery = '', subjectFilter = '') {
+            console.log('🔍 Фильтрация преподавателей:');
+            console.log('- hasActiveFilters:', hasActiveFilters);
+            console.log('- searchQuery:', searchQuery);
+            console.log('- subjectFilter:', subjectFilter);
+
+            // Получаем доступные слоты (не забронированные)
+            const availableSlots = testSlots.filter(slot => !slot.isBooked);
+            const teacherIdsWithSlots = new Set(availableSlots.map(slot => slot.teacherId));
+
+            console.log('- availableSlots:', availableSlots.length);
+            console.log('- teacherIdsWithSlots:', Array.from(teacherIdsWithSlots));
+
+            let teachers = testTeachers;
+
+            // Если фильтры не используются, показываем только преподавателей с доступными слотами
+            if (!hasActiveFilters) {
+                teachers = testTeachers.filter(teacher => teacherIdsWithSlots.has(teacher.id));
+                console.log('- Показываем только с доступными слотами:', teachers.length);
+            } else {
+                console.log('- Показываем всех (есть активные фильтры):', teachers.length);
+            }
+
+            // Применяем фильтры
+            if (hasActiveFilters) {
+                teachers = teachers.filter(teacher => {
+                    const profile = teacher.profile;
+
+                    // Поиск по имени
+                    if (searchQuery && !teacher.name.toLowerCase().includes(searchQuery.toLowerCase())) {
+                        return false;
+                    }
+
+                    // Фильтр по предмету
+                    if (subjectFilter && (!profile.subjects || !profile.subjects.includes(subjectFilter))) {
+                        return false;
+                    }
+
+                    return true;
+                });
+            }
+
+            console.log('✅ Итоговый результат:', teachers.length, 'преподавателей');
+            return teachers;
+        }
+
+        function testWithoutFilters() {
+            const result = filterTeachers(false);
+            displayResult('Без фильтров (только с доступными слотами)', result);
+        }
+
+        function testWithSearch() {
+            const result = filterTeachers(true, 'Анна');
+            displayResult('С поиском "Анна" (все репетиторы)', result);
+        }
+
+        function testWithSubjectFilter() {
+            const result = filterTeachers(true, '', 'Математика');
+            displayResult('С фильтром по предмету "Математика" (все репетиторы)', result);
+        }
+
+        function displayResult(title, teachers) {
+            const container = document.getElementById('result');
+            container.innerHTML = `
+                <h3>${title}</h3>
+                <p>Найдено: ${teachers.length} преподавателей</p>
+                ${teachers.map(t => `<div class="teacher">${t.name} (${t.profile.subjects.join(', ')})</div>`).join('')}
+            `;
+        }
+
+        // Инициализация
+        displayTestData();
+    </script>
+</body>
+</html>
