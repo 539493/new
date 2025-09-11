@@ -33,6 +33,7 @@ interface DataContextType {
   refreshAllData: () => void; // Функция для принудительного обновления всех данных
   forceSyncData: () => Promise<void>; // Функция для принудительной синхронизации с сервером
   uploadLocalDataToServer: () => Promise<any>; // Функция для загрузки локальных данных на сервер
+  deleteUser: (userId: string) => Promise<boolean>; // Функция для удаления пользователя
   updateTeacherProfile: (teacherId: string, profile: TeacherProfile) => void;
   socketRef: React.MutableRefObject<Socket | null>;
   loadInitialData: () => void;
@@ -466,6 +467,69 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     }
   };
 
+  // Функция для удаления пользователя
+  const deleteUser = async (userId: string): Promise<boolean> => {
+    try {
+      console.log(`🗑️ Удаляем пользователя: ${userId}`);
+      
+      // Отправляем запрос на удаление на сервер
+      const response = await fetch(`${SERVER_URL}/api/users/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Ошибка удаления пользователя');
+      }
+      
+      const result = await response.json();
+      console.log('✅ Пользователь успешно удален:', result);
+      
+      // Удаляем пользователя из локального состояния
+      setAllUsers(prev => {
+        const updated = prev.filter(user => user.id !== userId);
+        saveToStorage('tutoring_users', updated);
+        return updated;
+      });
+      
+      // Удаляем из профилей
+      setTeacherProfiles(prev => {
+        const updated = { ...prev };
+        delete updated[userId];
+        saveToStorage('tutoring_teacherProfiles', updated);
+        return updated;
+      });
+      
+      setStudentProfiles(prev => {
+        const updated = { ...prev };
+        delete updated[userId];
+        saveToStorage('tutoring_studentProfiles', updated);
+        return updated;
+      });
+      
+      // Удаляем связанные данные
+      setTimeSlots(prev => prev.filter(slot => slot.teacherId !== userId));
+      setLessons(prev => prev.filter(lesson => 
+        lesson.teacherId !== userId && lesson.studentId !== userId
+      ));
+      setChats(prev => prev.filter(chat => 
+        !chat.participants.includes(userId)
+      ));
+      setPosts(prev => prev.filter(post => post.userId !== userId));
+      setNotifications(prev => prev.filter(notification => 
+        notification.userId !== userId
+      ));
+      
+      return true;
+    } catch (error) {
+      console.error('❌ Ошибка удаления пользователя:', error);
+      return false;
+    }
+  };
+
   // Инициализация WebSocket соединения
   useEffect(() => {
     // Проверяем, доступен ли сервер перед подключением
@@ -856,6 +920,50 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           }
           return prev;
         });
+      });
+
+      // Слушаем удаление пользователей
+      newSocket.on('userDeleted', (data: { userId: string; userRole: string; deletedUser: any; deletedData: any }) => {
+        console.log('🗑️ Получено событие удаления пользователя:', data);
+        
+        // Удаляем пользователя из списка
+        setAllUsers(prev => {
+          const updated = prev.filter(user => user.id !== data.userId);
+          saveToStorage('tutoring_users', updated);
+          return updated;
+        });
+        
+        // Удаляем из профилей
+        if (data.userRole === 'teacher') {
+          setTeacherProfiles(prev => {
+            const updated = { ...prev };
+            delete updated[data.userId];
+            saveToStorage('tutoring_teacherProfiles', updated);
+            return updated;
+          });
+        } else if (data.userRole === 'student') {
+          setStudentProfiles(prev => {
+            const updated = { ...prev };
+            delete updated[data.userId];
+            saveToStorage('tutoring_studentProfiles', updated);
+            return updated;
+          });
+        }
+        
+        // Удаляем связанные данные
+        setTimeSlots(prev => prev.filter(slot => slot.teacherId !== data.userId));
+        setLessons(prev => prev.filter(lesson => 
+          lesson.teacherId !== data.userId && lesson.studentId !== data.userId
+        ));
+        setChats(prev => prev.filter(chat => 
+          !chat.participants.includes(data.userId)
+        ));
+        setPosts(prev => prev.filter(post => post.userId !== data.userId));
+        setNotifications(prev => prev.filter(notification => 
+          notification.userId !== data.userId
+        ));
+        
+        console.log('✅ Пользователь удален из локального состояния');
       });
 
     // Добавляем обработку события завершения урока
@@ -2179,6 +2287,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         refreshAllData, // Функция для принудительного обновления всех данных
         forceSyncData, // Добавлено
         uploadLocalDataToServer, // Функция для загрузки локальных данных на сервер
+        deleteUser, // Функция для удаления пользователя
         teacherProfiles,
         updateTeacherProfile, // добавлено
         socketRef,

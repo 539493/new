@@ -1,48 +1,10 @@
 {
-  "teacherProfiles": {
-    "user_1757355577539_40b4xo9j7": {
-      "id": "user_1757355577539_40b4xo9j7",
-      "email": "test.teacher@example.com",
-      "name": "Тест Преподаватель",
-      "nickname": "test_teacher",
-      "role": "teacher",
-      "phone": "+7-999-123-45-67",
-      "createdAt": "2025-09-08T18:19:37.540Z",
-      "subjects": [],
-      "grades": [],
-      "experience": "beginner",
-      "hourlyRate": 0,
-      "country": "",
-      "city": "",
-      "bio": "",
-      "avatar": "",
-      "rating": 0,
-      "lessonsCount": 0,
-      "studentsCount": 0,
-      "offlineAvailable": false,
-      "overbookingEnabled": true
-    }
-  },
-  "studentProfiles": {
-    "user_1757356235491_25jzldyar": {
-      "id": "user_1757356235491_25jzldyar",
-      "email": "test@example.com",
-      "name": "Тестовый Пользователь",
-      "nickname": "testuser",
-      "role": "student",
-      "phone": "+1234567890",
-      "createdAt": "2025-09-08T18:30:35.491Z",
-      "grade": "",
-      "subjects": [],
-      "goals": [],
-      "experience": "beginner",
-      "city": "",
-      "bio": ""
-    }
-  },
+  "teacherProfiles": {},
+  "studentProfiles": {},
+  "overbookingRequests": [],
   "timeSlots": [],
   "lessons": [],
   "chats": [],
-  "overbookingRequests": [],
-  "posts": []
+  "posts": [],
+  "notifications": []
 }

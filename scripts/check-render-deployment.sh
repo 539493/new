@@ -116,3 +116,4 @@ else
     echo -e "${YELLOW}   Проверьте логи в Render Dashboard для диагностики${NC}"
     exit 1
 fi
+

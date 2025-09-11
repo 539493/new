@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import UsersList from './UsersList';
+import UserManagement from './UserManagement';
 
 const UsersPage: React.FC = () => {
   const { user } = useAuth();
@@ -18,12 +19,22 @@ const UsersPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4">
+      <div className="max-w-7xl mx-auto px-4 space-y-8">
+        {/* Список пользователей */}
         <UsersList
           title="Все пользователи"
           showTeachers={true}
           showStudents={true}
         />
+        
+        {/* Управление пользователями (только для администраторов или преподавателей) */}
+        {(user.role === 'teacher' || user.role === 'admin') && (
+          <UserManagement
+            title="Управление пользователями"
+            showTeachers={true}
+            showStudents={true}
+          />
+        )}
       </div>
     </div>
   );

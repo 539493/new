@@ -409,6 +409,138 @@ app.get('/api/users/:id', (req, res) => {
   }
 });
 
+// Endpoint для удаления пользователя
+app.delete('/api/users/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    console.log(`🗑️ Deleting user with ID: ${id}`);
+    
+    let deletedUser = null;
+    let userRole = null;
+    
+    // Ищем и удаляем из преподавателей
+    if (teacherProfiles[id]) {
+      deletedUser = teacherProfiles[id];
+      userRole = 'teacher';
+      delete teacherProfiles[id];
+      console.log(`👨‍🏫 Deleted teacher: ${deletedUser.name} (${id})`);
+    }
+    
+    // Ищем и удаляем из студентов
+    if (studentProfiles[id]) {
+      deletedUser = studentProfiles[id];
+      userRole = 'student';
+      delete studentProfiles[id];
+      console.log(`👨‍🎓 Deleted student: ${deletedUser.name} (${id})`);
+    }
+    
+    if (!deletedUser) {
+      console.log(`❌ User with ID ${id} not found`);
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Удаляем связанные данные
+    // Удаляем слоты времени пользователя
+    const userSlots = timeSlots.filter(slot => slot.teacherId === id);
+    timeSlots = timeSlots.filter(slot => slot.teacherId !== id);
+    console.log(`📅 Deleted ${userSlots.length} time slots for user ${id}`);
+    
+    // Удаляем уроки пользователя
+    const userLessons = lessons.filter(lesson => 
+      lesson.teacherId === id || lesson.studentId === id
+    );
+    lessons = lessons.filter(lesson => 
+      lesson.teacherId !== id && lesson.studentId !== id
+    );
+    console.log(`📚 Deleted ${userLessons.length} lessons for user ${id}`);
+    
+    // Удаляем чаты пользователя
+    const userChats = chats.filter(chat => 
+      chat.participants.includes(id)
+    );
+    chats = chats.filter(chat => 
+      !chat.participants.includes(id)
+    );
+    console.log(`💬 Deleted ${userChats.length} chats for user ${id}`);
+    
+    // Удаляем посты пользователя
+    const userPosts = posts.filter(post => post.userId === id);
+    posts = posts.filter(post => post.userId !== id);
+    console.log(`📝 Deleted ${userPosts.length} posts for user ${id}`);
+    
+    // Удаляем уведомления пользователя
+    const userNotifications = notifications.filter(notification => 
+      notification.userId === id
+    );
+    notifications = notifications.filter(notification => 
+      notification.userId !== id
+    );
+    console.log(`🔔 Deleted ${userNotifications.length} notifications for user ${id}`);
+    
+    // Сохраняем данные на сервере
+    saveServerData({
+      teacherProfiles,
+      studentProfiles,
+      timeSlots,
+      lessons,
+      chats,
+      overbookingRequests,
+      posts,
+      notifications
+    });
+    
+    // Отправляем уведомление всем подключенным клиентам
+    io.emit('userDeleted', {
+      userId: id,
+      userRole: userRole,
+      deletedUser: deletedUser,
+      deletedData: {
+        slots: userSlots.length,
+        lessons: userLessons.length,
+        chats: userChats.length,
+        posts: userPosts.length,
+        notifications: userNotifications.length
+      }
+    });
+    
+    // Отправляем обновленные данные всем клиентам для синхронизации
+    io.emit('dataUpdated', {
+      type: 'userDeleted',
+      timeSlots: timeSlots,
+      lessons: lessons,
+      chats: chats,
+      posts: posts,
+      notifications: notifications,
+      teacherProfiles: teacherProfiles,
+      studentProfiles: studentProfiles
+    });
+    
+    console.log(`✅ User ${id} deleted successfully`);
+    
+    res.json({
+      success: true,
+      message: 'User deleted successfully',
+      deletedUser: {
+        id,
+        name: deletedUser.name,
+        role: userRole,
+        deletedData: {
+          slots: userSlots.length,
+          lessons: userLessons.length,
+          chats: userChats.length,
+          posts: userPosts.length,
+          notifications: userNotifications.length
+        }
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    res.status(500).json({ error: 'Failed to delete user' });
+  }
+});
+
 // Endpoint для загрузки локальных данных на сервер
 app.post('/api/upload-local-data', (req, res) => {
   try {

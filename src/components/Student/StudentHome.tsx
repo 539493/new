@@ -455,11 +455,11 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
       }));
     console.log('📅 Преподаватели из слотов:', teachersFromSlots.length, teachersFromSlots);
 
-    // Объединяем все источники
-    const allSources = [...teachersFromServer, ...teachersFromUsers, ...teachersFromProfiles, ...teachersFromSlots];
+    // Объединяем все источники - ПРИОРИТЕТ у зарегистрированных пользователей
+    const allSources = [...teachersFromUsers, ...teachersFromServer, ...teachersFromProfiles, ...teachersFromSlots];
     console.log('🔄 Всего источников:', allSources.length);
 
-    // Убираем дубликаты, приоритет у тех, у кого есть аватары и полные профили
+    // Убираем дубликаты, приоритет у зарегистрированных пользователей
     const allTeachersMap = new Map();
     allSources.forEach(teacher => {
       const existingTeacher = allTeachersMap.get(teacher.id);
@@ -467,16 +467,24 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
       if (!existingTeacher) {
         allTeachersMap.set(teacher.id, teacher);
       } else {
-        // Если у нового преподавателя есть аватар, а у существующего нет, заменяем
-        const newHasAvatar = teacher.avatar && teacher.avatar.trim() !== '' && teacher.avatar !== 'undefined' && teacher.avatar !== 'null';
-        const existingHasAvatar = existingTeacher.avatar && existingTeacher.avatar.trim() !== '' && existingTeacher.avatar !== 'undefined' && existingTeacher.avatar !== 'null';
+        // Приоритет у зарегистрированных пользователей (из allUsers)
+        const isFromUsers = teachersFromUsers.some(t => t.id === teacher.id);
+        const existingIsFromUsers = teachersFromUsers.some(t => t.id === existingTeacher.id);
         
-        // Если у нового преподавателя есть полный профиль, заменяем
-        const newHasFullProfile = teacher.profile && teacher.profile.subjects && teacher.profile.subjects.length > 0;
-        const existingHasFullProfile = existingTeacher.profile && existingTeacher.profile.subjects && existingTeacher.profile.subjects.length > 0;
-        
-        if ((newHasAvatar && !existingHasAvatar) || (newHasFullProfile && !existingHasFullProfile)) {
+        if (isFromUsers && !existingIsFromUsers) {
           allTeachersMap.set(teacher.id, teacher);
+        } else if (!isFromUsers && !existingIsFromUsers) {
+          // Если у нового преподавателя есть аватар, а у существующего нет, заменяем
+          const newHasAvatar = teacher.avatar && teacher.avatar.trim() !== '' && teacher.avatar !== 'undefined' && teacher.avatar !== 'null';
+          const existingHasAvatar = existingTeacher.avatar && existingTeacher.avatar.trim() !== '' && existingTeacher.avatar !== 'undefined' && existingTeacher.avatar !== 'null';
+          
+          // Если у нового преподавателя есть полный профиль, заменяем
+          const newHasFullProfile = teacher.profile && teacher.profile.subjects && teacher.profile.subjects.length > 0;
+          const existingHasFullProfile = existingTeacher.profile && existingTeacher.profile.subjects && existingTeacher.profile.subjects.length > 0;
+          
+          if ((newHasAvatar && !existingHasAvatar) || (newHasFullProfile && !existingHasFullProfile)) {
+            allTeachersMap.set(teacher.id, teacher);
+          }
         }
       }
     });
@@ -1166,7 +1174,7 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
                   {/* Avatar - Centered on background, Bigger */}
                   <div className="relative -mt-12 flex justify-center">
                     <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center overflow-hidden border-4 border-white shadow-2xl relative">
-                      {/* Online Status - всегда зеленый для зарегистрированных репетиторов (отображаются всегда) */}
+                      {/* Online Status - всегда зеленый для всех репетиторов (отображаются всегда) */}
                       <div className="absolute top-2 right-2 w-5 h-5 bg-green-500 border-2 border-white rounded-full shadow-lg" title="Доступен для контакта (всегда отображается)"></div>
                       
                       {/* Avatar Image */}
