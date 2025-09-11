@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "start": "cd backend && node production-server.cjs",
+    "render:start": "cd backend && node production-server.cjs",
     "server": "node backend/server.cjs",
     "build:server": "echo 'Server is already built'",
     "deploy:check": "./scripts/check-deploy-status.sh",

@@ -2,11 +2,15 @@ services:
   - type: web
     name: nauchi
     env: node
+    plan: free
     buildCommand: npm install --legacy-peer-deps && npm run build
-    startCommand: npm start
+    startCommand: cd backend && node production-server.cjs
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 10000
     healthCheckPath: /api/health
+    autoDeploy: true
+    branch: main
+    rootDir: .

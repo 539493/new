@@ -4,12 +4,12 @@ const isProd = import.meta.env.PROD;
 // URL сервера
 export const SERVER_URL = isProd 
   ? 'https://nauchi.onrender.com' 
-  : 'http://localhost:10000';
+  : 'http://localhost:3001';
 
 // URL WebSocket
 export const WEBSOCKET_URL = isProd 
   ? 'https://nauchi.onrender.com' 
-  : 'http://localhost:10000';
+  : 'http://localhost:3001';
 
 // URL внешнего сервиса видео чата
 export const EXTERNAL_VIDEO_CHAT_URL = 'https://video-chat-web-lp8d.onrender.com';
