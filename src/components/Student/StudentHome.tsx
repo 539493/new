@@ -22,6 +22,12 @@ interface StudentHomeProps {
 
 const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
   const { bookLesson, timeSlots, allUsers, refreshUsers, refreshAllData, forceSyncData, sendMessageToUser, teacherProfiles } = useData();
+  
+  // Функция для принудительного обновления данных
+  const handleRefreshData = () => {
+    console.log('🔄 Принудительное обновление данных...');
+    refreshAllData();
+  };
   const { user } = useAuth();
   
   const [filters, setFilters] = useState<FilterOptions>({});
@@ -402,45 +408,52 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
     console.log('- teacherProfiles:', Object.keys(teacherProfiles).length, teacherProfiles);
     console.log('- timeSlots:', timeSlots.length);
     
-    // Получаем всех преподавателей из разных источников
-    const teachersFromServer = serverTeachers.map(teacher => ({
-      id: teacher.id,
-      name: teacher.name || teacher.profile?.name || 'Репетитор',
-      avatar: teacher.avatar || teacher.profile?.avatar || '',
-      rating: teacher.profile?.rating,
-      profile: teacher.profile
-    }));
-    console.log('📡 Преподаватели с сервера:', teachersFromServer.length, teachersFromServer);
-
+    // ПРИОРИТЕТ 1: Зарегистрированные преподаватели из allUsers (гарантированно всегда видны)
     const teachersFromUsers = allUsers
       ?.filter((u: any) => u.role === 'teacher')
       .map((user: any) => ({
         id: user.id,
         name: user.name || user.profile?.name || 'Репетитор',
         avatar: user.avatar || user.profile?.avatar || '',
-        rating: user.profile?.rating,
-        profile: user.profile
+        rating: user.profile?.rating || 0,
+        profile: user.profile || {},
+        isRegistered: true, // Флаг зарегистрированного пользователя
+        source: 'registered'
       })) || [];
-    console.log('👥 Преподаватели из allUsers:', teachersFromUsers.length, teachersFromUsers);
+    console.log('👥 ЗАРЕГИСТРИРОВАННЫЕ преподаватели (ПРИОРИТЕТ):', teachersFromUsers.length, teachersFromUsers);
 
-    // Получаем преподавателей из локальных профилей (fallback)
+    // ПРИОРИТЕТ 2: Преподаватели из teacherProfiles (локальные профили)
     const teachersFromProfiles = Object.entries(teacherProfiles).map(([id, profile]: [string, any]) => ({
       id,
       name: profile.name || 'Репетитор',
       avatar: profile.avatar || '',
-      rating: profile.rating,
-      profile: profile
+      rating: profile.rating || 0,
+      profile: profile,
+      isRegistered: false,
+      source: 'profiles'
     }));
     console.log('📱 Преподаватели из teacherProfiles:', teachersFromProfiles.length, teachersFromProfiles);
 
-    // Также получаем преподавателей из слотов, если они еще не добавлены
+    // ПРИОРИТЕТ 3: Преподаватели с сервера
+    const teachersFromServer = serverTeachers.map(teacher => ({
+      id: teacher.id,
+      name: teacher.name || teacher.profile?.name || 'Репетитор',
+      avatar: teacher.avatar || teacher.profile?.avatar || '',
+      rating: teacher.profile?.rating || 0,
+      profile: teacher.profile || {},
+      isRegistered: false,
+      source: 'server'
+    }));
+    console.log('📡 Преподаватели с сервера:', teachersFromServer.length, teachersFromServer);
+
+    // ПРИОРИТЕТ 4: Преподаватели из слотов (дополнительные)
     const teachersFromSlots = timeSlots
       .filter(slot => slot.teacherId && slot.teacherName)
       .map(slot => ({
         id: slot.teacherId,
         name: slot.teacherName,
         avatar: slot.teacherAvatar || '',
-        rating: slot.rating,
+        rating: slot.rating || 0,
         profile: {
           subjects: slot.subject ? [slot.subject] : [],
           experience: slot.experience || 'beginner',
@@ -450,41 +463,32 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
           bio: '',
           rating: slot.rating || 0,
           hourlyRate: slot.price || 0,
-        }
+        },
+        isRegistered: false,
+        source: 'slots'
       }));
     console.log('📅 Преподаватели из слотов:', teachersFromSlots.length, teachersFromSlots);
 
-    // Объединяем все источники - ПРИОРИТЕТ у зарегистрированных пользователей
-    const allSources = [...teachersFromUsers, ...teachersFromServer, ...teachersFromProfiles, ...teachersFromSlots];
+    // Объединяем все источники с правильным приоритетом
+    const allSources = [...teachersFromUsers, ...teachersFromProfiles, ...teachersFromServer, ...teachersFromSlots];
     console.log('🔄 Всего источников:', allSources.length);
 
-    // Убираем дубликаты, приоритет у зарегистрированных пользователей
+    // Убираем дубликаты с гарантией видимости зарегистрированных преподавателей
     const allTeachersMap = new Map();
-    allSources.forEach(teacher => {
-      const existingTeacher = allTeachersMap.get(teacher.id);
-      
-      if (!existingTeacher) {
+    
+    // Сначала добавляем ВСЕ зарегистрированные преподаватели (гарантированно)
+    teachersFromUsers.forEach(teacher => {
+      allTeachersMap.set(teacher.id, teacher);
+      console.log('✅ ГАРАНТИРОВАННО добавлен зарегистрированный преподаватель:', teacher.id, teacher.name);
+    });
+    
+    // Затем добавляем остальных, если их еще нет
+    [...teachersFromProfiles, ...teachersFromServer, ...teachersFromSlots].forEach(teacher => {
+      if (!allTeachersMap.has(teacher.id)) {
         allTeachersMap.set(teacher.id, teacher);
+        console.log('➕ Добавлен дополнительный преподаватель:', teacher.id, teacher.name, teacher.source);
       } else {
-        // Приоритет у зарегистрированных пользователей (из allUsers)
-        const isFromUsers = teachersFromUsers.some(t => t.id === teacher.id);
-        const existingIsFromUsers = teachersFromUsers.some(t => t.id === existingTeacher.id);
-        
-        if (isFromUsers && !existingIsFromUsers) {
-          allTeachersMap.set(teacher.id, teacher);
-        } else if (!isFromUsers && !existingIsFromUsers) {
-          // Если у нового преподавателя есть аватар, а у существующего нет, заменяем
-          const newHasAvatar = teacher.avatar && teacher.avatar.trim() !== '' && teacher.avatar !== 'undefined' && teacher.avatar !== 'null';
-          const existingHasAvatar = existingTeacher.avatar && existingTeacher.avatar.trim() !== '' && existingTeacher.avatar !== 'undefined' && existingTeacher.avatar !== 'null';
-          
-          // Если у нового преподавателя есть полный профиль, заменяем
-          const newHasFullProfile = teacher.profile && teacher.profile.subjects && teacher.profile.subjects.length > 0;
-          const existingHasFullProfile = existingTeacher.profile && existingTeacher.profile.subjects && existingTeacher.profile.subjects.length > 0;
-          
-          if ((newHasAvatar && !existingHasAvatar) || (newHasFullProfile && !existingHasFullProfile)) {
-            allTeachersMap.set(teacher.id, teacher);
-          }
-        }
+        console.log('⏭️ Пропущен дубликат преподавателя:', teacher.id, teacher.name, teacher.source);
       }
     });
 
@@ -1108,12 +1112,24 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
       {/* Преподаватели в виде карточек */}
       <div className="mb-6">
         <div className="text-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            {filteredTeachers.length > 0 
-              ? `Найдено ${filteredTeachers.length} преподавателей` 
-              : 'Преподаватели'
-            }
-          </h2>
+          <div className="flex items-center justify-center gap-4 mb-2">
+            <h2 className="text-2xl font-bold text-gray-900">
+              {filteredTeachers.length > 0 
+                ? `Найдено ${filteredTeachers.length} преподавателей` 
+                : 'Преподаватели'
+              }
+            </h2>
+            <button
+              onClick={handleRefreshData}
+              className="px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm flex items-center gap-2"
+              title="Обновить список преподавателей"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Обновить
+            </button>
+          </div>
           <p className="text-gray-500 text-sm">
             {filteredTeachers.length > 0 
               ? 'Выберите подходящего преподавателя для связи или бронирования урока'

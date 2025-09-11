@@ -293,16 +293,34 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   // Функция для принудительного обновления списка пользователей
   const refreshUsers = () => {
     try {
+      console.log('🔄 Принудительное обновление списка пользователей...');
       const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
+      console.log('👥 Загружено пользователей из localStorage:', users.length);
+      
+      // Фильтруем только преподавателей для логирования
+      const teachers = users.filter((u: any) => u.role === 'teacher');
+      console.log('👨‍🏫 Зарегистрированных преподавателей:', teachers.length, teachers.map((t: any) => ({ id: t.id, name: t.name })));
+      
       setAllUsers(users);
+      
+      // Также принудительно обновляем teacherProfiles из localStorage
+      const teacherProfilesData = JSON.parse(localStorage.getItem('tutoring_teacherProfiles') || '{}');
+      console.log('📱 Обновляем teacherProfiles из localStorage:', Object.keys(teacherProfilesData).length);
+      setTeacherProfiles(teacherProfilesData);
+      
+      console.log('✅ Обновление пользователей завершено');
     } catch (error) {
+      console.error('❌ Ошибка при обновлении пользователей:', error);
       setAllUsers([]);
     }
   };
 
   // Функция для принудительного обновления всех данных
   const refreshAllData = () => {
-    // Обновляем пользователей и уроки
+    console.log('🔄 Принудительное обновление всех данных...');
+    // Сначала обновляем локальные данные
+    refreshUsers();
+    // Затем загружаем с сервера
     loadUsersFromServer();
     loadLessonsFromServer();
     
@@ -311,6 +329,11 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       socketRef.current.emit('requestAllSlots');
       socketRef.current.emit('requestAllUsers');
     }
+    
+    // Принудительно синхронизируем с сервером
+    forceSyncData().catch(error => {
+      console.error('❌ Ошибка при синхронизации данных:', error);
+    });
   };
 
   // Функция для принудительной синхронизации всех данных с сервера
@@ -579,9 +602,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         console.log(`🌐 Server URL: ${SERVER_URL}`);
         console.log(`🔌 Socket ID: ${newSocket.id}`);
         
-        // Загружаем пользователей и уроки с сервера при подключении
-        loadUsersFromServer();
-        loadLessonsFromServer();
+        // При подключении принудительно обновляем все данные
+        console.log('🔄 Первоначальное подключение - обновляем данные...');
+        refreshAllData();
       
       // Синхронизируем локальные слоты с сервером при восстановлении соединения
       const localSlots = loadFromStorage('tutoring_timeSlots', []);
@@ -611,6 +634,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       newSocket.on('reconnect', (attemptNumber) => {
         setIsConnected(true);
         console.log(`🔄 Reconnected to server after ${attemptNumber} attempts`);
+        
+        // При восстановлении соединения принудительно обновляем данные
+        console.log('🔄 Восстановление соединения - обновляем данные...');
+        refreshAllData();
       });
 
       newSocket.on('reconnect_attempt', (attemptNumber) => {

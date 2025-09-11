@@ -39,9 +39,16 @@ const TeacherSearch: React.FC<TeacherSearchProps> = ({ onTeacherSelect, onBookLe
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [favorites, setFavorites] = useState<string[]>([]);
 
-  // Получаем всех преподавателей (фильтрация по слотам будет в filteredTeachers)
+  // Получаем всех преподавателей с гарантией видимости зарегистрированных
   const teachers = useMemo(() => {
-    return allUsers.filter(user => user.role === 'teacher');
+    console.log('🔍 TeacherSearch: Получаем всех преподавателей...');
+    console.log('👥 allUsers:', allUsers?.length || 0, allUsers);
+    
+    // ПРИОРИТЕТ: Зарегистрированные преподаватели из allUsers (гарантированно всегда видны)
+    const registeredTeachers = allUsers?.filter(user => user.role === 'teacher') || [];
+    console.log('👨‍🏫 ЗАРЕГИСТРИРОВАННЫЕ преподаватели (ПРИОРИТЕТ):', registeredTeachers.length, registeredTeachers.map(t => ({ id: t.id, name: t.name })));
+    
+    return registeredTeachers;
   }, [allUsers]);
 
   // Фильтруем и сортируем преподавателей
