@@ -21,13 +21,27 @@ interface StudentHomeProps {
 }
 
 const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
-  const { bookLesson, timeSlots, allUsers, refreshUsers, refreshAllData, forceSyncData, sendMessageToUser, teacherProfiles } = useData();
+  const { bookLesson, timeSlots, allUsers, refreshUsers, refreshAllData, forceSyncData, sendMessageToUser, teacherProfiles, loadRegisteredTeachers } = useData();
   
   // Функция для принудительного обновления данных
   const handleRefreshData = () => {
     console.log('🔄 Принудительное обновление данных...');
     refreshAllData();
   };
+
+  // Автоматически загружаем зарегистрированных преподавателей при загрузке компонента
+  React.useEffect(() => {
+    console.log('🔄 StudentHome: Автоматическая загрузка зарегистрированных преподавателей...');
+    loadRegisteredTeachers();
+    
+    // Устанавливаем периодическую загрузку каждые 30 секунд для гарантии видимости
+    const interval = setInterval(() => {
+      console.log('⏰ StudentHome: Периодическая загрузка зарегистрированных преподавателей...');
+      loadRegisteredTeachers();
+    }, 30000); // 30 секунд
+    
+    return () => clearInterval(interval);
+  }, [loadRegisteredTeachers]);
   const { user } = useAuth();
   
   const [filters, setFilters] = useState<FilterOptions>({});
@@ -1132,10 +1146,16 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
           </div>
           <p className="text-gray-500 text-sm">
             {filteredTeachers.length > 0 
-              ? 'Выберите подходящего преподавателя для связи или бронирования урока'
+              ? 'Зарегистрированные преподаватели всегда доступны для связи и бронирования уроков'
               : 'Попробуйте изменить фильтры или воспользоваться овербукингом'
             }
           </p>
+          {filteredTeachers.length > 0 && (
+            <div className="mt-2 flex items-center justify-center gap-2 text-green-600 text-xs">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span>Все репетиторы доступны 24/7</span>
+            </div>
+          )}
         </div>
         
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -1216,7 +1236,7 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
                   <div className="relative -mt-12 flex justify-center">
                     <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center overflow-hidden border-4 border-white shadow-2xl relative">
                       {/* Online Status - всегда зеленый для всех репетиторов (отображаются всегда) */}
-                      <div className="absolute top-2 right-2 w-5 h-5 bg-green-500 border-2 border-white rounded-full shadow-lg" title="Доступен для контакта (всегда отображается)"></div>
+                      <div className="absolute top-2 right-2 w-5 h-5 bg-green-500 border-2 border-white rounded-full shadow-lg animate-pulse" title="Зарегистрированный репетитор (всегда доступен)"></div>
                       
                       {/* Avatar Image */}
                       {(() => {

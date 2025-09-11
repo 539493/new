@@ -20,8 +20,22 @@ interface SearchFilters {
 }
 
 const TeacherSearch: React.FC<TeacherSearchProps> = ({ onTeacherSelect, onBookLesson }) => {
-  const { allUsers, timeSlots } = useData();
+  const { allUsers, timeSlots, loadRegisteredTeachers } = useData();
   const { user } = useAuth();
+
+  // Автоматически загружаем зарегистрированных преподавателей при загрузке компонента
+  React.useEffect(() => {
+    console.log('🔍 TeacherSearch: Автоматическая загрузка зарегистрированных преподавателей...');
+    loadRegisteredTeachers();
+    
+    // Устанавливаем периодическую загрузку каждые 30 секунд для гарантии видимости
+    const interval = setInterval(() => {
+      console.log('⏰ TeacherSearch: Периодическая загрузка зарегистрированных преподавателей...');
+      loadRegisteredTeachers();
+    }, 30000); // 30 секунд
+    
+    return () => clearInterval(interval);
+  }, [loadRegisteredTeachers]);
   
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);

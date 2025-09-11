@@ -30,6 +30,7 @@ interface DataContextType {
   allUsers: User[];
   setAllUsers: (users: User[]) => void;
   refreshUsers: () => void; // Добавляем функцию для обновления пользователей
+  loadRegisteredTeachers: () => any[]; // Функция для загрузки зарегистрированных преподавателей (независимо от онлайн статуса)
   refreshAllData: () => void; // Функция для принудительного обновления всех данных
   forceSyncData: () => Promise<void>; // Функция для принудительной синхронизации с сервером
   uploadLocalDataToServer: () => Promise<any>; // Функция для загрузки локальных данных на сервер
@@ -170,8 +171,16 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
   const [allUsers, setAllUsers] = useState<User[]>(() => {
     try {
-      return JSON.parse(localStorage.getItem('tutoring_users') || '[]');
-    } catch {
+      const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
+      console.log('🔄 Загружаем пользователей из localStorage при инициализации:', users.length);
+      
+      // Фильтруем и логируем зарегистрированных преподавателей
+      const teachers = users.filter((u: any) => u.role === 'teacher');
+      console.log('👨‍🏫 Зарегистрированных преподавателей в localStorage:', teachers.length, teachers.map((t: any) => ({ id: t.id, name: t.name })));
+      
+      return users;
+    } catch (error) {
+      console.error('❌ Ошибка загрузки пользователей из localStorage:', error);
       return [];
     }
   });
@@ -315,12 +324,43 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     }
   };
 
+  // Функция для принудительной загрузки зарегистрированных преподавателей (независимо от онлайн статуса)
+  const loadRegisteredTeachers = () => {
+    try {
+      console.log('👨‍🏫 Принудительная загрузка зарегистрированных преподавателей...');
+      
+      // Загружаем из localStorage
+      const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
+      const teachers = users.filter((u: any) => u.role === 'teacher');
+      
+      console.log('📱 Зарегистрированных преподавателей в localStorage:', teachers.length);
+      teachers.forEach((teacher: any) => {
+        console.log(`  - ${teacher.name} (${teacher.email}) - ID: ${teacher.id}`);
+      });
+      
+      // Обновляем состояние
+      setAllUsers(users);
+      
+      // Также загружаем teacherProfiles
+      const teacherProfilesData = JSON.parse(localStorage.getItem('tutoring_teacherProfiles') || '{}');
+      setTeacherProfiles(teacherProfilesData);
+      
+      console.log('✅ Зарегистрированные преподаватели загружены (независимо от онлайн статуса)');
+      return teachers;
+    } catch (error) {
+      console.error('❌ Ошибка загрузки зарегистрированных преподавателей:', error);
+      return [];
+    }
+  };
+
   // Функция для принудительного обновления всех данных
   const refreshAllData = () => {
     console.log('🔄 Принудительное обновление всех данных...');
-    // Сначала обновляем локальные данные
+    // Сначала принудительно загружаем зарегистрированных преподавателей (независимо от онлайн статуса)
+    loadRegisteredTeachers();
+    // Затем обновляем локальные данные
     refreshUsers();
-    // Затем загружаем с сервера
+    // Затем загружаем с сервера (если есть соединение)
     loadUsersFromServer();
     loadLessonsFromServer();
     
@@ -2311,6 +2351,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           localStorage.setItem('tutoring_users', JSON.stringify(users));
         },
         refreshUsers, // Добавляем функцию для обновления пользователей
+        loadRegisteredTeachers, // Функция для загрузки зарегистрированных преподавателей (независимо от онлайн статуса)
         refreshAllData, // Функция для принудительного обновления всех данных
         forceSyncData, // Добавлено
         uploadLocalDataToServer, // Функция для загрузки локальных данных на сервер
