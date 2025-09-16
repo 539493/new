@@ -10,15 +10,7 @@ const server = http.createServer(app);
 
 // Настройка CORS для всех доменов
 const allowedOrigins = [
-  "http://localhost:3000",
-  "http://localhost:3001",
-  "http://localhost:3002",
-  "http://localhost:4173", 
-  "https://*.vercel.app",
-  "https://*.onrender.com",
-  "https://tutoring-platform.vercel.app",
-  "https://tutoring-platform.onrender.com",
-  "https://tutoring-platform-*.onrender.com"
+  "https://na-uchi.onrender.com"
 ];
 
 app.use(cors({
@@ -1829,6 +1821,11 @@ app.get('*', (req, res) => {
 const PORT = process.env.PORT || 3001;
 const HOST = process.env.HOST || '0.0.0.0';
 
-server.listen(PORT, HOST, () => {
-}); 
-}); 
+  server.listen(PORT, HOST, () => {
+    console.log(`🚀 Сервер запущен на http://${HOST}:${PORT}`);
+    console.log(`📊 Статистика сервера:`);
+    console.log(`   👨‍🏫 Преподавателей: ${Object.keys(teacherProfiles).length}`);
+    console.log(`   👨‍🎓 Студентов: ${Object.keys(studentProfiles).length}`);
+    console.log(`   📅 Слотов: ${timeSlots.length}`);
+    console.log(`   📚 Уроков: ${lessons.length}`);
+  });

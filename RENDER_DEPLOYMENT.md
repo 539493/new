@@ -54,9 +54,9 @@ Render автоматически установит:
 ## Проверка работы
 
 После деплоя проверьте:
-1. **Health check**: `https://your-app.onrender.com/api/health`
-2. **API status**: `https://your-app.onrender.com/api/status`
-3. **Frontend**: `https://your-app.onrender.com/`
+1. **Health check**: `https://na-uchi.onrender.com/api/health`
+2. **API status**: `https://na-uchi.onrender.com/api/status`
+3. **Frontend**: `https://na-uchi.onrender.com/`
 
 ## Особенности
 

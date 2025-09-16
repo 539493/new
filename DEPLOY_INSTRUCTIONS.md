@@ -32,9 +32,9 @@ git push origin main
 ## 🔍 Проверка работы
 
 После деплоя проверьте:
-- **Health check**: `https://your-app.onrender.com/api/health`
-- **API status**: `https://your-app.onrender.com/api/status`
-- **Frontend**: `https://your-app.onrender.com/`
+- **Health check**: `https://na-uchi.onrender.com/api/health`
+- **API status**: `https://na-uchi.onrender.com/api/status`
+- **Frontend**: `https://na-uchi.onrender.com/`
 
 ## 📁 Что настроено
 

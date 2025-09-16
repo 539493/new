@@ -429,9 +429,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       saveUsersToStorage(updatedUsers);
       
       // Отправляем обновление на сервер
-      if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
-        // В production отправляем на сервер
-        fetch('https://tutoring-platform-1756666331-zjfl.onrender.com/api/updateProfile', {
+      if (typeof window !== 'undefined') {
+        // Всегда отправляем на production сервер Render
+        fetch(`${SERVER_URL}/api/updateProfile`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

@@ -10,22 +10,7 @@ const server = http.createServer(app);
 
 // Настройка CORS для всех доменов
 const allowedOrigins = [
-  "http://localhost:3000",
-  "http://localhost:3001",
-  "http://localhost:3002",
-  "http://localhost:3003",
-  "http://localhost:3004",
-  "http://localhost:4173",
-  "http://localhost:5173", // Vite dev server
-  "https://*.vercel.app",
-  "https://*.onrender.com",
-  "https://na-uchi.onrender.com",
-  "https://nauchi.onrender.com",
-  "https://tutoring-platform.vercel.app",
-  "https://tutoring-platform.onrender.com",
-  "https://tutoring-platform-*.onrender.com",
-  "https://tutoring-platform-am88.onrender.com",
-  "https://tutoring-platform-1756666331-zjfl.onrender.com"
+  "https://na-uchi.onrender.com"
 ];
 
 app.use(cors({
@@ -1248,5 +1233,4 @@ server.listen(PORT, HOST, () => {
   console.log(`🔍 Root endpoint: http://${HOST}:${PORT}/`);
   console.log(`📁 Dist path: ${distPath} (exists: ${fs.existsSync(distPath)})`);
   console.log(`🔌 Socket.IO server ready with CORS origins: ${allowedOrigins.join(', ')}`);
-  console.log(`🌍 CORS enabled for: ${allowedOrigins.filter(o => o.includes('onrender.com')).join(', ')}`);
 });

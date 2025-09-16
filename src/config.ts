@@ -2,10 +2,10 @@
 // Всегда используем Render сервер для единой базы данных
 
 // URL сервера - всегда Render
-export const SERVER_URL = 'https://nauchi.onrender.com';
+export const SERVER_URL = 'https://na-uchi.onrender.com';
 
 // URL WebSocket - всегда Render
-export const WEBSOCKET_URL = 'https://nauchi.onrender.com';
+export const WEBSOCKET_URL = 'https://na-uchi.onrender.com';
 
 // URL внешнего сервиса видео чата
 export const EXTERNAL_VIDEO_CHAT_URL = 'https://video-chat-web-lp8d.onrender.com';
@@ -23,6 +23,5 @@ export const SOCKET_CONFIG = {
 export const ENV = {
   isDevelopment: import.meta.env.DEV,
   isProduction: import.meta.env.PROD,
-  isLocalhost: window.location.hostname === 'localhost',
-  isRender: window.location.hostname.includes('onrender.com')
+  
 }; 
