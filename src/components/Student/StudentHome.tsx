@@ -34,11 +34,11 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
     console.log('🔄 StudentHome: Автоматическая загрузка зарегистрированных преподавателей...');
     loadRegisteredTeachers();
     
-    // Устанавливаем периодическую загрузку каждые 30 секунд для гарантии видимости
+    // Устанавливаем периодическую загрузку каждые 10 секунд для гарантии видимости
     const interval = setInterval(() => {
       console.log('⏰ StudentHome: Периодическая загрузка зарегистрированных преподавателей...');
       loadRegisteredTeachers();
-    }, 30000); // 30 секунд
+    }, 10000); // 10 секунд - более частое обновление
     
     return () => clearInterval(interval);
   }, [loadRegisteredTeachers]);
@@ -227,8 +227,10 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
     console.log('📱 teacherProfiles изменились:', Object.keys(teacherProfiles).length);
     if (Object.keys(teacherProfiles).length > 0) {
       console.log('✅ Найдены локальные профили преподавателей:', Object.keys(teacherProfiles));
+      // Принудительно загружаем репетиторов при изменении профилей
+      loadRegisteredTeachers();
     }
-  }, [teacherProfiles]);
+  }, [teacherProfiles, loadRegisteredTeachers]);
 
 
   const socket = React.useRef<Socket | null>(null);
@@ -511,6 +513,17 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
     return result;
   }, [serverTeachers, allUsers, timeSlots, teacherProfiles]);
 
+  // Дополнительный эффект для принудительной загрузки репетиторов при изменении allUsers
+  React.useEffect(() => {
+    console.log('🔄 allUsers изменились:', allUsers?.length || 0);
+    if (allUsers && allUsers.length > 0) {
+      const teachers = allUsers.filter((u: any) => u.role === 'teacher');
+      console.log('👨‍🏫 Обнаружены репетиторы в allUsers:', teachers.length);
+      // Принудительно загружаем репетиторов
+      loadRegisteredTeachers();
+    }
+  }, [allUsers, loadRegisteredTeachers]);
+
   // Дополнительно фильтруем преподавателей по профилю и поиску
   const filteredTeachers = React.useMemo(() => {
     // Проверяем, используются ли какие-либо фильтры
@@ -532,8 +545,8 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
 
     let teachers = allTeachers;
 
-    // ВСЕГДА показываем всех преподавателей, независимо от наличия слотов
-    console.log('- Показываем ВСЕХ преподавателей (изменено по запросу):', teachers.length);
+    // ВСЕГДА показываем всех преподавателей, независимо от наличия слотов или онлайн статуса
+    console.log('- Показываем ВСЕХ преподавателей (независимо от онлайн статуса):', teachers.length);
 
     // Применяем фильтры по профилям преподавателей (если есть активные фильтры)
     if (hasActiveFilters) {

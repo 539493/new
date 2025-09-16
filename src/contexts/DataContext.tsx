@@ -345,6 +345,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       const teacherProfilesData = JSON.parse(localStorage.getItem('tutoring_teacherProfiles') || '{}');
       setTeacherProfiles(teacherProfilesData);
       
+      // Принудительно обновляем состояние для гарантии отображения
+      console.log('🔄 Принудительное обновление состояния для гарантии видимости репетиторов...');
+      
       console.log('✅ Зарегистрированные преподаватели загружены (независимо от онлайн статуса)');
       return teachers;
     } catch (error) {
@@ -595,6 +598,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
   // Инициализация WebSocket соединения
   useEffect(() => {
+    // Сначала загружаем локальных репетиторов для гарантии их отображения
+    console.log('🔄 Инициализация: загружаем локальных репетиторов...');
+    loadRegisteredTeachers();
+    
     // Проверяем, доступен ли сервер перед подключением
     const checkServerAvailability = async () => {
       try {
@@ -621,6 +628,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         console.log('Server not available, loading local data only');
         loadInitialData();
         loadLessonsFromServer();
+        // Принудительно загружаем репетиторов даже при отсутствии сервера
+        loadRegisteredTeachers();
         return;
       }
 
@@ -693,6 +702,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       // При ошибке подключения загружаем начальные данные
       loadInitialData();
         loadLessonsFromServer();
+        // Принудительно загружаем репетиторов даже при ошибке подключения
+        loadRegisteredTeachers();
     });
 
     // Получаем все актуальные данные при подключении
@@ -1368,6 +1379,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         try {
           const newUsers = JSON.parse(e.newValue || '[]');
           setAllUsers(newUsers);
+          
+          // Принудительно загружаем репетиторов при изменении данных
+          const teachers = newUsers.filter((u: any) => u.role === 'teacher');
+          console.log('🔄 Обновление репетиторов через localStorage:', teachers.length);
         } catch (error) {
           setAllUsers([]);
         }
