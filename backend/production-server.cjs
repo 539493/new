@@ -749,6 +749,37 @@ io.on('connection', (socket) => {
   // Отправляем все профили студентов новому клиенту
   socket.emit('studentProfiles', studentProfiles);
   
+  // Принудительно отправляем всех пользователей новому клиенту (независимо от онлайн статуса)
+  const allUsers = [];
+  Object.entries(teacherProfiles).forEach(([id, profile]) => {
+    allUsers.push({
+      id,
+      email: profile.email || '',
+      name: profile.name || '',
+      nickname: profile.nickname || '',
+      role: 'teacher',
+      phone: profile.phone || '',
+      profile: profile,
+      isOnline: false,
+      isRegistered: true
+    });
+  });
+  Object.entries(studentProfiles).forEach(([id, profile]) => {
+    allUsers.push({
+      id,
+      email: profile.email || '',
+      name: profile.name || '',
+      nickname: profile.nickname || '',
+      role: 'student',
+      phone: profile.phone || '',
+      profile: profile,
+      isOnline: false,
+      isRegistered: true
+    });
+  });
+  socket.emit('allUsers', allUsers);
+  console.log('📡 Отправляем всех пользователей новому клиенту:', allUsers.length);
+  
   // Отправляем статус подключения
   socket.emit('connectionStatus', { 
     status: 'connected', 
@@ -759,11 +790,56 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     console.log(`🔌 Socket.IO отключение: ${socket.id}`);
     console.log(`📊 Осталось подключений: ${io.engine.clientsCount}`);
+    
+    // ВАЖНО: НЕ удаляем репетиторов из teacherProfiles при отключении!
+    // Репетиторы должны оставаться видимыми всегда, независимо от онлайн статуса
+    console.log('✅ Репетиторы остаются видимыми независимо от отключения WebSocket');
   });
   
   // Обработка регистрации пользователя
   socket.on('userRegistered', (user) => {
     io.emit('userRegistered', user);
+  });
+
+  // Обработка запроса всех пользователей
+  socket.on('requestAllUsers', () => {
+    const users = [];
+    
+    // ВСЕГДА добавляем ВСЕХ преподавателей из teacherProfiles (независимо от онлайн статуса)
+    Object.entries(teacherProfiles).forEach(([id, profile]) => {
+      users.push({
+        id,
+        email: profile.email || '',
+        name: profile.name || '',
+        nickname: profile.nickname || '',
+        role: 'teacher',
+        phone: profile.phone || '',
+        profile: profile,
+        isOnline: false, // Всегда false, так как мы не отслеживаем онлайн статус
+        isRegistered: true // Флаг зарегистрированного пользователя
+      });
+    });
+    
+    // Добавляем студентов
+    Object.entries(studentProfiles).forEach(([id, profile]) => {
+      users.push({
+        id,
+        email: profile.email || '',
+        name: profile.name || '',
+        nickname: profile.nickname || '',
+        role: 'student',
+        phone: profile.phone || '',
+        profile: profile,
+        isOnline: false,
+        isRegistered: true
+      });
+    });
+    
+    console.log('📡 Отправляем всех пользователей (независимо от онлайн статуса):', users.length);
+    console.log('👨‍🏫 Преподавателей:', users.filter(u => u.role === 'teacher').length);
+    console.log('👨‍🎓 Студентов:', users.filter(u => u.role === 'student').length);
+    
+    socket.emit('allUsers', users);
   });
 
   // Обработка обновления профиля ученика

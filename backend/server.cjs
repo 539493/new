@@ -258,6 +258,37 @@ io.on('connection', (socket) => {
   // Отправляем все слоты для синхронизации
   socket.emit('allSlots', timeSlots);
   
+  // Принудительно отправляем всех пользователей новому клиенту (независимо от онлайн статуса)
+  const allUsers = [];
+  Object.entries(teacherProfiles).forEach(([id, profile]) => {
+    allUsers.push({
+      id,
+      email: profile.email || '',
+      name: profile.name || '',
+      nickname: profile.nickname || '',
+      role: 'teacher',
+      phone: profile.phone || '',
+      profile: profile,
+      isOnline: false,
+      isRegistered: true
+    });
+  });
+  Object.entries(studentProfiles).forEach(([id, profile]) => {
+    allUsers.push({
+      id,
+      email: profile.email || '',
+      name: profile.name || '',
+      nickname: profile.nickname || '',
+      role: 'student',
+      phone: profile.phone || '',
+      profile: profile,
+      isOnline: false,
+      isRegistered: true
+    });
+  });
+  socket.emit('allUsers', allUsers);
+  console.log('📡 Отправляем всех пользователей новому клиенту:', allUsers.length);
+  
   // Обработка запроса всех слотов
   socket.on('requestAllSlots', () => {
     socket.emit('allSlots', timeSlots);
@@ -269,7 +300,7 @@ io.on('connection', (socket) => {
   socket.on('requestAllUsers', () => {
     const users = [];
     
-    // Добавляем преподавателей
+    // ВСЕГДА добавляем ВСЕХ преподавателей из teacherProfiles (независимо от онлайн статуса)
     Object.entries(teacherProfiles).forEach(([id, profile]) => {
       users.push({
         id,
@@ -278,7 +309,9 @@ io.on('connection', (socket) => {
         nickname: profile.nickname || '',
         role: 'teacher',
         phone: profile.phone || '',
-        profile: profile
+        profile: profile,
+        isOnline: false, // Всегда false, так как мы не отслеживаем онлайн статус
+        isRegistered: true // Флаг зарегистрированного пользователя
       });
     });
     
@@ -291,9 +324,15 @@ io.on('connection', (socket) => {
         nickname: profile.nickname || '',
         role: 'student',
         phone: profile.phone || '',
-        profile: profile
+        profile: profile,
+        isOnline: false,
+        isRegistered: true
       });
     });
+    
+    console.log('📡 Отправляем всех пользователей (независимо от онлайн статуса):', users.length);
+    console.log('👨‍🏫 Преподавателей:', users.filter(u => u.role === 'teacher').length);
+    console.log('👨‍🎓 Студентов:', users.filter(u => u.role === 'student').length);
     
     socket.emit('allUsers', users);
   });
@@ -1031,6 +1070,9 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
+    console.log(`🔌 Socket.IO отключение: ${socket.id}`);
+    console.log(`📊 Осталось подключений: ${io.engine.clientsCount}`);
+    
     // Удаляем сокет из всех комнат
     for (const roomId in rooms) {
       if (rooms[roomId].has(socket.id)) {
@@ -1039,15 +1081,20 @@ io.on('connection', (socket) => {
         if (rooms[roomId].size === 0) delete rooms[roomId];
       }
     }
+    
+    // Удаляем из teacherSocketMap только для овербукинга (не влияет на отображение репетиторов)
     let removed = false;
     for (const [teacherId, sockId] of Object.entries(teacherSocketMap)) {
       if (sockId === socket.id) {
         delete teacherSocketMap[teacherId];
         removed = true;
+        console.log(`👨‍🏫 Удален из teacherSocketMap (только для овербукинга): ${teacherId}`);
       }
     }
-    if (!removed) {
-    }
+    
+    // ВАЖНО: НЕ удаляем репетиторов из teacherProfiles при отключении!
+    // Репетиторы должны оставаться видимыми всегда, независимо от онлайн статуса
+    console.log('✅ Репетиторы остаются видимыми независимо от отключения WebSocket');
   });
 });
 
@@ -1783,4 +1830,5 @@ const PORT = process.env.PORT || 3001;
 const HOST = process.env.HOST || '0.0.0.0';
 
 server.listen(PORT, HOST, () => {
+}); 
 }); 
