@@ -115,3 +115,5 @@ console.log('3. git push origin main');
 console.log('4. Создать новый Web Service на render.com');
 console.log('5. Подключить репозиторий и настроить деплой');
 
+
+

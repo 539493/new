@@ -1,16 +1,16 @@
-// РљРѕРЅС„РёРіСѓСЂР°С†РёСЏ РґР»СЏ СЂР°Р±РѕС‚С‹ С‚РѕР»СЊРєРѕ СЃ Render СЃРµСЂРІРµСЂРѕРј
-// Р’СЃРµРіРґР° РёСЃРїРѕР»СЊР·СѓРµРј Render СЃРµСЂРІРµСЂ РґР»СЏ РµРґРёРЅРѕР№ Р±Р°Р·С‹ РґР°РЅРЅС‹С…
+// Конфигурация для работы только с Render сервером
+// Всегда используем Render сервер для единой базы данных
 
-// URL СЃРµСЂРІРµСЂР° - РІСЃРµРіРґР° Render
-export const SERVER_URL = 'https://na-uchi.onrender.com';
+// URL сервера - всегда Render
+export const SERVER_URL = 'https://nauchi.onrender.com';
 
-// URL WebSocket - РІСЃРµРіРґР° Render
-export const WEBSOCKET_URL = 'https://na-uchi.onrender.com';
+// URL WebSocket - всегда Render
+export const WEBSOCKET_URL = 'https://nauchi.onrender.com';
 
-// URL РІРЅРµС€РЅРµРіРѕ СЃРµСЂРІРёСЃР° РІРёРґРµРѕ С‡Р°С‚Р°
+// URL внешнего сервиса видео чата
 export const EXTERNAL_VIDEO_CHAT_URL = 'https://video-chat-web-lp8d.onrender.com';
 
-// РќР°СЃС‚СЂРѕР№РєРё Socket.IO РґР»СЏ С‡Р°С‚Р° Рё СѓРІРµРґРѕРјР»РµРЅРёР№
+// Настройки Socket.IO для чата и уведомлений
 export const SOCKET_CONFIG = {
   transports: ['websocket', 'polling'],
   timeout: 10000,
@@ -19,9 +19,9 @@ export const SOCKET_CONFIG = {
   rememberUpgrade: true
 };
 
-// РћРєСЂСѓР¶РµРЅРёРµ
+// Окружение
 export const ENV = {
   isDevelopment: import.meta.env.DEV,
   isProduction: import.meta.env.PROD,
   
-}; 
+};
