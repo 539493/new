@@ -12,7 +12,8 @@ const server = http.createServer(app);
 const allowedOrigins = [
   "https://na-uchi.onrender.com",
   "https://nauchi.netlify.app",
-  "https://*.netlify.app"
+  "https://*.netlify.app",
+  "https://*.vercel.app"
 ];
 
 app.use(cors({

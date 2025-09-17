@@ -10,7 +10,10 @@ const server = http.createServer(app);
 
 // Настройка CORS для всех доменов
 const allowedOrigins = [
-  "https://na-uchi.onrender.com"
+  "https://na-uchi.onrender.com",
+  "https://nauchi.netlify.app",
+  "https://*.netlify.app",
+  "https://*.vercel.app"
 ];
 
 app.use(cors({
