@@ -38,8 +38,6 @@ function getStudentProfile(studentId: string) {
     return student?.profile as StudentProfile | undefined;
   } catch {
     return undefined;
-  }
-}
 
 const TeacherStudents: React.FC = () => {
   const { lessons, studentProfiles, createSlot, bookLesson } = useData();
@@ -77,7 +75,6 @@ const TeacherStudents: React.FC = () => {
         studentId: lesson.studentId,
         lessons: [],
       };
-    }
     studentsMap[lesson.studentId].lessons.push(lesson);
   });
   const students = Object.values(studentsMap);
@@ -138,13 +135,10 @@ const TeacherStudents: React.FC = () => {
       setError('Ошибка при создании или бронировании слота');
     } finally {
       setLoading(false);
-    }
   };
 
   // Получить профиль выбранного ученика
   const selectedProfile = selectedStudent ? studentProfiles[selectedStudent.studentId] : undefined;
-  if (modalOpen && selectedStudent) {
-  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
