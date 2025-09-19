@@ -75,8 +75,8 @@ const TeacherStudents: React.FC = () => {
         studentId: lesson.studentId,
         lessons: [],
       };
+    }
     studentsMap[lesson.studentId].lessons.push(lesson);
-  });
   const students = Object.values(studentsMap);
 
   const handleOpenChat = (studentId: string, studentName: string) => {
@@ -599,5 +599,5 @@ const TeacherStudents: React.FC = () => {
     </div>
   );
 };
-
-export default TeacherStudents; 
+export default TeacherStudents;
+export default TeacherStudents;
