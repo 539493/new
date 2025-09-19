@@ -1,5 +1,27 @@
 import React, { useState } from 'react';
-import { User, Calendar, MessageCircle, User as UserIcon, Info, Eye, FileText } from 'lucide-react';
+import { 
+  User, 
+  Calendar, 
+  MessageCircle, 
+  User as UserIcon, 
+  Info, 
+  Eye, 
+  FileText,
+  X,
+  Phone,
+  Mail,
+  MapPin,
+  School,
+  GraduationCap,
+  Target,
+  BookOpen,
+  Clock,
+  Users,
+  Star,
+  Heart,
+  Award,
+  TrendingUp
+} from 'lucide-react';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
 import type { StudentProfile } from '../../types';
@@ -204,52 +226,308 @@ const TeacherStudents: React.FC = () => {
         </div>
       )}
 
-      {/* Модальное окно профиля ученика */}
+      {/* Полноценное модальное окно профиля ученика */}
       {modalOpen && selectedStudent && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative">
-            <button
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-700"
-              onClick={closeModal}
-              title="Закрыть"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            <div className="flex flex-col items-center mb-6">
-              {selectedProfile?.avatar && selectedProfile.avatar.trim() !== '' ? (
-                <img 
-                  src={selectedProfile.avatar} 
-                  alt="avatar" 
-                  className="w-20 h-20 rounded-full object-cover mb-2"
-                  onError={(e) => {
-                    // Если изображение не загрузилось, показываем заглушку
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                    target.nextElementSibling?.classList.remove('hidden');
-                  }}
-                />
-              ) : null}
-              <div className={`w-20 h-20 rounded-full bg-gradient-to-r from-blue-400 to-indigo-500 flex items-center justify-center mb-2 ${selectedProfile?.avatar && selectedProfile.avatar.trim() !== '' ? 'hidden' : ''}`}>
-                <UserIcon className="h-10 w-10 text-white" />
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[95vh] overflow-y-auto relative">
+            {/* Header */}
+            <div className="sticky top-0 bg-white border-b border-gray-200 p-6 rounded-t-3xl z-10">
+              <div className="flex items-center justify-between">
+                <button
+                  onClick={closeModal}
+                  className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+                >
+                  <X className="w-6 h-6 text-gray-600" />
+                </button>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => handleOpenChat(selectedStudent.studentId, selectedStudent.studentName)}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center space-x-2"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    <span>Написать</span>
+                  </button>
+                  <button
+                    onClick={() => handleOpenCalendar({ id: selectedStudent.studentId, name: selectedStudent.studentName })}
+                    className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center space-x-2"
+                  >
+                    <Calendar className="w-4 h-4" />
+                    <span>Назначить урок</span>
+                  </button>
+                </div>
               </div>
-              <h2 className="text-xl font-bold text-gray-900">{selectedStudent.studentName}</h2>
             </div>
-            <div className="space-y-2">
-              {selectedProfile?.grade && (
-                <div className="flex items-center text-gray-700"><span className="font-semibold mr-2">Класс:</span> {selectedProfile.grade}</div>
+
+            {/* Content */}
+            <div className="p-6">
+              {/* Profile Header */}
+              <div className="flex flex-col lg:flex-row gap-6 mb-8">
+                <div className="flex flex-col items-center lg:items-start">
+                  {selectedProfile?.avatar && selectedProfile.avatar.trim() !== '' ? (
+                    <img 
+                      src={selectedProfile.avatar} 
+                      alt="avatar" 
+                      className="w-32 h-32 rounded-full object-cover mb-4"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        target.nextElementSibling?.classList.remove('hidden');
+                      }}
+                    />
+                  ) : null}
+                  <div className={`w-32 h-32 rounded-full bg-gradient-to-r from-blue-400 to-indigo-500 flex items-center justify-center mb-4 ${selectedProfile?.avatar && selectedProfile.avatar.trim() !== '' ? 'hidden' : ''}`}>
+                    <UserIcon className="h-16 w-16 text-white" />
+                  </div>
+                  <h1 className="text-3xl font-bold text-gray-900 mb-2">{selectedStudent.studentName}</h1>
+                  {selectedProfile?.grade && (
+                    <div className="flex items-center text-lg text-gray-600 mb-2">
+                      <GraduationCap className="w-5 h-5 mr-2" />
+                      <span>{selectedProfile.grade} класс</span>
+                    </div>
+                  )}
+                  {selectedProfile?.age && (
+                    <div className="text-gray-600 mb-2">
+                      <span className="font-medium">Возраст:</span> {selectedProfile.age} лет
+                    </div>
+                  )}
+                </div>
+
+                {/* Quick Stats */}
+                <div className="flex-1 grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="bg-blue-50 rounded-xl p-4 text-center">
+                    <BookOpen className="w-8 h-8 text-blue-500 mx-auto mb-2" />
+                    <div className="text-2xl font-bold text-blue-600">
+                      {studentsMap[selectedStudent.studentId]?.lessons.length || 0}
+                    </div>
+                    <div className="text-sm text-gray-600">Всего уроков</div>
+                  </div>
+                  <div className="bg-green-50 rounded-xl p-4 text-center">
+                    <Award className="w-8 h-8 text-green-500 mx-auto mb-2" />
+                    <div className="text-2xl font-bold text-green-600">
+                      {studentsMap[selectedStudent.studentId]?.lessons.filter(l => l.status === 'completed').length || 0}
+                    </div>
+                    <div className="text-sm text-gray-600">Завершено</div>
+                  </div>
+                  <div className="bg-purple-50 rounded-xl p-4 text-center">
+                    <Users className="w-8 h-8 text-purple-500 mx-auto mb-2" />
+                    <div className="text-2xl font-bold text-purple-600">
+                      {selectedProfile?.subjects?.length || 0}
+                    </div>
+                    <div className="text-sm text-gray-600">Предметов</div>
+                  </div>
+                  <div className="bg-orange-50 rounded-xl p-4 text-center">
+                    <TrendingUp className="w-8 h-8 text-orange-500 mx-auto mb-2" />
+                    <div className="text-2xl font-bold text-orange-600">
+                      {selectedProfile?.experience ? 
+                        (selectedProfile.experience === 'beginner' ? 'Начинающий' : 
+                         selectedProfile.experience === 'intermediate' ? 'Средний' : 'Продвинутый') 
+                        : 'Не указан'}
+                    </div>
+                    <div className="text-sm text-gray-600">Уровень</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Detailed Information */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Personal Information */}
+                <div className="bg-gray-50 rounded-xl p-6">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                    <User className="w-5 h-5 mr-2 text-blue-500" />
+                    Личная информация
+                  </h3>
+                  <div className="space-y-3">
+                    {selectedProfile?.school && (
+                      <div className="flex items-center text-gray-700">
+                        <School className="w-4 h-4 mr-3 text-gray-400" />
+                        <span className="font-medium mr-2">Школа:</span>
+                        <span>{selectedProfile.school}</span>
+                      </div>
+                    )}
+                    {selectedProfile?.city && (
+                      <div className="flex items-center text-gray-700">
+                        <MapPin className="w-4 h-4 mr-3 text-gray-400" />
+                        <span className="font-medium mr-2">Город:</span>
+                        <span>{selectedProfile.city}</span>
+                      </div>
+                    )}
+                    {selectedProfile?.phone && (
+                      <div className="flex items-center text-gray-700">
+                        <Phone className="w-4 h-4 mr-3 text-gray-400" />
+                        <span className="font-medium mr-2">Телефон:</span>
+                        <span>{selectedProfile.phone}</span>
+                      </div>
+                    )}
+                    {selectedProfile?.parentName && (
+                      <div className="flex items-center text-gray-700">
+                        <User className="w-4 h-4 mr-3 text-gray-400" />
+                        <span className="font-medium mr-2">Родитель:</span>
+                        <span>{selectedProfile.parentName}</span>
+                      </div>
+                    )}
+                    {selectedProfile?.parentPhone && (
+                      <div className="flex items-center text-gray-700">
+                        <Phone className="w-4 h-4 mr-3 text-gray-400" />
+                        <span className="font-medium mr-2">Телефон родителя:</span>
+                        <span>{selectedProfile.parentPhone}</span>
+                      </div>
+                    )}
+                    {selectedProfile?.timeZone && (
+                      <div className="flex items-center text-gray-700">
+                        <Clock className="w-4 h-4 mr-3 text-gray-400" />
+                        <span className="font-medium mr-2">Часовой пояс:</span>
+                        <span>{selectedProfile.timeZone}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Academic Information */}
+                <div className="bg-gray-50 rounded-xl p-6">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                    <BookOpen className="w-5 h-5 mr-2 text-green-500" />
+                    Учебная информация
+                  </h3>
+                  <div className="space-y-3">
+                    {selectedProfile?.subjects && selectedProfile.subjects.length > 0 && (
+                      <div>
+                        <span className="font-medium text-gray-700 block mb-2">Изучаемые предметы:</span>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedProfile.subjects.map((subject, index) => (
+                            <span key={index} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+                              {subject}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {selectedProfile?.goals && selectedProfile.goals.length > 0 && (
+                      <div>
+                        <span className="font-medium text-gray-700 block mb-2">Цели обучения:</span>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedProfile.goals.map((goal, index) => (
+                            <span key={index} className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">
+                              {goal}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {selectedProfile?.learningStyle && (
+                      <div className="flex items-center text-gray-700">
+                        <Target className="w-4 h-4 mr-3 text-gray-400" />
+                        <span className="font-medium mr-2">Стиль обучения:</span>
+                        <span>{selectedProfile.learningStyle === 'visual' ? 'Визуальный' : 
+                               selectedProfile.learningStyle === 'auditory' ? 'Аудиальный' :
+                               selectedProfile.learningStyle === 'kinesthetic' ? 'Кинестетический' : 'Смешанный'}</span>
+                      </div>
+                    )}
+                    {selectedProfile?.preferredFormats && selectedProfile.preferredFormats.length > 0 && (
+                      <div>
+                        <span className="font-medium text-gray-700 block mb-2">Предпочитаемые форматы:</span>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedProfile.preferredFormats.map((format, index) => (
+                            <span key={index} className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm">
+                              {format}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {selectedProfile?.preferredDurations && selectedProfile.preferredDurations.length > 0 && (
+                      <div>
+                        <span className="font-medium text-gray-700 block mb-2">Предпочитаемая длительность:</span>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedProfile.preferredDurations.map((duration, index) => (
+                            <span key={index} className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm">
+                              {duration} мин
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Interests & Hobbies */}
+                {selectedProfile?.interests && selectedProfile.interests.length > 0 && (
+                  <div className="bg-gray-50 rounded-xl p-6">
+                    <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                      <Heart className="w-5 h-5 mr-2 text-red-500" />
+                      Интересы и хобби
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedProfile.interests.map((interest, index) => (
+                        <span key={index} className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm">
+                          {interest}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Biography */}
+                {selectedProfile?.bio && (
+                  <div className="bg-gray-50 rounded-xl p-6">
+                    <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                      <FileText className="w-5 h-5 mr-2 text-indigo-500" />
+                      О себе
+                    </h3>
+                    <p className="text-gray-700 leading-relaxed">{selectedProfile.bio}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Lessons History */}
+              {studentsMap[selectedStudent.studentId]?.lessons && studentsMap[selectedStudent.studentId].lessons.length > 0 && (
+                <div className="mt-8">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                    <Calendar className="w-5 h-5 mr-2 text-blue-500" />
+                    История уроков
+                  </h3>
+                  <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                    <div className="max-h-64 overflow-y-auto">
+                      {studentsMap[selectedStudent.studentId].lessons.map((lesson, index) => (
+                        <div key={lesson.id} className={`p-4 border-b border-gray-100 ${index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}`}>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h4 className="font-medium text-gray-900">{lesson.subject}</h4>
+                              <p className="text-sm text-gray-600">
+                                {lesson.date} в {lesson.startTime}-{lesson.endTime}
+                              </p>
+                              {lesson.comment && (
+                                <p className="text-sm text-gray-500 mt-1">{lesson.comment}</p>
+                              )}
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                lesson.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                lesson.status === 'scheduled' ? 'bg-blue-100 text-blue-800' :
+                                'bg-red-100 text-red-800'
+                              }`}>
+                                {lesson.status === 'completed' ? 'Завершен' :
+                                 lesson.status === 'scheduled' ? 'Запланирован' : 'Отменен'}
+                              </span>
+                              <span className="text-sm font-medium text-gray-900">{lesson.price} ₽</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               )}
-              {selectedProfile?.subjects && selectedProfile.subjects.length > 0 && (
-                <div className="flex items-center text-gray-700"><span className="font-semibold mr-2">Предметы:</span> {selectedProfile.subjects.join(', ')}</div>
-              )}
-              {selectedProfile?.bio && (
-                <div className="text-gray-700"><span className="font-semibold mr-2">О себе:</span> {selectedProfile.bio}</div>
-              )}
+
+              {/* No Profile Data */}
               {!selectedProfile && (
-                <div className="text-gray-400 text-sm">Профиль не заполнен</div>
+                <div className="text-center py-12">
+                  <div className="mx-auto h-12 w-12 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                    <User className="h-6 w-6 text-gray-400" />
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Профиль не заполнен</h3>
+                  <p className="text-gray-600">Ученик еще не заполнил информацию о себе</p>
+                </div>
               )}
-              <button onClick={() => handleOpenCalendar({ id: selectedStudent.studentId, name: selectedStudent.studentName })} className="btn btn-primary mt-4">Назначить урок</button>
             </div>
           </div>
         </div>
