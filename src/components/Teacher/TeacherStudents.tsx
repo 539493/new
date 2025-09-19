@@ -77,7 +77,7 @@ const TeacherStudents: React.FC = () => {
       };
     }
     studentsMap[lesson.studentId].lessons.push(lesson);
-  const students = Object.values(studentsMap);
+  });
 
   const handleOpenChat = (studentId: string, studentName: string) => {
     alert(`Чат с ${studentName} открыт! Перейдите в раздел 'Чаты' для общения.`);
@@ -599,5 +599,4 @@ const TeacherStudents: React.FC = () => {
     </div>
   );
 };
-export default TeacherStudents;
 export default TeacherStudents;
