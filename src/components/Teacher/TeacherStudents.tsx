@@ -1,4 +1,4 @@
-﻿import React, { useState } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { 
   User, 
   Calendar, 
@@ -20,7 +20,10 @@ import {
   Star,
   Heart,
   Award,
-  TrendingUp
+  TrendingUp,
+  Edit,
+  CheckCircle,
+  AlertCircle
 } from "lucide-react";
 import { useData } from "../../contexts/DataContext";
 import { useAuth } from "../../contexts/AuthContext";
@@ -30,9 +33,16 @@ import TeacherCalendar from "./TeacherCalendar";
 import Modal from "../../components/Shared/Modal";
 import UserProfile from "../Shared/UserProfile";
 
-// Вспомогательная функция для получения профиля ученика по studentId
+// Улучшенная функция для получения профиля ученика
 function getStudentProfile(studentId: string): StudentProfile | undefined {
   try {
+    // Сначала пытаемся получить из studentProfiles
+    const studentProfiles = JSON.parse(localStorage.getItem("tutoring_studentProfiles") || "{}");
+    if (studentProfiles[studentId]) {
+      return studentProfiles[studentId];
+    }
+    
+    // Если не найдено, ищем в общем списке пользователей
     const users = JSON.parse(localStorage.getItem("tutoring_users") || "[]");
     const student = users.find((u: any) => u.id === studentId && u.role === "student");
     return student?.profile as StudentProfile | undefined;
@@ -40,6 +50,49 @@ function getStudentProfile(studentId: string): StudentProfile | undefined {
     return undefined;
   }
 }
+
+// Компонент для отображения статистики профиля
+const ProfileStatCard: React.FC<{ icon: React.ReactNode; value: string | number; label: string; color: string }> = ({ icon, value, label, color }) => (
+  <div className={`${color} rounded-xl p-4 text-center`}>
+    <div className="w-8 h-8 mx-auto mb-2 flex items-center justify-center">
+      {icon}
+    </div>
+    <div className="text-2xl font-bold">{value}</div>
+    <div className="text-sm text-gray-600">{label}</div>
+  </div>
+);
+
+// Компонент для отображения информации профиля
+const ProfileInfoItem: React.FC<{ icon: React.ReactNode; label: string; value: string | number; fallback?: string }> = ({ icon, label, value, fallback }) => {
+  if (!value && !fallback) return null;
+  
+  return (
+    <div className="flex items-center text-gray-700">
+      <div className="w-4 h-4 mr-3 text-gray-400 flex-shrink-0">
+        {icon}
+      </div>
+      <span className="font-medium mr-2">{label}:</span>
+      <span>{value || fallback}</span>
+    </div>
+  );
+};
+
+// Компонент для отображения тегов
+const TagList: React.FC<{ items: string[]; color: string; emptyMessage?: string }> = ({ items, color, emptyMessage }) => {
+  if (!items || items.length === 0) {
+    return emptyMessage ? <span className="text-gray-500 text-sm">{emptyMessage}</span> : null;
+  }
+  
+  return (
+    <div className="flex flex-wrap gap-2">
+      {items.map((item, index) => (
+        <span key={index} className={`${color} px-3 py-1 rounded-full text-sm`}>
+          {item}
+        </span>
+      ))}
+    </div>
+  );
+};
 
 const TeacherStudents: React.FC = () => {
   const { user } = useAuth();
@@ -67,6 +120,7 @@ const TeacherStudents: React.FC = () => {
   const [calendarModalOpen, setCalendarModalOpen] = useState(false);
   const [calendarStudent, setCalendarStudent] = useState<{ id: string; name: string } | null>(null);
   const [selectedUserProfile, setSelectedUserProfile] = useState<string | null>(null);
+  const [profileData, setProfileData] = useState<StudentProfile | null>(null);
 
   // Собираем всех учеников, которые бронировали уроки у этого преподавателя
   const teacherLessons = lessons.filter((lesson: Lesson) => lesson.teacherId === user?.id);
@@ -84,6 +138,14 @@ const TeacherStudents: React.FC = () => {
 
   const students = Object.values(studentsMap);
 
+  // Обновляем профиль при изменении выбранного ученика
+  useEffect(() => {
+    if (selectedStudent) {
+      const profile = studentProfiles[selectedStudent.studentId] || getStudentProfile(selectedStudent.studentId);
+      setProfileData(profile || null);
+    }
+  }, [selectedStudent, studentProfiles]);
+
   const handleOpenChat = (studentId: string, studentName: string) => {
     alert(`Чат с ${studentName} открыт! Перейдите в раздел "Чаты" для общения.`);
   };
@@ -96,6 +158,7 @@ const TeacherStudents: React.FC = () => {
   const closeModal = () => {
     setModalOpen(false);
     setSelectedStudent(null);
+    setProfileData(null);
   };
 
   // Функция открытия модального окна для назначения урока
@@ -143,8 +206,22 @@ const TeacherStudents: React.FC = () => {
     }
   };
 
-  // Получить профиль выбранного ученика
-  const selectedProfile = selectedStudent ? (studentProfiles[selectedStudent.studentId] || getStudentProfile(selectedStudent.studentId)) : undefined;
+  // Вычисляем статистику профиля
+  const getProfileCompleteness = (profile: StudentProfile | null): number => {
+    if (!profile) return 0;
+    
+    const fields = [
+      profile.grade, profile.age, profile.school, profile.city, 
+      profile.phone, profile.parentName, profile.parentPhone,
+      profile.subjects?.length, profile.goals?.length, profile.interests?.length,
+      profile.learningStyle, profile.experience, profile.bio
+    ];
+    
+    const filledFields = fields.filter(field => field && (Array.isArray(field) ? field.length > 0 : true)).length;
+    return Math.round((filledFields / fields.length) * 100);
+  };
+
+  const profileCompleteness = getProfileCompleteness(profileData);
   
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -194,7 +271,10 @@ const TeacherStudents: React.FC = () => {
                   </div>
                 </div>
                 <div className="mb-4">
-                  <h4 className="text-md font-bold text-gray-800 mb-2 flex items-center"><Calendar className="h-4 w-4 mr-1 text-blue-500" />Забронированные уроки</h4>
+                  <h4 className="text-md font-bold text-gray-800 mb-2 flex items-center">
+                    <Calendar className="h-4 w-4 mr-1 text-blue-500" />
+                    Забронированные уроки
+                  </h4>
                   {student.lessons.length === 0 ? (
                     <div className="text-gray-500 text-sm">Нет уроков</div>
                   ) : (
@@ -226,10 +306,10 @@ const TeacherStudents: React.FC = () => {
         </div>
       )}
 
-      {/* Полноценное модальное окно профиля ученика */}
+      {/* Улучшенное модальное окно профиля ученика */}
       {modalOpen && selectedStudent && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[95vh] overflow-y-auto relative">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-5xl w-full max-h-[95vh] overflow-y-auto relative">
             {/* Header */}
             <div className="sticky top-0 bg-white border-b border-gray-200 p-6 rounded-t-3xl z-10">
               <div className="flex items-center justify-between">
@@ -263,9 +343,9 @@ const TeacherStudents: React.FC = () => {
               {/* Profile Header */}
               <div className="flex flex-col lg:flex-row gap-6 mb-8">
                 <div className="flex flex-col items-center lg:items-start">
-                  {selectedProfile?.avatar && selectedProfile.avatar.trim() !== "" ? (
+                  {profileData?.avatar && profileData.avatar.trim() !== "" ? (
                     <img 
-                      src={selectedProfile.avatar} 
+                      src={profileData.avatar} 
                       alt="avatar" 
                       className="w-32 h-32 rounded-full object-cover mb-4"
                       onError={(e) => {
@@ -279,52 +359,66 @@ const TeacherStudents: React.FC = () => {
                     <UserIcon className="h-16 w-16 text-white" />
                   </div>
                   <h1 className="text-3xl font-bold text-gray-900 mb-2">{selectedStudent.studentName}</h1>
-                  {selectedProfile?.grade && (
+                  
+                  {/* Индикатор заполненности профиля */}
+                  <div className="flex items-center space-x-2 mb-4">
+                    {profileCompleteness > 70 ? (
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                    ) : profileCompleteness > 30 ? (
+                      <AlertCircle className="w-5 h-5 text-yellow-500" />
+                    ) : (
+                      <AlertCircle className="w-5 h-5 text-red-500" />
+                    )}
+                    <span className={`text-sm font-medium ${
+                      profileCompleteness > 70 ? "text-green-600" : 
+                      profileCompleteness > 30 ? "text-yellow-600" : "text-red-600"
+                    }`}>
+                      Профиль заполнен на {profileCompleteness}%
+                    </span>
+                  </div>
+
+                  {profileData?.grade && (
                     <div className="flex items-center text-lg text-gray-600 mb-2">
                       <GraduationCap className="w-5 h-5 mr-2" />
-                      <span>{selectedProfile.grade} класс</span>
+                      <span>{profileData.grade} класс</span>
                     </div>
                   )}
-                  {selectedProfile?.age && (
+                  {profileData?.age && (
                     <div className="text-gray-600 mb-2">
-                      <span className="font-medium">Возраст:</span> {selectedProfile.age} лет
+                      <span className="font-medium">Возраст:</span> {profileData.age} лет
                     </div>
                   )}
                 </div>
 
                 {/* Quick Stats */}
                 <div className="flex-1 grid grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="bg-blue-50 rounded-xl p-4 text-center">
-                    <BookOpen className="w-8 h-8 text-blue-500 mx-auto mb-2" />
-                    <div className="text-2xl font-bold text-blue-600">
-                      {studentsMap[selectedStudent.studentId]?.lessons.length || 0}
-                    </div>
-                    <div className="text-sm text-gray-600">Всего уроков</div>
-                  </div>
-                  <div className="bg-green-50 rounded-xl p-4 text-center">
-                    <Award className="w-8 h-8 text-green-500 mx-auto mb-2" />
-                    <div className="text-2xl font-bold text-green-600">
-                      {studentsMap[selectedStudent.studentId]?.lessons.filter((l: Lesson) => l.status === "completed").length || 0}
-                    </div>
-                    <div className="text-sm text-gray-600">Завершено</div>
-                  </div>
-                  <div className="bg-purple-50 rounded-xl p-4 text-center">
-                    <Users className="w-8 h-8 text-purple-500 mx-auto mb-2" />
-                    <div className="text-2xl font-bold text-purple-600">
-                      {selectedProfile?.subjects?.length || 0}
-                    </div>
-                    <div className="text-sm text-gray-600">Предметов</div>
-                  </div>
-                  <div className="bg-orange-50 rounded-xl p-4 text-center">
-                    <TrendingUp className="w-8 h-8 text-orange-500 mx-auto mb-2" />
-                    <div className="text-2xl font-bold text-orange-600">
-                      {selectedProfile?.experience ? 
-                        (selectedProfile.experience === "beginner" ? "Начинающий" : 
-                         selectedProfile.experience === "intermediate" ? "Средний" : "Продвинутый") 
-                        : "Не указан"}
-                    </div>
-                    <div className="text-sm text-gray-600">Уровень</div>
-                  </div>
+                  <ProfileStatCard
+                    icon={<BookOpen className="w-8 h-8 text-blue-500" />}
+                    value={studentsMap[selectedStudent.studentId]?.lessons.length || 0}
+                    label="Всего уроков"
+                    color="bg-blue-50"
+                  />
+                  <ProfileStatCard
+                    icon={<Award className="w-8 h-8 text-green-500" />}
+                    value={studentsMap[selectedStudent.studentId]?.lessons.filter((l: Lesson) => l.status === "completed").length || 0}
+                    label="Завершено"
+                    color="bg-green-50"
+                  />
+                  <ProfileStatCard
+                    icon={<Users className="w-8 h-8 text-purple-500" />}
+                    value={profileData?.subjects?.length || 0}
+                    label="Предметов"
+                    color="bg-purple-50"
+                  />
+                  <ProfileStatCard
+                    icon={<TrendingUp className="w-8 h-8 text-orange-500" />}
+                    value={profileData?.experience ? 
+                      (profileData.experience === "beginner" ? "Начинающий" : 
+                       profileData.experience === "intermediate" ? "Средний" : "Продвинутый") 
+                      : "Не указан"}
+                    label="Уровень"
+                    color="bg-orange-50"
+                  />
                 </div>
               </div>
 
@@ -337,48 +431,42 @@ const TeacherStudents: React.FC = () => {
                     Личная информация
                   </h3>
                   <div className="space-y-3">
-                    {selectedProfile?.school && (
-                      <div className="flex items-center text-gray-700">
-                        <School className="w-4 h-4 mr-3 text-gray-400" />
-                        <span className="font-medium mr-2">Школа:</span>
-                        <span>{selectedProfile.school}</span>
-                      </div>
-                    )}
-                    {selectedProfile?.city && (
-                      <div className="flex items-center text-gray-700">
-                        <MapPin className="w-4 h-4 mr-3 text-gray-400" />
-                        <span className="font-medium mr-2">Город:</span>
-                        <span>{selectedProfile.city}</span>
-                      </div>
-                    )}
-                    {selectedProfile?.phone && (
-                      <div className="flex items-center text-gray-700">
-                        <Phone className="w-4 h-4 mr-3 text-gray-400" />
-                        <span className="font-medium mr-2">Телефон:</span>
-                        <span>{selectedProfile.phone}</span>
-                      </div>
-                    )}
-                    {selectedProfile?.parentName && (
-                      <div className="flex items-center text-gray-700">
-                        <User className="w-4 h-4 mr-3 text-gray-400" />
-                        <span className="font-medium mr-2">Родитель:</span>
-                        <span>{selectedProfile.parentName}</span>
-                      </div>
-                    )}
-                    {selectedProfile?.parentPhone && (
-                      <div className="flex items-center text-gray-700">
-                        <Phone className="w-4 h-4 mr-3 text-gray-400" />
-                        <span className="font-medium mr-2">Телефон родителя:</span>
-                        <span>{selectedProfile.parentPhone}</span>
-                      </div>
-                    )}
-                    {selectedProfile?.timeZone && (
-                      <div className="flex items-center text-gray-700">
-                        <Clock className="w-4 h-4 mr-3 text-gray-400" />
-                        <span className="font-medium mr-2">Часовой пояс:</span>
-                        <span>{selectedProfile.timeZone}</span>
-                      </div>
-                    )}
+                    <ProfileInfoItem
+                      icon={<School className="w-4 h-4" />}
+                      label="Школа"
+                      value={profileData?.school || ""}
+                      fallback="Не указана"
+                    />
+                    <ProfileInfoItem
+                      icon={<MapPin className="w-4 h-4" />}
+                      label="Город"
+                      value={profileData?.city || ""}
+                      fallback="Не указан"
+                    />
+                    <ProfileInfoItem
+                      icon={<Phone className="w-4 h-4" />}
+                      label="Телефон"
+                      value={profileData?.phone || ""}
+                      fallback="Не указан"
+                    />
+                    <ProfileInfoItem
+                      icon={<User className="w-4 h-4" />}
+                      label="Родитель"
+                      value={profileData?.parentName || ""}
+                      fallback="Не указан"
+                    />
+                    <ProfileInfoItem
+                      icon={<Phone className="w-4 h-4" />}
+                      label="Телефон родителя"
+                      value={profileData?.parentPhone || ""}
+                      fallback="Не указан"
+                    />
+                    <ProfileInfoItem
+                      icon={<Clock className="w-4 h-4" />}
+                      label="Часовой пояс"
+                      value={profileData?.timeZone || ""}
+                      fallback="Не указан"
+                    />
                   </div>
                 </div>
 
@@ -388,92 +476,73 @@ const TeacherStudents: React.FC = () => {
                     <BookOpen className="w-5 h-5 mr-2 text-green-500" />
                     Учебная информация
                   </h3>
-                  <div className="space-y-3">
-                    {selectedProfile?.subjects && selectedProfile.subjects.length > 0 && (
-                      <div>
-                        <span className="font-medium text-gray-700 block mb-2">Изучаемые предметы:</span>
-                        <div className="flex flex-wrap gap-2">
-                          {selectedProfile.subjects.map((subject: string, index: number) => (
-                            <span key={index} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
-                              {subject}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {selectedProfile?.goals && selectedProfile.goals.length > 0 && (
-                      <div>
-                        <span className="font-medium text-gray-700 block mb-2">Цели обучения:</span>
-                        <div className="flex flex-wrap gap-2">
-                          {selectedProfile.goals.map((goal: string, index: number) => (
-                            <span key={index} className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">
-                              {goal}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {selectedProfile?.learningStyle && (
-                      <div className="flex items-center text-gray-700">
-                        <Target className="w-4 h-4 mr-3 text-gray-400" />
-                        <span className="font-medium mr-2">Стиль обучения:</span>
-                        <span>{selectedProfile.learningStyle === "visual" ? "Визуальный" : 
-                               selectedProfile.learningStyle === "auditory" ? "Аудиальный" :
-                               selectedProfile.learningStyle === "kinesthetic" ? "Кинестетический" : "Смешанный"}</span>
-                      </div>
-                    )}
-                    {selectedProfile?.preferredFormats && selectedProfile.preferredFormats.length > 0 && (
-                      <div>
-                        <span className="font-medium text-gray-700 block mb-2">Предпочитаемые форматы:</span>
-                        <div className="flex flex-wrap gap-2">
-                          {selectedProfile.preferredFormats.map((format: string, index: number) => (
-                            <span key={index} className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm">
-                              {format}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {selectedProfile?.preferredDurations && selectedProfile.preferredDurations.length > 0 && (
-                      <div>
-                        <span className="font-medium text-gray-700 block mb-2">Предпочитаемая длительность:</span>
-                        <div className="flex flex-wrap gap-2">
-                          {selectedProfile.preferredDurations.map((duration: number, index: number) => (
-                            <span key={index} className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm">
-                              {duration} мин
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                  <div className="space-y-4">
+                    <div>
+                      <span className="font-medium text-gray-700 block mb-2">Изучаемые предметы:</span>
+                      <TagList
+                        items={profileData?.subjects || []}
+                        color="bg-blue-100 text-blue-800"
+                        emptyMessage="Не указаны"
+                      />
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700 block mb-2">Цели обучения:</span>
+                      <TagList
+                        items={profileData?.goals || []}
+                        color="bg-green-100 text-green-800"
+                        emptyMessage="Не указаны"
+                      />
+                    </div>
+                    <ProfileInfoItem
+                      icon={<Target className="w-4 h-4" />}
+                      label="Стиль обучения"
+                      value={profileData?.learningStyle === "visual" ? "Визуальный" : 
+                             profileData?.learningStyle === "auditory" ? "Аудиальный" :
+                             profileData?.learningStyle === "kinesthetic" ? "Кинестетический" : 
+                             profileData?.learningStyle === "mixed" ? "Смешанный" : ""}
+                      fallback="Не указан"
+                    />
+                    <div>
+                      <span className="font-medium text-gray-700 block mb-2">Предпочитаемые форматы:</span>
+                      <TagList
+                        items={profileData?.preferredFormats || []}
+                        color="bg-purple-100 text-purple-800"
+                        emptyMessage="Не указаны"
+                      />
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700 block mb-2">Предпочитаемая длительность:</span>
+                      <TagList
+                        items={profileData?.preferredDurations?.map(d => `${d} мин`) || []}
+                        color="bg-orange-100 text-orange-800"
+                        emptyMessage="Не указана"
+                      />
+                    </div>
                   </div>
                 </div>
 
                 {/* Interests & Hobbies */}
-                {selectedProfile?.interests && selectedProfile.interests.length > 0 && (
+                {profileData?.interests && profileData.interests.length > 0 && (
                   <div className="bg-gray-50 rounded-xl p-6">
                     <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
                       <Heart className="w-5 h-5 mr-2 text-red-500" />
                       Интересы и хобби
                     </h3>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedProfile.interests.map((interest: string, index: number) => (
-                        <span key={index} className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm">
-                          {interest}
-                        </span>
-                      ))}
-                    </div>
+                    <TagList
+                      items={profileData.interests}
+                      color="bg-red-100 text-red-800"
+                    />
                   </div>
                 )}
 
                 {/* Biography */}
-                {selectedProfile?.bio && (
+                {profileData?.bio && (
                   <div className="bg-gray-50 rounded-xl p-6">
                     <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
                       <FileText className="w-5 h-5 mr-2 text-indigo-500" />
                       О себе
                     </h3>
-                    <p className="text-gray-700 leading-relaxed">{selectedProfile.bio}</p>
+                    <p className="text-gray-700 leading-relaxed">{profileData.bio}</p>
                   </div>
                 )}
               </div>
@@ -500,7 +569,10 @@ const TeacherStudents: React.FC = () => {
                               )}
                             </div>
                             <div className="flex items-center space-x-2">
-                              <span className="px-2 py-1 rounded-full text-xs font-medium">
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                lesson.status === "completed" ? "bg-green-100 text-green-800" :
+                                lesson.status === "scheduled" ? "bg-blue-100 text-blue-800" : "bg-red-100 text-red-800"
+                              }`}>
                                 {lesson.status === "completed" ? "Завершен" :
                                  lesson.status === "scheduled" ? "Запланирован" : "Отменен"}
                               </span>
@@ -514,8 +586,8 @@ const TeacherStudents: React.FC = () => {
                 </div>
               )}
 
-              {/* No Profile Data */}
-              {!selectedProfile && (
+              {/* Profile Status */}
+              {!profileData && (
                 <div className="text-center py-12">
                   <div className="mx-auto h-12 w-12 bg-gray-100 rounded-full flex items-center justify-center mb-4">
                     <User className="h-6 w-6 text-gray-400" />
