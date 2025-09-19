@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { 
   User, 
   Calendar, 
@@ -25,14 +25,13 @@ import {
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
 import type { StudentProfile } from '../../types';
-import { TimeSlot } from '../../types';
+import { TimeSlot, Lesson } from '../../types';
 import TeacherCalendar from './TeacherCalendar';
 import Modal from '../../components/Shared/Modal';
 import UserProfile from '../Shared/UserProfile';
 
 // Вспомогательная функция для получения профиля ученика по studentId
-function getStudentProfile(studentId: string) {
-function getStudentProfile(studentId: string) {
+function getStudentProfile(studentId: string): StudentProfile | undefined {
   try {
     const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
     const student = users.find((u: any) => u.id === studentId && u.role === 'student');
@@ -41,8 +40,12 @@ function getStudentProfile(studentId: string) {
     return undefined;
   }
 }
+
+const TeacherStudents: React.FC = () => {
   const { user } = useAuth();
-  const [selectedStudent, setSelectedStudent] = useState<null | { studentName: string; studentId: string }>();
+  const { lessons, createSlot, studentProfiles } = useData();
+  
+  const [selectedStudent, setSelectedStudent] = useState<null | { studentName: string; studentId: string }>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [assigningStudent, setAssigningStudent] = useState<{ id: string; name: string } | null>(null);
@@ -66,9 +69,9 @@ function getStudentProfile(studentId: string) {
   const [selectedUserProfile, setSelectedUserProfile] = useState<string | null>(null);
 
   // Собираем всех учеников, которые бронировали уроки у этого преподавателя
-  const teacherLessons = lessons.filter(lesson => lesson.teacherId === user?.id);
-  const studentsMap: Record<string, { studentName: string; studentId: string; lessons: typeof teacherLessons }> = {};
-  teacherLessons.forEach(lesson => {
+  const teacherLessons = lessons.filter((lesson: Lesson) => lesson.teacherId === user?.id);
+  const studentsMap: Record<string, { studentName: string; studentId: string; lessons: Lesson[] }> = {};
+  teacherLessons.forEach((lesson: Lesson) => {
     if (!studentsMap[lesson.studentId]) {
       studentsMap[lesson.studentId] = {
         studentName: lesson.studentName,
@@ -79,8 +82,10 @@ function getStudentProfile(studentId: string) {
     studentsMap[lesson.studentId].lessons.push(lesson);
   });
 
+  const students = Object.values(studentsMap);
+
   const handleOpenChat = (studentId: string, studentName: string) => {
-    alert(`Чат с ${studentName} открыт! Перейдите в раздел 'Чаты' для общения.`);
+    alert(Чат с  открыт! Перейдите в раздел 'Чаты' для общения.);
   };
 
   const handleCardClick = (student: { studentName: string; studentId: string }) => {
@@ -135,11 +140,12 @@ function getStudentProfile(studentId: string) {
       setError('Ошибка при создании или бронировании слота');
     } finally {
       setLoading(false);
+    }
   };
 
   // Получить профиль выбранного ученика
-  // �������� ������� ���������� �������
   const selectedProfile = selectedStudent ? (studentProfiles[selectedStudent.studentId] || getStudentProfile(selectedStudent.studentId)) : undefined;
+  
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
@@ -156,7 +162,7 @@ function getStudentProfile(studentId: string) {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {students.map(student => (
+          {students.map((student) => (
             <div
               key={student.studentId}
               className="card-gradient hover:shadow-lg transition-shadow duration-200 overflow-hidden cursor-pointer"
@@ -193,7 +199,7 @@ function getStudentProfile(studentId: string) {
                     <div className="text-gray-500 text-sm">Нет уроков</div>
                   ) : (
                     <ul className="space-y-2">
-                      {student.lessons.map(lesson => (
+                      {student.lessons.map((lesson: Lesson) => (
                         <li key={lesson.id} className="flex items-center justify-between bg-gray-50 rounded px-3 py-2">
                           <div>
                             <span className="font-medium text-gray-700">{lesson.subject}</span>
@@ -269,7 +275,7 @@ function getStudentProfile(studentId: string) {
                       }}
                     />
                   ) : null}
-                  <div className={`w-32 h-32 rounded-full bg-gradient-to-r from-blue-400 to-indigo-500 flex items-center justify-center mb-4 ${selectedProfile?.avatar && selectedProfile.avatar.trim() !== '' ? 'hidden' : ''}`}>
+                  <div className={w-32 h-32 rounded-full bg-gradient-to-r from-blue-400 to-indigo-500 flex items-center justify-center mb-4 }>
                     <UserIcon className="h-16 w-16 text-white" />
                   </div>
                   <h1 className="text-3xl font-bold text-gray-900 mb-2">{selectedStudent.studentName}</h1>
@@ -298,7 +304,7 @@ function getStudentProfile(studentId: string) {
                   <div className="bg-green-50 rounded-xl p-4 text-center">
                     <Award className="w-8 h-8 text-green-500 mx-auto mb-2" />
                     <div className="text-2xl font-bold text-green-600">
-                      {studentsMap[selectedStudent.studentId]?.lessons.filter(l => l.status === 'completed').length || 0}
+                      {studentsMap[selectedStudent.studentId]?.lessons.filter((l: Lesson) => l.status === 'completed').length || 0}
                     </div>
                     <div className="text-sm text-gray-600">Завершено</div>
                   </div>
@@ -387,7 +393,7 @@ function getStudentProfile(studentId: string) {
                       <div>
                         <span className="font-medium text-gray-700 block mb-2">Изучаемые предметы:</span>
                         <div className="flex flex-wrap gap-2">
-                          {selectedProfile.subjects.map((subject, index) => (
+                          {selectedProfile.subjects.map((subject: string, index: number) => (
                             <span key={index} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
                               {subject}
                             </span>
@@ -399,7 +405,7 @@ function getStudentProfile(studentId: string) {
                       <div>
                         <span className="font-medium text-gray-700 block mb-2">Цели обучения:</span>
                         <div className="flex flex-wrap gap-2">
-                          {selectedProfile.goals.map((goal, index) => (
+                          {selectedProfile.goals.map((goal: string, index: number) => (
                             <span key={index} className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">
                               {goal}
                             </span>
@@ -420,7 +426,7 @@ function getStudentProfile(studentId: string) {
                       <div>
                         <span className="font-medium text-gray-700 block mb-2">Предпочитаемые форматы:</span>
                         <div className="flex flex-wrap gap-2">
-                          {selectedProfile.preferredFormats.map((format, index) => (
+                          {selectedProfile.preferredFormats.map((format: string, index: number) => (
                             <span key={index} className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm">
                               {format}
                             </span>
@@ -432,7 +438,7 @@ function getStudentProfile(studentId: string) {
                       <div>
                         <span className="font-medium text-gray-700 block mb-2">Предпочитаемая длительность:</span>
                         <div className="flex flex-wrap gap-2">
-                          {selectedProfile.preferredDurations.map((duration, index) => (
+                          {selectedProfile.preferredDurations.map((duration: number, index: number) => (
                             <span key={index} className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm">
                               {duration} мин
                             </span>
@@ -451,7 +457,7 @@ function getStudentProfile(studentId: string) {
                       Интересы и хобби
                     </h3>
                     <div className="flex flex-wrap gap-2">
-                      {selectedProfile.interests.map((interest, index) => (
+                      {selectedProfile.interests.map((interest: string, index: number) => (
                         <span key={index} className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm">
                           {interest}
                         </span>
@@ -481,8 +487,8 @@ function getStudentProfile(studentId: string) {
                   </h3>
                   <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
                     <div className="max-h-64 overflow-y-auto">
-                      {studentsMap[selectedStudent.studentId].lessons.map((lesson, index) => (
-                        <div key={lesson.id} className={`p-4 border-b border-gray-100 ${index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}`}>
+                      {studentsMap[selectedStudent.studentId].lessons.map((lesson: Lesson, index: number) => (
+                        <div key={lesson.id} className={p-4 border-b border-gray-100 }>
                           <div className="flex items-center justify-between">
                             <div>
                               <h4 className="font-medium text-gray-900">{lesson.subject}</h4>
@@ -494,11 +500,7 @@ function getStudentProfile(studentId: string) {
                               )}
                             </div>
                             <div className="flex items-center space-x-2">
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                lesson.status === 'completed' ? 'bg-green-100 text-green-800' :
-                                lesson.status === 'scheduled' ? 'bg-blue-100 text-blue-800' :
-                                'bg-red-100 text-red-800'
-                              }`}>
+                              <span className={px-2 py-1 rounded-full text-xs font-medium }>
                                 {lesson.status === 'completed' ? 'Завершен' :
                                  lesson.status === 'scheduled' ? 'Запланирован' : 'Отменен'}
                               </span>
@@ -599,4 +601,5 @@ function getStudentProfile(studentId: string) {
     </div>
   );
 };
+
 export default TeacherStudents;
