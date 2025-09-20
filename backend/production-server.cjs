@@ -111,15 +111,15 @@ const io = new Server(server, {
 
 // Загрузка данных сервера
 let serverData = {
-        teacherProfiles: {},
-        studentProfiles: {},
-        timeSlots: [],
-        lessons: [],
-        chats: [],
-      overbookingRequests: [],
-      posts: [],
-      notifications: []
-    };
+  teacherProfiles: {},
+  studentProfiles: {},
+  timeSlots: [],
+  lessons: [],
+  chats: [],
+  overbookingRequests: [],
+  posts: [],
+  notifications: []
+};
 
 const dataFilePath = path.join(__dirname, 'server_data.json');
 
@@ -185,9 +185,9 @@ app.get('/health', (req, res) => {
     status: 'healthy',
     timestamp: new Date().toISOString(),
     ...stats
-      });
-    });
-    
+  });
+});
+
 // API endpoints с кэшированием
 app.get('/api/stats', (req, res) => {
   const cacheKey = 'stats';
@@ -593,8 +593,116 @@ io.on('connection', (socket) => {
   socket.on('leaveRoom', (room) => {
     socket.leave(room);
     log('Client left room:', room);
-    });
   });
+
+  // Обработчик обновления профиля студента
+  socket.on('updateStudentProfile', (data) => {
+    log('Received updateStudentProfile:', data);
+    if (data && data.studentId && data.profile) {
+      serverData.studentProfiles[data.studentId] = data.profile;
+      saveServerData();
+      
+      // Отправляем обновление всем клиентам
+      io.emit('studentProfileUpdated', { studentId: data.studentId, profile: data.profile });
+      io.emit('profileUpdated', { type: 'student', userId: data.studentId, profile: data.profile });
+      
+      log('Student profile updated and broadcasted');
+    }
+  });
+
+  // Обработчик обновления профиля преподавателя
+  socket.on('updateTeacherProfile', (data) => {
+    log('Received updateTeacherProfile:', data);
+    if (data && data.teacherId && data.profile) {
+      serverData.teacherProfiles[data.teacherId] = data.profile;
+      saveServerData();
+      
+      // Отправляем обновление всем клиентам
+      io.emit('teacherProfileUpdated', { teacherId: data.teacherId, profile: data.profile });
+      io.emit('profileUpdated', { type: 'teacher', userId: data.teacherId, profile: data.profile });
+      
+      log('Teacher profile updated and broadcasted');
+    }
+  });
+
+  // Обработчик создания слота
+  socket.on('createSlot', (data) => {
+    log('Received createSlot:', data);
+    if (data) {
+      const slot = { ...data, id: Date.now().toString() };
+      serverData.timeSlots.push(slot);
+      saveServerData();
+      
+      io.emit('slotCreated', slot);
+      log('Slot created and broadcasted');
+    }
+  });
+
+  // Обработчик бронирования урока
+  socket.on('bookLesson', (data) => {
+    log('Received bookLesson:', data);
+    if (data && data.slotId && data.studentId) {
+      const slotIndex = serverData.timeSlots.findIndex(slot => slot.id === data.slotId);
+      if (slotIndex !== -1) {
+        serverData.timeSlots[slotIndex].isBooked = true;
+        serverData.timeSlots[slotIndex].studentId = data.studentId;
+        serverData.timeSlots[slotIndex].studentName = data.studentName;
+        
+        const lesson = {
+          id: Date.now().toString(),
+          slotId: data.slotId,
+          teacherId: serverData.timeSlots[slotIndex].teacherId,
+          teacherName: serverData.timeSlots[slotIndex].teacherName,
+          studentId: data.studentId,
+          studentName: data.studentName,
+          subject: serverData.timeSlots[slotIndex].subject,
+          date: serverData.timeSlots[slotIndex].date,
+          startTime: serverData.timeSlots[slotIndex].startTime,
+          endTime: serverData.timeSlots[slotIndex].endTime,
+          price: serverData.timeSlots[slotIndex].price,
+          status: 'scheduled',
+          comment: data.comment || ''
+        };
+        
+        serverData.lessons.push(lesson);
+        saveServerData();
+        
+        io.emit('lessonBooked', lesson);
+        log('Lesson booked and broadcasted');
+      }
+    }
+  });
+
+  // Обработчик завершения урока
+  socket.on('lessonCompleted', (data) => {
+    log('Received lessonCompleted:', data);
+    if (data && data.lessonId) {
+      const lessonIndex = serverData.lessons.findIndex(lesson => lesson.id === data.lessonId);
+      if (lessonIndex !== -1) {
+        serverData.lessons[lessonIndex].status = 'completed';
+        saveServerData();
+        
+        io.emit('lessonCompleted', { lessonId: data.lessonId });
+        log('Lesson completed and broadcasted');
+      }
+    }
+  });
+
+  // Обработчик удаления слота
+  socket.on('deleteSlot', (data) => {
+    log('Received deleteSlot:', data);
+    if (data && data.slotId) {
+      const slotIndex = serverData.timeSlots.findIndex(slot => slot.id === data.slotId);
+      if (slotIndex !== -1) {
+        serverData.timeSlots.splice(slotIndex, 1);
+        saveServerData();
+        
+        io.emit('slotDeleted', { slotId: data.slotId });
+        log('Slot deleted and broadcasted');
+      }
+    }
+  });
+});
 
 // Graceful shutdown
 const gracefulShutdown = async (signal) => {
