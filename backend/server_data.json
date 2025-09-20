@@ -1,6 +1,10 @@
 {
-  "teacherProfiles": [],
-  "studentProfiles": [],
+  "teacherProfiles": {},
+  "studentProfiles": {},
   "timeSlots": [],
-  "lessons": []
+  "lessons": [],
+  "chats": [],
+  "overbookingRequests": [],
+  "posts": [],
+  "notifications": []
 }

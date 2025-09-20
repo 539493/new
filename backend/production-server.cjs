@@ -111,10 +111,14 @@ const io = new Server(server, {
 
 // Загрузка данных сервера
 let serverData = {
-  teacherProfiles: [],
-  studentProfiles: [],
+  teacherProfiles: {},
+  studentProfiles: {},
   timeSlots: [],
-  lessons: []
+  lessons: [],
+  chats: [],
+  overbookingRequests: [],
+  posts: [],
+  notifications: []
 };
 
 const dataFilePath = path.join(__dirname, 'server_data.json');
@@ -123,7 +127,20 @@ const dataFilePath = path.join(__dirname, 'server_data.json');
 const loadServerData = async () => {
   try {
     const data = await fs.readFile(dataFilePath, 'utf8');
-    serverData = JSON.parse(data);
+    const parsedData = JSON.parse(data);
+    
+    // Инициализируем данные с правильной структурой
+    serverData = {
+      teacherProfiles: parsedData.teacherProfiles && typeof parsedData.teacherProfiles === 'object' ? parsedData.teacherProfiles : {},
+      studentProfiles: parsedData.studentProfiles && typeof parsedData.studentProfiles === 'object' ? parsedData.studentProfiles : {},
+      timeSlots: Array.isArray(parsedData.timeSlots) ? parsedData.timeSlots : [],
+      lessons: Array.isArray(parsedData.lessons) ? parsedData.lessons : [],
+      chats: Array.isArray(parsedData.chats) ? parsedData.chats : [],
+      overbookingRequests: Array.isArray(parsedData.overbookingRequests) ? parsedData.overbookingRequests : [],
+      posts: Array.isArray(parsedData.posts) ? parsedData.posts : [],
+      notifications: Array.isArray(parsedData.notifications) ? parsedData.notifications : []
+    };
+    
     log('Server data loaded successfully');
   } catch (error) {
     log('Error loading server data:', error.message);
@@ -152,8 +169,8 @@ const saveServerData = async () => {
 // Статистика сервера
 const getServerStats = () => {
   return {
-    teacherProfilesCount: serverData.teacherProfiles.length,
-    studentProfilesCount: serverData.studentProfiles.length,
+    teacherProfilesCount: Object.keys(serverData.teacherProfiles).length,
+    studentProfilesCount: Object.keys(serverData.studentProfiles).length,
     timeSlotsCount: serverData.timeSlots.length,
     lessonsCount: serverData.lessons.length,
     memoryUsage: process.memoryUsage(),
@@ -185,7 +202,7 @@ app.get('/api/stats', (req, res) => {
   res.json(stats);
 });
 
-// Остальные API endpoints...
+// Получение всех преподавателей
 app.get('/api/teachers', (req, res) => {
   const cacheKey = 'teachers';
   const cached = getCachedResponse(cacheKey);
@@ -194,10 +211,16 @@ app.get('/api/teachers', (req, res) => {
     return res.json(cached);
   }
   
-  setCachedResponse(cacheKey, serverData.teacherProfiles);
-  res.json(serverData.teacherProfiles);
+  const teachers = Object.entries(serverData.teacherProfiles).map(([id, profile]) => ({
+    id,
+    ...profile
+  }));
+  
+  setCachedResponse(cacheKey, teachers);
+  res.json(teachers);
 });
 
+// Получение всех студентов
 app.get('/api/students', (req, res) => {
   const cacheKey = 'students';
   const cached = getCachedResponse(cacheKey);
@@ -206,10 +229,16 @@ app.get('/api/students', (req, res) => {
     return res.json(cached);
   }
   
-  setCachedResponse(cacheKey, serverData.studentProfiles);
-  res.json(serverData.studentProfiles);
+  const students = Object.entries(serverData.studentProfiles).map(([id, profile]) => ({
+    id,
+    ...profile
+  }));
+  
+  setCachedResponse(cacheKey, students);
+  res.json(students);
 });
 
+// Получение всех слотов
 app.get('/api/timeslots', (req, res) => {
   const cacheKey = 'timeslots';
   const cached = getCachedResponse(cacheKey);
@@ -222,6 +251,7 @@ app.get('/api/timeslots', (req, res) => {
   res.json(serverData.timeSlots);
 });
 
+// Получение всех уроков
 app.get('/api/lessons', (req, res) => {
   const cacheKey = 'lessons';
   const cached = getCachedResponse(cacheKey);
@@ -234,20 +264,45 @@ app.get('/api/lessons', (req, res) => {
   res.json(serverData.lessons);
 });
 
+// Получение преподавателя по ID
+app.get('/api/teachers/:id', (req, res) => {
+  const { id } = req.params;
+  const teacher = serverData.teacherProfiles[id];
+  
+  if (!teacher) {
+    return res.status(404).json({ error: 'Teacher not found' });
+  }
+  
+  res.json({ id, ...teacher });
+});
+
+// Получение студента по ID
+app.get('/api/students/:id', (req, res) => {
+  const { id } = req.params;
+  const student = serverData.studentProfiles[id];
+  
+  if (!student) {
+    return res.status(404).json({ error: 'Student not found' });
+  }
+  
+  res.json({ id, ...student });
+});
+
 // POST endpoints
 app.post('/api/teachers', async (req, res) => {
   try {
-    const teacher = req.body;
-    teacher.id = Date.now().toString();
-    serverData.teacherProfiles.push(teacher);
+    const teacherData = req.body;
+    const id = teacherData.id || Date.now().toString();
+    
+    serverData.teacherProfiles[id] = teacherData;
     await saveServerData();
     
     // Очищаем кэш
     apiCache.delete('teachers');
     apiCache.delete('stats');
     
-    io.emit('teacherAdded', teacher);
-    res.json(teacher);
+    io.emit('teacherAdded', { id, ...teacherData });
+    res.json({ id, ...teacherData });
   } catch (error) {
     console.error('Error adding teacher:', error);
     res.status(500).json({ error: 'Failed to add teacher' });
@@ -256,17 +311,18 @@ app.post('/api/teachers', async (req, res) => {
 
 app.post('/api/students', async (req, res) => {
   try {
-    const student = req.body;
-    student.id = Date.now().toString();
-    serverData.studentProfiles.push(student);
+    const studentData = req.body;
+    const id = studentData.id || Date.now().toString();
+    
+    serverData.studentProfiles[id] = studentData;
     await saveServerData();
     
     // Очищаем кэш
     apiCache.delete('students');
     apiCache.delete('stats');
     
-    io.emit('studentAdded', student);
-    res.json(student);
+    io.emit('studentAdded', { id, ...studentData });
+    res.json({ id, ...studentData });
   } catch (error) {
     console.error('Error adding student:', error);
     res.status(500).json({ error: 'Failed to add student' });
@@ -276,7 +332,7 @@ app.post('/api/students', async (req, res) => {
 app.post('/api/timeslots', async (req, res) => {
   try {
     const timeSlot = req.body;
-    timeSlot.id = Date.now().toString();
+    timeSlot.id = timeSlot.id || Date.now().toString();
     serverData.timeSlots.push(timeSlot);
     await saveServerData();
     
@@ -295,7 +351,7 @@ app.post('/api/timeslots', async (req, res) => {
 app.post('/api/lessons', async (req, res) => {
   try {
     const lesson = req.body;
-    lesson.id = Date.now().toString();
+    lesson.id = lesson.id || Date.now().toString();
     serverData.lessons.push(lesson);
     await saveServerData();
     
@@ -317,20 +373,19 @@ app.put('/api/teachers/:id', async (req, res) => {
     const { id } = req.params;
     const updatedTeacher = req.body;
     
-    const index = serverData.teacherProfiles.findIndex(t => t.id === id);
-    if (index === -1) {
+    if (!serverData.teacherProfiles[id]) {
       return res.status(404).json({ error: 'Teacher not found' });
     }
     
-    serverData.teacherProfiles[index] = { ...updatedTeacher, id };
+    serverData.teacherProfiles[id] = { ...updatedTeacher, id };
     await saveServerData();
     
     // Очищаем кэш
     apiCache.delete('teachers');
     apiCache.delete('stats');
     
-    io.emit('teacherUpdated', serverData.teacherProfiles[index]);
-    res.json(serverData.teacherProfiles[index]);
+    io.emit('teacherUpdated', { id, ...serverData.teacherProfiles[id] });
+    res.json({ id, ...serverData.teacherProfiles[id] });
   } catch (error) {
     console.error('Error updating teacher:', error);
     res.status(500).json({ error: 'Failed to update teacher' });
@@ -342,20 +397,19 @@ app.put('/api/students/:id', async (req, res) => {
     const { id } = req.params;
     const updatedStudent = req.body;
     
-    const index = serverData.studentProfiles.findIndex(s => s.id === id);
-    if (index === -1) {
+    if (!serverData.studentProfiles[id]) {
       return res.status(404).json({ error: 'Student not found' });
     }
     
-    serverData.studentProfiles[index] = { ...updatedStudent, id };
+    serverData.studentProfiles[id] = { ...updatedStudent, id };
     await saveServerData();
     
     // Очищаем кэш
     apiCache.delete('students');
     apiCache.delete('stats');
     
-    io.emit('studentUpdated', serverData.studentProfiles[index]);
-    res.json(serverData.studentProfiles[index]);
+    io.emit('studentUpdated', { id, ...serverData.studentProfiles[id] });
+    res.json({ id, ...serverData.studentProfiles[id] });
   } catch (error) {
     console.error('Error updating student:', error);
     res.status(500).json({ error: 'Failed to update student' });
@@ -417,12 +471,12 @@ app.delete('/api/teachers/:id', async (req, res) => {
   try {
     const { id } = req.params;
     
-    const index = serverData.teacherProfiles.findIndex(t => t.id === id);
-    if (index === -1) {
+    if (!serverData.teacherProfiles[id]) {
       return res.status(404).json({ error: 'Teacher not found' });
     }
     
-    const deletedTeacher = serverData.teacherProfiles.splice(index, 1)[0];
+    const deletedTeacher = { id, ...serverData.teacherProfiles[id] };
+    delete serverData.teacherProfiles[id];
     await saveServerData();
     
     // Очищаем кэш
@@ -441,12 +495,12 @@ app.delete('/api/students/:id', async (req, res) => {
   try {
     const { id } = req.params;
     
-    const index = serverData.studentProfiles.findIndex(s => s.id === id);
-    if (index === -1) {
+    if (!serverData.studentProfiles[id]) {
       return res.status(404).json({ error: 'Student not found' });
     }
     
-    const deletedStudent = serverData.studentProfiles.splice(index, 1)[0];
+    const deletedStudent = { id, ...serverData.studentProfiles[id] };
+    delete serverData.studentProfiles[id];
     await saveServerData();
     
     // Очищаем кэш
