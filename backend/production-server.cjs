@@ -111,15 +111,15 @@ const io = new Server(server, {
 
 // Загрузка данных сервера
 let serverData = {
-  teacherProfiles: {},
-  studentProfiles: {},
-  timeSlots: [],
-  lessons: [],
-  chats: [],
-  overbookingRequests: [],
-  posts: [],
-  notifications: []
-};
+        teacherProfiles: {},
+        studentProfiles: {},
+        timeSlots: [],
+        lessons: [],
+        chats: [],
+      overbookingRequests: [],
+      posts: [],
+      notifications: []
+    };
 
 const dataFilePath = path.join(__dirname, 'server_data.json');
 
@@ -185,9 +185,9 @@ app.get('/health', (req, res) => {
     status: 'healthy',
     timestamp: new Date().toISOString(),
     ...stats
-  });
-});
-
+      });
+    });
+    
 // API endpoints с кэшированием
 app.get('/api/stats', (req, res) => {
   const cacheKey = 'stats';
@@ -593,8 +593,8 @@ io.on('connection', (socket) => {
   socket.on('leaveRoom', (room) => {
     socket.leave(room);
     log('Client left room:', room);
+    });
   });
-});
 
 // Graceful shutdown
 const gracefulShutdown = async (signal) => {
