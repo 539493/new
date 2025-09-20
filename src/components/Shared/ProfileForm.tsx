@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { Save, Upload, Settings, Bell, Lock, User as UserIcon, Palette, Database, Monitor, BookOpen, MessageCircle, FileText, Star, Plus } from 'lucide-react';
+﻿import React, { useState, useEffect } from 'react';
+import { Save, Upload, Settings, Bell, Lock, User as UserIcon, Palette, Database, Monitor, BookOpen, MessageCircle, FileText, Star, Plus, Edit } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { StudentProfile, TeacherProfile } from '../../types';
 import { useData } from '../../contexts/DataContext';
 import Modal from './Modal';
 import PostEditor from './PostEditor';
 import PostCard from './PostCard';
-
-
+import StudentProfileDisplayModal from '../Student/StudentProfileDisplayModal';
+import StudentProfileEditModal from '../Student/StudentProfileEditModal';
 
 const ProfileForm: React.FC = () => {
   const { user, updateProfile, deleteAccount } = useAuth();
@@ -26,6 +26,8 @@ const ProfileForm: React.FC = () => {
   } = useData();
   
   const [editMode, setEditMode] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [studentProfile, setStudentProfile] = useState<StudentProfile>({
     grade: '',
     bio: '',
@@ -98,24 +100,14 @@ const ProfileForm: React.FC = () => {
         const profile = user.profile as StudentProfile;
         setStudentProfile({
           ...studentProfile,
-          ...profile,
-          goals: profile.goals || [],
-          interests: profile.interests || [],
-          preferredFormats: profile.preferredFormats || [],
-          preferredDurations: profile.preferredDurations || [],
+          ...profile
         });
       } else {
         const profile = user.profile as TeacherProfile;
         setTeacherProfile({
           ...teacherProfile,
           ...profile,
-          formats: profile.formats || [],
-          subjects: profile.subjects || [],
-          grades: profile.grades || [],
-          goals: profile.goals || [],
-          lessonTypes: profile.lessonTypes || [],
-          durations: profile.durations || [],
-          education: profile.education || {
+          education: {
             university: '',
             degree: '',
             graduationYear: undefined,
@@ -205,8 +197,6 @@ const ProfileForm: React.FC = () => {
     }
   };
 
-
-
   // Статистика для ученика
   let studentLessonsCount = 0;
   let uniqueTeachersCount = 0;
@@ -247,23 +237,23 @@ const ProfileForm: React.FC = () => {
             // Автоматически сохраняем и синхронизируем
             updateProfile(updatedProfile);
             updateStudentProfile(user.id, updatedProfile);
-            console.log('✅ Аватар студента сохранен');
+            console.log(' Аватар студента сохранен');
           } else {
             const updatedProfile = { ...teacherProfile, avatar: avatarUrl };
             setTeacherProfile(updatedProfile);
             // Автоматически сохраняем и синхронизируем
             updateProfile(updatedProfile);
             updateTeacherProfile(user.id, { ...updatedProfile, name: user.name, email: user.email });
-            console.log('✅ Аватар преподавателя сохранен');
+            console.log(' Аватар преподавателя сохранен');
           }
         } catch (error) {
-          console.error('❌ Ошибка при сохранении аватара:', error);
+          console.error(' Ошибка при сохранении аватара:', error);
           alert('Ошибка при сохранении фото. Попробуйте еще раз.');
         }
       };
 
       reader.onerror = () => {
-        console.error('❌ Ошибка чтения файла');
+        console.error(' Ошибка чтения файла');
         alert('Ошибка при чтении файла. Попробуйте выбрать другое изображение.');
       };
 
@@ -271,7 +261,12 @@ const ProfileForm: React.FC = () => {
     }
   };
 
-    return (
+  const handleProfileSave = (updatedProfile: StudentProfile) => {
+    setStudentProfile(updatedProfile);
+    setShowEditModal(false);
+  };
+
+  return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Верхний блок профиля */}
       <div className="flex items-center gap-4 mb-6 relative">
@@ -308,10 +303,30 @@ const ProfileForm: React.FC = () => {
           )}
             </div>
         <div className="flex items-center gap-2 ml-4">
-          <button
-            className="btn-primary text-sm px-3 py-2"
-            onClick={() => setEditMode(true)}
-          >Редактировать</button>
+          {user.role === 'student' ? (
+            <>
+              <button
+                className="btn-primary text-sm px-3 py-2"
+                onClick={() => setShowProfileModal(true)}
+              >
+                Просмотр профиля
+              </button>
+              <button
+                className="btn-primary text-sm px-3 py-2"
+                onClick={() => setShowEditModal(true)}
+              >
+                <Edit className="w-4 h-4 mr-1" />
+                Редактировать
+              </button>
+            </>
+          ) : (
+            <button
+              className="btn-primary text-sm px-3 py-2"
+              onClick={() => setEditMode(true)}
+            >
+              Редактировать
+            </button>
+          )}
               <button
             className="bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-blue-600 rounded-full p-2 shadow transition-colors duration-150 focus:outline-none"
             style={{ width: 36, height: 36 }}
@@ -337,7 +352,7 @@ const ProfileForm: React.FC = () => {
         
         {/* Описание */}
         <div className="text-gray-700 whitespace-pre-line leading-relaxed mb-4 text-sm">
-          {user.role === 'student' ? studentProfile.bio || '—' : user.profile?.bio || '—'}
+          {user.role === 'student' ? studentProfile.bio || '' : user.profile?.bio || ''}
         </div>
         
         {/* Информация для ученика */}
@@ -474,15 +489,15 @@ const ProfileForm: React.FC = () => {
           <div className="space-y-2">
             <div>
               <span className="text-sm font-medium text-gray-600">Предметы:</span>
-              <span className="text-sm text-gray-900 ml-1">{user.profile?.subjects?.join(', ') || '—'}</span>
+              <span className="text-sm text-gray-900 ml-1">{user.profile?.subjects?.join(', ') || ''}</span>
             </div>
             <div>
               <span className="text-sm font-medium text-gray-600">Классы:</span>
-              <span className="text-sm text-gray-900 ml-1">{(user.profile as TeacherProfile)?.grades?.join(', ') || '—'}</span>
+              <span className="text-sm text-gray-900 ml-1">{(user.profile as TeacherProfile)?.grades?.join(', ') || ''}</span>
             </div>
             <div>
               <span className="text-sm font-medium text-gray-600">Страна:</span>
-              <span className="text-sm text-gray-900 ml-1">{(user.profile as TeacherProfile)?.country || '—'}</span>
+              <span className="text-sm text-gray-900 ml-1">{(user.profile as TeacherProfile)?.country || ''}</span>
             </div>
             {(user.profile as TeacherProfile)?.experience && (
               <div>
@@ -493,6 +508,18 @@ const ProfileForm: React.FC = () => {
           </div>
         )}
       </div>
+      {/* Модальные окна */}
+      <StudentProfileDisplayModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+      />
+
+      <StudentProfileEditModal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        onSave={handleProfileSave}
+      />
+
       {/* Модальное окно контактов */}
       <Modal open={contactModalOpen} onClose={() => setContactModalOpen(false)}>
         <div className="text-base font-bold mb-2">Контактная информация</div>
@@ -727,841 +754,6 @@ const ProfileForm: React.FC = () => {
           )}
         </div>
       </div>
-      {/* Форма редактирования оставляю как есть, по editMode */}
-      <Modal open={editMode} onClose={() => setEditMode(false)}>
-        <div className="w-[720px] max-w-full max-h-[80vh] overflow-y-auto">
-          <div className="space-y-8 p-4">
-          {/* Avatar */}
-              <div className="flex items-center gap-8">
-                <div className="h-20 w-20 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center overflow-hidden">
-              {(user.role === 'student' ? studentProfile.avatar : teacherProfile.avatar) ? (
-                <img
-                  src={user.role === 'student' ? studentProfile.avatar : teacherProfile.avatar}
-                  alt="Avatar"
-                  className="h-20 w-20 rounded-full object-cover"
-                />
-              ) : (
-                <UserIcon className="h-10 w-10 text-white" />
-              )}
-            </div>
-            <div>
-                  <label className="btn-primary cursor-pointer">
-                <Upload className="h-4 w-4" />
-                <span>Загрузить фото</span>
-                    <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
-                  </label>
-              <p className="text-sm text-gray-500 mt-1">Рекомендуемый размер: 200x200px</p>
-            </div>
-          </div>
-          {/* Basic Info */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Имя</label>
-              <input
-                type="text"
-                value={user?.name}
-                disabled
-                    className="input-modern w-full"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Никнейм</label>
-              <input
-                type="text"
-                value={`@${user?.nickname}`}
-                disabled
-                    className="input-modern w-full"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-              <input
-                type="email"
-                value={user?.email}
-                disabled
-                    className="input-modern w-full"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Номер телефона</label>
-              <input
-                type="tel"
-                value={user?.phone || ''}
-                onChange={(e) => {
-                  // Обновляем номер телефона в контексте аутентификации
-                  if (user) {
-                    // Здесь нужно обновить пользователя в контексте
-                    // Пока просто сохраняем в localStorage
-                    try {
-                      const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
-                      const userIndex = users.findIndex((u: any) => u.id === user.id);
-                      if (userIndex !== -1) {
-                        users[userIndex].phone = e.target.value;
-                        localStorage.setItem('tutoring_users', JSON.stringify(users));
-                      }
-                    } catch (error) {
-                    }
-                  }
-                }}
-                className="input-modern w-full"
-                placeholder="+7 (999) 123-45-67"
-              />
-            </div>
-          </div>
-              {/* Teaching Info — только для преподавателя */}
-              {user.role === 'teacher' && (
-                <>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Предметы, которые вы преподаете</label>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-              {subjects.map(subject => (
-                <label key={subject} className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    checked={teacherProfile.subjects.includes(subject)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setTeacherProfile({
-                          ...teacherProfile,
-                          subjects: [...teacherProfile.subjects, subject]
-                        });
-                      } else {
-                        setTeacherProfile({
-                          ...teacherProfile,
-                          subjects: teacherProfile.subjects.filter(s => s !== subject)
-                        });
-                      }
-                    }}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="text-sm text-gray-700">{subject}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Классы, с которыми работаете</label>
-            <div className="grid grid-cols-4 md:grid-cols-6 gap-2">
-              {grades.map(grade => (
-                <label key={grade} className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    checked={teacherProfile.grades.includes(grade)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setTeacherProfile({
-                          ...teacherProfile,
-                          grades: [...teacherProfile.grades, grade]
-                        });
-                      } else {
-                        setTeacherProfile({
-                          ...teacherProfile,
-                          grades: teacherProfile.grades.filter(g => g !== grade)
-                        });
-                      }
-                    }}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="text-sm text-gray-700">{grade}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Опыт преподавания</label>
-              <select
-                value={teacherProfile.experience}
-                onChange={(e) => setTeacherProfile({ ...teacherProfile, experience: e.target.value as any })}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              >
-                {experiences.map(exp => (
-                  <option key={exp} value={exp}>{getExperienceLabel(exp)}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Тип преподавателя</label>
-              <select
-                value={teacherProfile.teacherType || 'private'}
-                onChange={(e) => setTeacherProfile({ ...teacherProfile, teacherType: e.target.value as any })}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="private">Частный преподаватель</option>
-                <option value="school">Преподаватель школы</option>
-                <option value="both">Частный + Школа</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Возраст</label>
-              <input
-                type="number"
-                value={teacherProfile.age || ''}
-                onChange={(e) => setTeacherProfile({ ...teacherProfile, age: e.target.value ? Number(e.target.value) : undefined })}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                min="18"
-                max="100"
-                placeholder="Укажите возраст"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Лет опыта</label>
-              <input
-                type="number"
-                value={teacherProfile.experienceYears || ''}
-                onChange={(e) => setTeacherProfile({ ...teacherProfile, experienceYears: e.target.value ? Number(e.target.value) : undefined })}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                min="0"
-                max="50"
-                placeholder="Количество лет"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Стоимость часа (₽)</label>
-              <input
-                type="number"
-                value={teacherProfile.hourlyRate}
-                onChange={(e) => setTeacherProfile({ ...teacherProfile, hourlyRate: Number(e.target.value) })}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                min="0"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Цели занятий</label>
-            <div className="grid grid-cols-2 gap-2">
-              {goals.map(goal => (
-                <label key={goal} className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    checked={teacherProfile.goals.includes(goal)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setTeacherProfile({
-                          ...teacherProfile,
-                          goals: [...teacherProfile.goals, goal]
-                        });
-                      } else {
-                        setTeacherProfile({
-                          ...teacherProfile,
-                          goals: teacherProfile.goals.filter(g => g !== goal)
-                        });
-                      }
-                    }}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="text-sm text-gray-700">{goal}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Продолжительность уроков</label>
-            <div className="flex space-x-4">
-              {durations.map(duration => (
-                <label key={duration} className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    checked={teacherProfile.durations.includes(duration)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setTeacherProfile({
-                          ...teacherProfile,
-                          durations: [...teacherProfile.durations, duration]
-                        });
-                      } else {
-                        setTeacherProfile({
-                          ...teacherProfile,
-                          durations: teacherProfile.durations.filter(d => d !== duration)
-                        });
-                      }
-                    }}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="text-sm text-gray-700">{duration} мин</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Форматы проведения</label>
-            <div className="flex space-x-4">
-              {formats.map(format => (
-                <label key={format} className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    checked={teacherProfile.formats?.includes(format) || false}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setTeacherProfile({
-                          ...teacherProfile,
-                          formats: [...(teacherProfile.formats || []), format]
-                        });
-                      } else {
-                        setTeacherProfile({
-                          ...teacherProfile,
-                          formats: (teacherProfile.formats || []).filter(f => f !== format)
-                        });
-                      }
-                    }}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="text-sm text-gray-700">
-                    {format === 'online' ? 'Онлайн' : format === 'offline' ? 'Оффлайн' : 'Мини-группа'}
-                  </span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={teacherProfile.offlineAvailable}
-                  onChange={(e) => setTeacherProfile({ ...teacherProfile, offlineAvailable: e.target.checked })}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span className="text-sm font-medium text-gray-700">Провожу оффлайн занятия</span>
-              </label>
-            </div>
-
-            <div>
-              <label className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={teacherProfile.overbookingEnabled}
-                  onChange={(e) => setTeacherProfile({ ...teacherProfile, overbookingEnabled: e.target.checked })}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span className="text-sm font-medium text-gray-700">Участвую в овербукинге</span>
-              </label>
-            </div>
-          </div>
-                </>
-              )}
-
-          {teacherProfile.offlineAvailable && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Город</label>
-              <input
-                type="text"
-                value={teacherProfile.city}
-                onChange={(e) => setTeacherProfile({ ...teacherProfile, city: e.target.value })}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                placeholder="Введите ваш город"
-              />
-            </div>
-          )}
-
-          {/* О себе — для студента и преподавателя */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">О себе</label>
-            <textarea
-              value={user.role === 'student' ? studentProfile.bio : teacherProfile.bio}
-              onChange={e => {
-                if (user.role === 'student') {
-                  setStudentProfile({ ...studentProfile, bio: e.target.value });
-                } else {
-                  setTeacherProfile({ ...teacherProfile, bio: e.target.value });
-                }
-              }}
-              rows={4}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              placeholder="Расскажите о себе..."
-            />
-          </div>
-
-          {/* Дополнительная информация — только для учеников */}
-          {user.role === 'student' && (
-            <>
-              <div className="border-t border-gray-200 pt-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Дополнительная информация</h3>
-                
-                {/* Предметы для ученика */}
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Предметы, которые изучаете</label>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    {subjects.map(subject => (
-                      <label key={subject} className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          checked={studentProfile.subjects?.includes(subject) || false}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setStudentProfile({
-                                ...studentProfile,
-                                subjects: [...(studentProfile.subjects || []), subject]
-                              });
-                            } else {
-                              setStudentProfile({
-                                ...studentProfile,
-                                subjects: (studentProfile.subjects || []).filter(s => s !== subject)
-                              });
-                            }
-                          }}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                        <span className="text-sm text-gray-700">{subject}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Возраст</label>
-                    <input
-                      type="number"
-                      value={studentProfile.age || ''}
-                      onChange={(e) => setStudentProfile({ ...studentProfile, age: e.target.value ? Number(e.target.value) : undefined })}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      min="5"
-                      max="25"
-                      placeholder="Укажите возраст"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Школа</label>
-                    <input
-                      type="text"
-                      value={studentProfile.school || ''}
-                      onChange={(e) => setStudentProfile({ ...studentProfile, school: e.target.value })}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      placeholder="Название школы"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Город</label>
-                    <input
-                      type="text"
-                      value={studentProfile.city || ''}
-                      onChange={(e) => setStudentProfile({ ...studentProfile, city: e.target.value })}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      placeholder="Ваш город"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Телефон</label>
-                    <input
-                      type="tel"
-                      value={studentProfile.phone || ''}
-                      onChange={(e) => setStudentProfile({ ...studentProfile, phone: e.target.value })}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      placeholder="+7 (999) 123-45-67"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Имя родителя</label>
-                    <input
-                      type="text"
-                      value={studentProfile.parentName || ''}
-                      onChange={(e) => setStudentProfile({ ...studentProfile, parentName: e.target.value })}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      placeholder="Имя родителя"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Телефон родителя</label>
-                    <input
-                      type="tel"
-                      value={studentProfile.parentPhone || ''}
-                      onChange={(e) => setStudentProfile({ ...studentProfile, parentPhone: e.target.value })}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      placeholder="+7 (999) 123-45-67"
-                    />
-                  </div>
-                </div>
-
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Цели обучения</label>
-                  <div className="flex flex-wrap gap-2">
-                    {goals.map(goal => (
-                      <label key={goal} className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          checked={studentProfile.goals?.includes(goal) || false}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setStudentProfile({
-                                ...studentProfile,
-                                goals: [...(studentProfile.goals || []), goal]
-                              });
-                            } else {
-                              setStudentProfile({
-                                ...studentProfile,
-                                goals: (studentProfile.goals || []).filter(g => g !== goal)
-                              });
-                            }
-                          }}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                        <span className="text-sm text-gray-700">{goal}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Интересы и хобби</label>
-                  <textarea
-                    value={studentProfile.interests?.join(', ') || ''}
-                    onChange={(e) => setStudentProfile({ 
-                      ...studentProfile, 
-                      interests: e.target.value.split(',').map(item => item.trim()).filter(item => item)
-                    })}
-                    rows={3}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    placeholder="Напишите через запятую: спорт, музыка, рисование..."
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Стиль обучения</label>
-                    <select
-                      value={studentProfile.learningStyle || 'mixed'}
-                      onChange={(e) => setStudentProfile({ ...studentProfile, learningStyle: e.target.value as any })}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="visual">Визуальный</option>
-                      <option value="auditory">Аудиальный</option>
-                      <option value="kinesthetic">Кинестетический</option>
-                      <option value="mixed">Смешанный</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Уровень знаний</label>
-                    <select
-                      value={studentProfile.experience || 'beginner'}
-                      onChange={(e) => setStudentProfile({ ...studentProfile, experience: e.target.value as any })}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="beginner">Начинающий</option>
-                      <option value="intermediate">Средний</option>
-                      <option value="advanced">Продвинутый</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Предпочитаемые форматы занятий</label>
-                  <div className="flex space-x-4">
-                    {formats.map(format => (
-                      <label key={format} className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          checked={studentProfile.preferredFormats?.includes(format) || false}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setStudentProfile({
-                                ...studentProfile,
-                                preferredFormats: [...(studentProfile.preferredFormats || []), format]
-                              });
-                            } else {
-                              setStudentProfile({
-                                ...studentProfile,
-                                preferredFormats: (studentProfile.preferredFormats || []).filter(f => f !== format)
-                              });
-                            }
-                          }}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                        <span className="text-sm text-gray-700">
-                          {format === 'online' ? 'Онлайн' : format === 'offline' ? 'Оффлайн' : 'Мини-группа'}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Предпочитаемая длительность занятий</label>
-                  <div className="flex space-x-4">
-                    {durations.map(duration => (
-                      <label key={duration} className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          checked={studentProfile.preferredDurations?.includes(duration) || false}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setStudentProfile({
-                                ...studentProfile,
-                                preferredDurations: [...(studentProfile.preferredDurations || []), duration]
-                              });
-                            } else {
-                              setStudentProfile({
-                                ...studentProfile,
-                                preferredDurations: (studentProfile.preferredDurations || []).filter(d => d !== duration)
-                              });
-                            }
-                          }}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                        <span className="text-sm text-gray-700">{duration} мин</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Часовой пояс</label>
-                  <input
-                    type="text"
-                    value={studentProfile.timeZone || ''}
-                    onChange={(e) => setStudentProfile({ ...studentProfile, timeZone: e.target.value })}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    placeholder="UTC+3 (Москва)"
-                  />
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* Образование — только для преподавателей */}
-          {user.role === 'teacher' && (
-            <>
-              <div className="border-t border-gray-200 pt-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Образование</h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Университет</label>
-                    <input
-                      type="text"
-                      value={teacherProfile.education?.university || ''}
-                      onChange={(e) => setTeacherProfile({
-                        ...teacherProfile,
-                        education: {
-                          ...teacherProfile.education,
-                          university: e.target.value
-                        }
-                      })}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      placeholder="Название университета"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Специальность/Степень</label>
-                    <input
-                      type="text"
-                      value={teacherProfile.education?.degree || ''}
-                      onChange={(e) => setTeacherProfile({
-                        ...teacherProfile,
-                        education: {
-                          ...teacherProfile.education,
-                          degree: e.target.value
-                        }
-                      })}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      placeholder="Ваша специальность"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Год окончания</label>
-                  <input
-                    type="number"
-                    value={teacherProfile.education?.graduationYear || ''}
-                    onChange={(e) => setTeacherProfile({
-                      ...teacherProfile,
-                      education: {
-                        ...teacherProfile.education,
-                        graduationYear: e.target.value ? Number(e.target.value) : undefined
-                      }
-                    })}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    min="1950"
-                    max={new Date().getFullYear()}
-                    placeholder="Год окончания"
-                  />
-                </div>
-              </div>
-
-              <div className="border-t border-gray-200 pt-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Курсы и сертификаты</h3>
-                
-                <div className="space-y-4">
-                  {teacherProfile.education?.courses?.map((course, index) => (
-                    <div key={index} className="border border-gray-200 rounded-lg p-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Название курса</label>
-                          <input
-                            type="text"
-                            value={course.name}
-                            onChange={(e) => {
-                              const newCourses = [...(teacherProfile.education?.courses || [])];
-                              newCourses[index] = { ...course, name: e.target.value };
-                              setTeacherProfile({
-                                ...teacherProfile,
-                                education: {
-                                  ...teacherProfile.education,
-                                  courses: newCourses
-                                }
-                              });
-                            }}
-                            className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                            placeholder="Название курса"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Учреждение</label>
-                          <input
-                            type="text"
-                            value={course.institution}
-                            onChange={(e) => {
-                              const newCourses = [...(teacherProfile.education?.courses || [])];
-                              newCourses[index] = { ...course, institution: e.target.value };
-                              setTeacherProfile({
-                                ...teacherProfile,
-                                education: {
-                                  ...teacherProfile.education,
-                                  courses: newCourses
-                                }
-                              });
-                            }}
-                            className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                            placeholder="Название учреждения"
-                          />
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Год прохождения</label>
-                          <input
-                            type="number"
-                            value={course.year}
-                            onChange={(e) => {
-                              const newCourses = [...(teacherProfile.education?.courses || [])];
-                              newCourses[index] = { ...course, year: Number(e.target.value) };
-                              setTeacherProfile({
-                                ...teacherProfile,
-                                education: {
-                                  ...teacherProfile.education,
-                                  courses: newCourses
-                                }
-                              });
-                            }}
-                            className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                            min="1950"
-                            max={new Date().getFullYear()}
-                            placeholder="Год"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Ссылка на сертификат</label>
-                          <input
-                            type="url"
-                            value={course.certificate || ''}
-                            onChange={(e) => {
-                              const newCourses = [...(teacherProfile.education?.courses || [])];
-                              newCourses[index] = { ...course, certificate: e.target.value };
-                              setTeacherProfile({
-                                ...teacherProfile,
-                                education: {
-                                  ...teacherProfile.education,
-                                  courses: newCourses
-                                }
-                              });
-                            }}
-                            className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                            placeholder="https://example.com/certificate.pdf"
-                          />
-                        </div>
-                      </div>
-                      
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const newCourses = teacherProfile.education?.courses?.filter((_, i) => i !== index) || [];
-                          setTeacherProfile({
-                            ...teacherProfile,
-                            education: {
-                              ...teacherProfile.education,
-                              courses: newCourses
-                            }
-                          });
-                        }}
-                        className="text-red-600 hover:text-red-800 text-sm font-medium"
-                      >
-                        Удалить курс
-                      </button>
-                    </div>
-                  ))}
-                  
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const newCourse = {
-                        name: '',
-                        institution: '',
-                        year: new Date().getFullYear(),
-                        certificate: ''
-                      };
-                      setTeacherProfile({
-                        ...teacherProfile,
-                        education: {
-                          ...teacherProfile.education,
-                          courses: [...(teacherProfile.education?.courses || []), newCourse]
-                        }
-                      });
-                    }}
-                    className="w-full p-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-gray-400 hover:text-gray-800 transition-colors flex items-center justify-center gap-2"
-                  >
-                    <Plus className="h-5 w-5" />
-                    Добавить курс
-                  </button>
-                </div>
-              </div>
-            </>
-          )}
-
-              <div className="flex justify-end gap-4">
-            <button
-              onClick={handleSave}
-                  className="btn-primary flex items-center gap-2"
-            >
-              <Save className="h-5 w-5" />
-              <span>Сохранить профиль</span>
-            </button>
-                <button
-                  onClick={() => setEditMode(false)}
-                  className="btn-secondary"
-                >
-                  Отмена
-            </button>
-          </div>
-        </div>
-      </div>
-      </Modal>
     </div>
   );
 };
