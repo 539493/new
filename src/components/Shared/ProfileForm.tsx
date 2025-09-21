@@ -485,19 +485,19 @@ const ProfileForm: React.FC = () => {
         )}
         
         {/* Информация для преподавателя */}
-        {user.role === 'teacher' && (
+        {user.role === 'teacher' && !editMode && (
           <div className="space-y-2">
             <div>
               <span className="text-sm font-medium text-gray-600">Предметы:</span>
-              <span className="text-sm text-gray-900 ml-1">{user.profile?.subjects?.join(', ') || ''}</span>
+              <span className="text-sm text-gray-900 ml-1">{user.profile?.subjects?.join(', ') || 'Не указаны'}</span>
             </div>
             <div>
               <span className="text-sm font-medium text-gray-600">Классы:</span>
-              <span className="text-sm text-gray-900 ml-1">{(user.profile as TeacherProfile)?.grades?.join(', ') || ''}</span>
+              <span className="text-sm text-gray-900 ml-1">{(user.profile as TeacherProfile)?.grades?.join(', ') || 'Не указаны'}</span>
             </div>
             <div>
-              <span className="text-sm font-medium text-gray-600">Страна:</span>
-              <span className="text-sm text-gray-900 ml-1">{(user.profile as TeacherProfile)?.country || ''}</span>
+              <span className="text-sm font-medium text-gray-600">Город:</span>
+              <span className="text-sm text-gray-900 ml-1">{(user.profile as TeacherProfile)?.city || 'Не указан'}</span>
             </div>
             {(user.profile as TeacherProfile)?.experience && (
               <div>
@@ -505,6 +505,180 @@ const ProfileForm: React.FC = () => {
                 <span className="text-sm text-gray-900 ml-1">{(user.profile as TeacherProfile).experience}</span>
               </div>
             )}
+            {(user.profile as TeacherProfile)?.experienceYears && (
+              <div>
+                <span className="text-sm font-medium text-gray-600">Лет преподавания:</span>
+                <span className="text-sm text-gray-900 ml-1">{(user.profile as TeacherProfile).experienceYears}</span>
+              </div>
+            )}
+            {(user.profile as TeacherProfile)?.hourlyRate && (
+              <div>
+                <span className="text-sm font-medium text-gray-600">Стоимость часа:</span>
+                <span className="text-sm text-gray-900 ml-1">{(user.profile as TeacherProfile).hourlyRate} ₽</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Форма редактирования для преподавателя */}
+        {user.role === 'teacher' && editMode && (
+          <div className="space-y-4">
+            {/* Биография */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">О себе</label>
+              <textarea
+                value={teacherProfile.bio || ''}
+                onChange={(e) => setTeacherProfile({ ...teacherProfile, bio: e.target.value })}
+                rows={4}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Расскажите о себе, своем опыте преподавания..."
+              />
+            </div>
+
+            {/* Предметы */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Предметы</label>
+              <div className="flex flex-wrap gap-2">
+                {['Математика', 'Физика', 'Химия', 'Биология', 'Русский язык', 'Литература', 'История', 'Обществознание', 'География', 'Английский язык', 'Информатика'].map(subject => (
+                  <button
+                    key={subject}
+                    onClick={() => {
+                      const newSubjects = teacherProfile.subjects?.includes(subject)
+                        ? teacherProfile.subjects.filter(s => s !== subject)
+                        : [...(teacherProfile.subjects || []), subject];
+                      setTeacherProfile({ ...teacherProfile, subjects: newSubjects });
+                    }}
+                    className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                      teacherProfile.subjects?.includes(subject)
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    {subject}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Классы */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Классы</label>
+              <div className="flex flex-wrap gap-2">
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(grade => (
+                  <button
+                    key={grade}
+                    onClick={() => {
+                      const newGrades = teacherProfile.grades?.includes(grade)
+                        ? teacherProfile.grades.filter(g => g !== grade)
+                        : [...(teacherProfile.grades || []), grade];
+                      setTeacherProfile({ ...teacherProfile, grades: newGrades });
+                    }}
+                    className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                      teacherProfile.grades?.includes(grade)
+                        ? 'bg-green-500 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    {grade} класс
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Основная информация */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Город</label>
+                <input
+                  type="text"
+                  value={teacherProfile.city || ''}
+                  onChange={(e) => setTeacherProfile({ ...teacherProfile, city: e.target.value })}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Укажите город"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Возраст</label>
+                <input
+                  type="number"
+                  value={teacherProfile.age || ''}
+                  onChange={(e) => setTeacherProfile({ ...teacherProfile, age: e.target.value ? Number(e.target.value) : undefined })}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Укажите возраст"
+                  min="18"
+                  max="80"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Лет преподавания</label>
+                <input
+                  type="number"
+                  value={teacherProfile.experienceYears || ''}
+                  onChange={(e) => setTeacherProfile({ ...teacherProfile, experienceYears: e.target.value ? Number(e.target.value) : undefined })}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Укажите стаж"
+                  min="0"
+                  max="50"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Стоимость часа (₽)</label>
+                <input
+                  type="number"
+                  value={teacherProfile.hourlyRate || ''}
+                  onChange={(e) => setTeacherProfile({ ...teacherProfile, hourlyRate: e.target.value ? Number(e.target.value) : undefined })}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Укажите стоимость"
+                  min="500"
+                  max="10000"
+                />
+              </div>
+            </div>
+
+            {/* Опыт */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Уровень опыта</label>
+              <select
+                value={teacherProfile.experience || 'experienced'}
+                onChange={(e) => setTeacherProfile({ ...teacherProfile, experience: e.target.value as 'beginner' | 'experienced' | 'professional' })}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="beginner">Начинающий</option>
+                <option value="experienced">Опытный</option>
+                <option value="professional">Профессионал</option>
+              </select>
+            </div>
+
+            {/* Тип преподавателя */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Тип преподавателя</label>
+              <select
+                value={teacherProfile.teacherType || 'private'}
+                onChange={(e) => setTeacherProfile({ ...teacherProfile, teacherType: e.target.value as 'private' | 'school' | 'both' })}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="private">Частный преподаватель</option>
+                <option value="school">Преподаватель школы</option>
+                <option value="both">Частный + Школа</option>
+              </select>
+            </div>
+
+            {/* Кнопки сохранения */}
+            <div className="flex gap-3 pt-4">
+              <button
+                onClick={handleSave}
+                className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <Save className="w-4 h-4 inline mr-2" />
+                Сохранить
+              </button>
+              <button
+                onClick={() => setEditMode(false)}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Отмена
+              </button>
+            </div>
           </div>
         )}
       </div>
