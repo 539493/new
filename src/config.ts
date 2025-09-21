@@ -1,16 +1,20 @@
-// Конфигурация для работы только с Render сервером
-// Всегда используем Render сервер для единой базы данных
+﻿// Конфигурация для локального сервера в режиме разработки
+// В продакшене используется Render сервер
 
-// URL сервера - всегда Render
-export const SERVER_URL = 'https://na-uchi.onrender.com';
+// URL сервера - локальный в разработке, Render в продакшене
+export const SERVER_URL = import.meta.env.DEV 
+  ? 'http://localhost:5000' 
+  : 'https://nauchi.onrender.com';
 
-// URL WebSocket - всегда Render
-export const WEBSOCKET_URL = 'https://na-uchi.onrender.com';
+// URL WebSocket - локальный в разработке, Render в продакшене
+export const WEBSOCKET_URL = import.meta.env.DEV 
+  ? 'http://localhost:5000' 
+  : 'https://nauchi.onrender.com';
 
-// URL внешнего сервиса видео чата
+// URL внешнего видео чата
 export const EXTERNAL_VIDEO_CHAT_URL = 'https://video-chat-web-lp8d.onrender.com';
 
-// Настройки Socket.IO для чата и уведомлений
+// Настройки Socket.IO для работы с сервером
 export const SOCKET_CONFIG = {
   transports: ['websocket', 'polling'],
   timeout: 10000,
@@ -19,9 +23,8 @@ export const SOCKET_CONFIG = {
   rememberUpgrade: true
 };
 
-// Окружение
+// Переменные
 export const ENV = {
   isDevelopment: import.meta.env.DEV,
   isProduction: import.meta.env.PROD,
-  
-}; 
+};

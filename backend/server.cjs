@@ -8,8 +8,12 @@ const path = require('path');
 const app = express();
 const server = http.createServer(app);
 
-// ÐÐ°ÑÑ‚Ñ€Ð¾Ð¹ÐºÐ° CORS Ð´Ð»Ñ Ð²ÑÐµÑ… Ð´Ð¾Ð¼ÐµÐ½Ð¾Ð²
+// Íàñòðîéêà CORS äëÿ âñåõ äîìåíîâ
 const allowedOrigins = [
+  "http://localhost:3000",
+  "http://localhost:3001", 
+  "http://localhost:5173",
+  "http://localhost:4173",
   "https://na-uchi.onrender.com",
   "https://nauchi.netlify.app",
   "https://*.netlify.app",
@@ -18,10 +22,10 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Ð Ð°Ð·Ñ€ÐµÑˆÐ°ÐµÐ¼ Ð·Ð°Ð¿Ñ€Ð¾ÑÑ‹ Ð±ÐµÐ· origin (Ð½Ð°Ð¿Ñ€Ð¸Ð¼ÐµÑ€, Ð¼Ð¾Ð±Ð¸Ð»ÑŒÐ½Ñ‹Ðµ Ð¿Ñ€Ð¸Ð»Ð¾Ð¶ÐµÐ½Ð¸Ñ)
+    // Ðàçðåøàåì çàïðîñû áåç origin (íàïðèìåð, ìîáèëüíûå ïðèëîæåíèÿ)
     if (!origin) return callback(null, true);
     
-    // ÐŸÑ€Ð¾Ð²ÐµÑ€ÑÐµÐ¼, ÑÐ¾Ð¾Ñ‚Ð²ÐµÑ‚ÑÑ‚Ð²ÑƒÐµÑ‚ Ð»Ð¸ origin Ñ€Ð°Ð·Ñ€ÐµÑˆÐµÐ½Ð½Ñ‹Ð¼ Ð´Ð¾Ð¼ÐµÐ½Ð°Ð¼
+    // Ïðîâåðÿåì, ñîîòâåòñòâóåò ëè origin ðàçðåøåííûì äîìåíàì
     const isAllowed = allowedOrigins.some(allowedOrigin => {
       if (allowedOrigin.includes('*')) {
         const pattern = allowedOrigin.replace('*', '.*');
@@ -33,6 +37,7 @@ app.use(cors({
     if (isAllowed) {
       callback(null, true);
     } else {
+      console.log('CORS blocked origin:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -40,13 +45,13 @@ app.use(cors({
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
 }));
 
-// Middleware Ð´Ð»Ñ Ð¿Ð°Ñ€ÑÐ¸Ð½Ð³Ð° JSON
+// Middleware äëÿ ïàðñèíãà JSON
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ÐŸÑ€Ð¾ÑÑ‚Ð¾Ð¹ Ñ‚ÐµÑÑ‚Ð¾Ð²Ñ‹Ð¹ API Ð¼Ð°Ñ€ÑˆÑ€ÑƒÑ‚
+// Ïðîñòîé òåñòîâûé API ìàðøðóò
 app.get('/api/test', (req, res) => {
-  res.json({ message: 'API Ñ€Ð°Ð±Ð¾Ñ‚Ð°ÐµÑ‚!', timestamp: new Date().toISOString() });
+  res.json({ message: 'API ðàáîòàåò!', timestamp: new Date().toISOString() });
 });
 
 // API Ð¼Ð°Ñ€ÑˆÑ€ÑƒÑ‚Ñ‹ - Ð´Ð¾Ð»Ð¶Ð½Ñ‹ Ð±Ñ‹Ñ‚ÑŒ ÐŸÐ•Ð Ð•Ð” ÑÑ‚Ð°Ñ‚Ð¸Ñ‡ÐµÑÐºÐ¸Ð¼Ð¸ Ñ„Ð°Ð¹Ð»Ð°Ð¼Ð¸
@@ -1821,7 +1826,7 @@ app.get('*', (req, res) => {
 });
 
 // Ð—Ð°Ð¿ÑƒÑÐº ÑÐµÑ€Ð²ÐµÑ€Ð°
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 5000;
 const HOST = process.env.HOST || '0.0.0.0';
 
   server.listen(PORT, HOST, () => {
