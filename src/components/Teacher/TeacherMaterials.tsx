@@ -18,6 +18,7 @@ const TeacherMaterials: React.FC = () => {
   const [link, setLink] = useState('');
   const [files, setFiles] = useState<File[]>([]);
   const [preview, setPreview] = useState<MaterialItem | null>(null);
+  const [query, setQuery] = useState('');
 
   const storageKey = user ? `teacher_materials_${user.id}` : undefined;
 
@@ -89,6 +90,10 @@ const TeacherMaterials: React.FC = () => {
     setMaterials((prev) => prev.filter((m) => m.id !== id));
   };
 
+  const renameMaterial = (id: string, newTitle: string) => {
+    setMaterials((prev) => prev.map((m) => (m.id === id ? { ...m, title: newTitle.trim() || m.title } : m)));
+  };
+
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-6">
@@ -125,16 +130,34 @@ const TeacherMaterials: React.FC = () => {
             Выбрано файлов: {files.length}
           </div>
         )}
+        <div className="mt-4">
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Поиск по названию или ссылке"
+            className="input-modern w-full"
+          />
+        </div>
       </div>
 
       <div className="space-y-3">
         {materials.length === 0 ? (
           <div className="text-gray-500 text-center py-12 bg-white rounded-2xl shadow">Пока нет материалов</div>
         ) : (
-          materials.map((m) => (
+          materials
+            .filter((m) => {
+              const q = query.trim().toLowerCase();
+              if (!q) return true;
+              return (
+                m.title.toLowerCase().includes(q) ||
+                (m.url ? m.url.toLowerCase().includes(q) : false) ||
+                (m.fileName ? m.fileName.toLowerCase().includes(q) : false)
+              );
+            })
+            .map((m) => (
             <div key={m.id} className="bg-white rounded-xl shadow p-4 flex items-center justify-between">
               <div className="min-w-0">
-                <div className="font-semibold text-gray-900 truncate max-w-md" title={m.title}>{m.title}</div>
+                <InlineTitle title={m.title} onSave={(val) => renameMaterial(m.id, val)} />
                 {m.url && (
                   <a href={m.url} target="_blank" rel="noreferrer" className="text-blue-600 text-sm break-all">
                     {m.url}
@@ -207,6 +230,33 @@ const TeacherMaterials: React.FC = () => {
           </div>
         </div>
       )}
+    </div>
+  );
+};
+
+// Небольшой компонент для инлайн-редактирования названия
+const InlineTitle: React.FC<{ title: string; onSave: (v: string) => void }> = ({ title, onSave }) => {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(title);
+  useEffect(() => setValue(title), [title]);
+  if (!editing) {
+    return (
+      <div className="font-semibold text-gray-900 truncate max-w-md" title={title} onDoubleClick={() => setEditing(true)}>
+        {title}
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-center gap-2">
+      <input
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={(e) => { if (e.key === 'Enter') { onSave(value); setEditing(false); } }}
+        className="input-modern"
+        autoFocus
+      />
+      <button className="btn-primary" onClick={() => { onSave(value); setEditing(false); }}>OK</button>
+      <button className="btn-secondary" onClick={() => { setValue(title); setEditing(false); }}>Отмена</button>
     </div>
   );
 };
