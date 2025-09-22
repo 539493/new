@@ -79,6 +79,34 @@ const loadUserFromStorage = (): User | null => {
   }
 };
 
+// Утилита для очистки кэшей профилей и связанных данных на устройстве
+const clearLocalProfileCaches = () => {
+  try {
+    const keysToClear = [
+      'tutoring_teacherProfiles',
+      'tutoring_studentProfiles',
+      'tutoring_timeSlots',
+      'tutoring_lessons',
+      'tutoring_chats',
+      'tutoring_posts',
+      'tutoring_notifications'
+    ];
+
+    keysToClear.forEach((key) => {
+      localStorage.removeItem(key);
+      // Сообщаем DataContext в этой же вкладке
+      window.dispatchEvent(new CustomEvent('customStorage', {
+        detail: {
+          key,
+          newValue: null,
+          oldValue: null
+        }
+      }));
+    });
+  } catch (e) {
+  }
+};
+
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(() => {
     try {
@@ -160,6 +188,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     phone: string
   ): Promise<boolean> => {
     try {
+      // На всякий случай очищаем локальные кэши профилей перед новой сессией
+      clearLocalProfileCaches();
       
       // Сначала регистрируем на сервере
       const response = await fetch(`${SERVER_URL}/api/register`, {
@@ -415,6 +445,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = () => {
     setUser(null);
     localStorage.removeItem('tutoring_currentUser');
+    // Очищаем локальные кэши профилей и связанные данные, чтобы исключить "прилипание" старого профиля
+    clearLocalProfileCaches();
   };
 
   const updateProfile = (profile: StudentProfile | TeacherProfile) => {
@@ -470,6 +502,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Очищаем localStorage
     localStorage.removeItem('tutoring_users');
     localStorage.removeItem('tutoring_currentUser');
+    // Также чистим профили и связанные данные
+    clearLocalProfileCaches();
   };
 
   const deleteAccount = async (): Promise<boolean> => {
@@ -568,7 +602,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         localStorage.setItem('tutoring_notifications', JSON.stringify(updatedNotifications));
       }
 
-      // Выходим из аккаунта
+      // Выходим из аккаунта и дополнительно чистим локальные кэши
       logout();
 
       alert('Аккаунт успешно удален');
