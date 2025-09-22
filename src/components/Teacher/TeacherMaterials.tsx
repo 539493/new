@@ -195,7 +195,7 @@ const TeacherMaterials: React.FC = () => {
               {preview.dataUrl && preview.fileType?.startsWith('text/') && (
                 <iframe title="text" src={preview.dataUrl} className="w-full h-full bg-white" />
               )}
-              {preview.dataUrl && !(/^(image\\/|application\/pdf|text\/)\/.*/.test(preview.fileType || '')) && (
+              {preview.dataUrl && !(/^(image\/|application\/pdf|text\/).*/.test(preview.fileType || '')) && (
                 <div className="p-6 text-center text-gray-600">
                   Онлайн-просмотр для этого формата не поддерживается. Скачайте файл для просмотра.
                 </div>
