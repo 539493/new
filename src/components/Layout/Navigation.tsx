@@ -1,4 +1,5 @@
 import React from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Home, Calendar, MessageCircle, User, LogOut, BarChart3 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -9,6 +10,27 @@ interface NavigationProps {
 
 const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange }) => {
   const { user, logout } = useAuth();
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const profileBtnRef = useRef<HTMLButtonElement | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  // Закрытие меню при клике вне его
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (
+        showProfileMenu &&
+        menuRef.current &&
+        !menuRef.current.contains(target) &&
+        profileBtnRef.current &&
+        !profileBtnRef.current.contains(target)
+      ) {
+        setShowProfileMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showProfileMenu]);
 
   const studentTabs = [
     { id: 'home', label: 'Главная', icon: Home },
@@ -39,13 +61,21 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange }) => {
               <span className="ml-3 text-2xl font-bold" style={{ color: '#175b8c', fontFamily: 'Inter, sans-serif' }}>uchi</span>
             </div>
 
-            <div className="hidden md:flex space-x-8">
+            <div className="hidden md:flex space-x-8 relative">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
+                const isTeacherProfileButton = user?.role === 'teacher' && tab.id === 'profile';
                 return (
                   <button
                     key={tab.id}
-                    onClick={() => onTabChange(tab.id)}
+                    ref={isTeacherProfileButton ? profileBtnRef : null}
+                    onClick={() => {
+                      if (isTeacherProfileButton) {
+                        setShowProfileMenu((v) => !v);
+                        return;
+                      }
+                      onTabChange(tab.id);
+                    }}
                     className={`flex items-center gap-2 px-5 py-3 rounded-xl text-base font-semibold transition-all duration-200 shadow-none ${
                       activeTab === tab.id
                         ? 'bg-primary-light/10 text-primary-light dark:bg-primary-dark/20 dark:text-primary-dark shadow-md'
@@ -57,6 +87,43 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange }) => {
                   </button>
                 );
               })}
+              {/* Выпадающее меню профиля преподавателя */
+              {user?.role === 'teacher' && showProfileMenu && (
+                <div
+                  ref={menuRef}
+                  className="absolute top-14 right-0 w-64 bg-white dark:bg-card-dark border border-border-light dark:border-border-dark rounded-xl shadow-2xl py-2 z-50"
+                >
+                  <div className="px-4 py-2 text-xs uppercase tracking-wide text-gray-400">Профиль</div>
+                  <button
+                    onClick={() => { setShowProfileMenu(false); onTabChange('profile'); }}
+                    className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-border-dark transition-colors flex items-center gap-2"
+                  >
+                    <span className="inline-block h-2 w-2 rounded-full bg-blue-500"></span>
+                    <span>Просмотреть профиль</span>
+                  </button>
+                  <button
+                    onClick={() => { setShowProfileMenu(false); onTabChange('slots'); }}
+                    className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-border-dark transition-colors flex items-center gap-2"
+                  >
+                    <span className="inline-block h-2 w-2 rounded-full bg-green-500"></span>
+                    <span>Слоты</span>
+                  </button>
+                  <button
+                    onClick={() => { setShowProfileMenu(false); onTabChange('calendar'); }}
+                    className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-border-dark transition-colors flex items-center gap-2"
+                  >
+                    <span className="inline-block h-2 w-2 rounded-full bg-purple-500"></span>
+                    <span>Календарь</span>
+                  </button>
+                  <button
+                    onClick={() => { setShowProfileMenu(false); onTabChange('students'); }}
+                    className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-border-dark transition-colors flex items-center gap-2"
+                  >
+                    <span className="inline-block h-2 w-2 rounded-full bg-amber-500"></span>
+                    <span>Ученики</span>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
@@ -94,7 +161,14 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange }) => {
               return (
                 <button
                   key={tab.id}
-                  onClick={() => onTabChange(tab.id)}
+                  onClick={() => {
+                    if (user?.role === 'teacher' && tab.id === 'profile') {
+                      // На мобильных просто переключаемся на профиль
+                      onTabChange('profile');
+                      return;
+                    }
+                    onTabChange(tab.id);
+                  }}
                   className={`flex-shrink-0 flex flex-col items-center gap-1 px-4 py-3 rounded-xl text-xs font-semibold transition-all duration-200 ${
                     activeTab === tab.id
                       ? 'bg-primary-light/10 text-primary-light dark:bg-primary-dark/20 dark:text-primary-dark shadow-md'
