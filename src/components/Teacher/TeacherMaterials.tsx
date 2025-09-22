@@ -17,6 +17,7 @@ const TeacherMaterials: React.FC = () => {
   const [title, setTitle] = useState('');
   const [link, setLink] = useState('');
   const [files, setFiles] = useState<File[]>([]);
+  const [preview, setPreview] = useState<MaterialItem | null>(null);
 
   const storageKey = user ? `teacher_materials_${user.id}` : undefined;
 
@@ -146,6 +147,20 @@ const TeacherMaterials: React.FC = () => {
                 )}
               </div>
               <div className="flex items-center gap-3">
+                {(m.dataUrl || m.url) && (
+                  <button
+                    onClick={() => {
+                      if (m.dataUrl) {
+                        setPreview(m);
+                      } else if (m.url) {
+                        window.open(m.url, '_blank');
+                      }
+                    }}
+                    className="text-blue-600 hover:text-blue-700"
+                  >
+                    Открыть
+                  </button>
+                )}
                 {m.dataUrl && (
                   <a
                     href={m.dataUrl}
@@ -161,6 +176,37 @@ const TeacherMaterials: React.FC = () => {
           ))
         )}
       </div>
+
+      {/* Preview modal */}
+      {preview && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setPreview(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full h-[80vh] overflow-hidden relative" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-3 border-b">
+              <div className="font-semibold truncate pr-4">{preview.title}</div>
+              <button className="text-gray-500 hover:text-gray-700" onClick={() => setPreview(null)}>Закрыть</button>
+            </div>
+            <div className="w-full h-[calc(80vh-52px)] bg-gray-50 flex items-center justify-center">
+              {preview.dataUrl && preview.fileType?.startsWith('image/') && (
+                <img src={preview.dataUrl} alt={preview.title} className="max-h-full max-w-full object-contain" />
+              )}
+              {preview.dataUrl && preview.fileType === 'application/pdf' && (
+                <iframe title="pdf" src={preview.dataUrl} className="w-full h-full" />
+              )}
+              {preview.dataUrl && preview.fileType?.startsWith('text/') && (
+                <iframe title="text" src={preview.dataUrl} className="w-full h-full bg-white" />
+              )}
+              {preview.dataUrl && !(/^(image\\/|application\/pdf|text\/)\/.*/.test(preview.fileType || '')) && (
+                <div className="p-6 text-center text-gray-600">
+                  Онлайн-просмотр для этого формата не поддерживается. Скачайте файл для просмотра.
+                </div>
+              )}
+              {preview.url && !preview.dataUrl && (
+                <iframe title="url" src={preview.url} className="w-full h-full bg-white" />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
