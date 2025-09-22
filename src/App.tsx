@@ -9,6 +9,7 @@ import TeacherHome from './components/Teacher/TeacherHome';
 import TeacherSlots from './components/Teacher/TeacherSlots';
 import TeacherStudents from './components/Teacher/TeacherStudents';
 import TeacherCalendar from './components/Teacher/TeacherCalendar';
+import TeacherMaterials from './components/Teacher/TeacherMaterials';
 import StudentLessons from './components/Student/StudentLessons';
 import StudentCalendar from './components/Student/StudentCalendar';
 import TeacherProfilePage from './components/Student/TeacherProfilePage';
@@ -74,6 +75,8 @@ const AppContent: React.FC = () => {
             return user.role === 'student' ? <StudentLessons setActiveTab={setActiveTab} /> : null;
           case 'students':
             return user.role === 'teacher' ? <TeacherStudents /> : null;
+          case 'materials':
+            return user.role === 'teacher' ? <TeacherMaterials /> : null;
           case 'chats':
             return <ChatList />;
           case 'profile':

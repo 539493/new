@@ -122,6 +122,13 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange }) => {
                     <span className="inline-block h-2 w-2 rounded-full bg-amber-500"></span>
                     <span>Ученики</span>
                   </button>
+                  <button
+                    onClick={() => { setShowProfileMenu(false); onTabChange('materials'); }}
+                    className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-border-dark transition-colors flex items-center gap-2"
+                  >
+                    <span className="inline-block h-2 w-2 rounded-full bg-pink-500"></span>
+                    <span>Материалы</span>
+                  </button>
                 </div>
               )}
             </div>
