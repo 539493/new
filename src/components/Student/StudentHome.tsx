@@ -21,7 +21,7 @@ interface StudentHomeProps {
 }
 
 const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
-  const { bookLesson, timeSlots, allUsers, refreshUsers, refreshAllData, forceSyncData, sendMessageToUser, teacherProfiles, loadRegisteredTeachers } = useData();
+  const { bookLesson, timeSlots, allUsers, refreshUsers, refreshAllData, forceSyncData, sendMessageToUser, teacherProfiles, loadRegisteredTeachers, setAllUsers } = useData();
   
   // Функция для принудительного обновления данных
   const handleRefreshData = () => {
@@ -97,7 +97,7 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
       console.log('🔄 Загружаем всех преподавателей...');
       console.log('🌐 SERVER_URL:', SERVER_URL);
       
-      // Принудительно синхронизируем данные с сервером
+      // Принудительно синхронизируем данные с сервера
       console.log('🔄 Синхронизируем данные с сервера...');
       await forceSyncData();
       
@@ -121,7 +121,12 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
           // Обновляем состояние серверных преподавателей
           setServerTeachers(teachers);
           
-          // Обновляем allUsers в контексте
+          // Обновляем allUsers в контексте, чтобы гарантировать отображение
+          if (Array.isArray(usersData)) {
+            setAllUsers(usersData);
+          }
+          
+          // Обновляем allUsers в контексте (поддерживающий вызов)
           refreshUsers();
           
           // Принудительно обновляем данные в контексте
@@ -157,6 +162,14 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
             console.log('✅ Объединенные преподаватели:', unique.length, unique);
             return unique;
           });
+          
+          // Также прокидываем их в allUsers (не повредит, данные объединятся через уникальные id)
+          try {
+            const users = Array.isArray(allUsers) ? allUsers : [];
+            const merged = [...users, ...teachersData];
+            const uniqueUsers = merged.filter((u, index, self) => index === self.findIndex(x => x.id === u.id));
+            setAllUsers(uniqueUsers);
+          } catch {}
         } else {
           console.warn('⚠️ Сервер вернул не-JSON ответ для преподавателей');
         }
@@ -709,11 +722,11 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
         // Обновляем данные в контексте
         if (freshTeacherData) {
           // Обновляем пользователя в localStorage
-          const existingUsers = JSON.parse(localStorage.getItem('allUsers') || '[]');
+          const existingUsers = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
           const updatedUsers = existingUsers.map((user: any) => 
             user.id === freshTeacherData.id ? freshTeacherData : user
           );
-          localStorage.setItem('allUsers', JSON.stringify(updatedUsers));
+          localStorage.setItem('tutoring_users', JSON.stringify(updatedUsers));
           
           // Используем свежие данные
           const teacherUser = {
@@ -1403,7 +1416,7 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
                     </select>
                   </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md-grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Дата занятия</label>
                     <input
