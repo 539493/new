@@ -87,7 +87,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange }) => {
                   </button>
                 );
               })}
-              {/* Выпадающее меню профиля преподавателя */
+              {/* Выпадающее меню профиля преподавателя */}
               {user?.role === 'teacher' && showProfileMenu && (
                 <div
                   ref={menuRef}
