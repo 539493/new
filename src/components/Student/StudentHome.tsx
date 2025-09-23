@@ -7,8 +7,7 @@ import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { FilterOptions, TimeSlot, User } from '../../types';
-import { io, Socket } from 'socket.io-client';
-import { SERVER_URL, WEBSOCKET_URL } from '../../config';
+import { SERVER_URL } from '../../config';
 import TeacherProfilePage from './TeacherProfilePage';
 import TeacherProfileModal from './TeacherProfileModal';
 import StudentCalendar from './StudentCalendar';
@@ -21,7 +20,7 @@ interface StudentHomeProps {
 }
 
 const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
-  const { bookLesson, timeSlots, allUsers, refreshUsers, refreshAllData, forceSyncData, sendMessageToUser, teacherProfiles, loadRegisteredTeachers, setAllUsers } = useData();
+  const { bookLesson, timeSlots, allUsers, refreshUsers, refreshAllData, forceSyncData, sendMessageToUser, teacherProfiles, loadRegisteredTeachers, setAllUsers, socketRef } = useData();
   
   // Функция для принудительного обновления данных
   const handleRefreshData = () => {
@@ -36,8 +35,10 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
     
     // Устанавливаем периодическую загрузку каждые 10 секунд для гарантии видимости
     const interval = setInterval(() => {
-      console.log('⏰ StudentHome: Периодическая загрузка зарегистрированных преподавателей...');
-      loadRegisteredTeachers();
+      if (document.visibilityState === 'visible') {
+        console.log('⏰ StudentHome: Периодическая загрузка зарегистрированных преподавателей...');
+        loadRegisteredTeachers();
+      }
     }, 10000); // 10 секунд - более частое обновление
     
     return () => clearInterval(interval);
@@ -194,8 +195,10 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
     
     // Периодически обновляем список преподавателей, чтобы они всегда отображались
     const interval = setInterval(() => {
-      console.log('🔄 Периодическое обновление списка преподавателей (каждые 30 сек)...');
-      loadTeachers();
+      if (document.visibilityState === 'visible') {
+        console.log('🔄 Периодическое обновление списка преподавателей (каждые 30 сек)...');
+        loadTeachers();
+      }
     }, 30000); // Обновляем каждые 30 секунд
     
     return () => clearInterval(interval);
@@ -246,39 +249,7 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
   }, [teacherProfiles, loadRegisteredTeachers]);
 
 
-  const socket = React.useRef<Socket | null>(null);
-  React.useEffect(() => {
-    if (!socket.current) {
-      socket.current = io(WEBSOCKET_URL);
-      
-      // Слушаем создание новых слотов
-      socket.current.on('slotCreated', () => {
-        // Обновляем доступные слоты при получении нового слота
-        setTimeout(() => {
-          loadAvailableSlots();
-        }, 100);
-      });
-      
-      // Слушаем регистрацию новых пользователей
-      socket.current.on('userRegistered', () => {
-        // Обновляем данные при регистрации нового пользователя
-        setTimeout(() => {
-          refreshAllData();
-          loadAvailableSlots();
-        }, 100);
-      });
-      
-      // Слушаем обновление профиля пользователя
-      socket.current.on('profileUpdated', (updatedUser: any) => {
-        console.log('Profile updated via WebSocket:', updatedUser);
-        // Обновляем данные при изменении профиля
-        setTimeout(() => {
-          refreshAllData();
-          loadAvailableSlots();
-        }, 100);
-      });
-    }
-  }, []);
+  // Используем общий socket из контекста, без локального второго соединения
 
   // Функция для загрузки всех доступных слотов
   const loadAvailableSlots = () => {
@@ -407,13 +378,13 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
 
   const handleOverbooking = () => {
     setShowOverbookingModal(false);
-    if (socket.current) {
+    if (socketRef?.current) {
       const requestData = {
         studentId: user?.id,
         studentName: user?.name,
         ...overbookingData,
       };
-      (socket.current as Socket).emit('overbookingRequest', requestData);
+      socketRef.current.emit('overbookingRequest', requestData);
     } else {
     }
     alert('Заявка на овербукинг отправлена! Мы подберем лучшего преподавателя за 5 часов до занятия.');

@@ -914,12 +914,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       });
     });
 
-      // Слушаем получение всех слотов
-      newSocket.on('allSlots', (allSlots: TimeSlot[]) => {
-        console.log('Received all slots from server:', allSlots.length);
-        setTimeSlots(allSlots);
-        saveToStorage('tutoring_timeSlots', allSlots);
-      });
+    // (dedup) Слушатель allSlots уже зарегистрирован выше
 
       // Слушаем получение всех уроков
       newSocket.on('allLessons', (allLessons: Lesson[]) => {
@@ -1119,35 +1114,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         setAllUsers(updatedUsers);
       });
 
-      newSocket.on('studentProfiles', (profiles: Record<string, StudentProfile>) => {
-        // Обновляем состояние studentProfiles
-        setStudentProfiles(profiles);
-        saveToStorage('tutoring_studentProfiles', profiles);
-        
-        // Обновляем список всех пользователей с профилями студентов
-        const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
-        const updatedUsers = [...users];
-        
-        Object.entries(profiles).forEach(([studentId, profile]) => {
-          const existingUserIndex = updatedUsers.findIndex((u: User) => u.id === studentId);
-          if (existingUserIndex >= 0) {
-            updatedUsers[existingUserIndex] = { ...updatedUsers[existingUserIndex], profile };
-          } else {
-            updatedUsers.push({
-              id: studentId,
-              email: profile.email || '',
-              name: profile.name || '',
-              nickname: profile.nickname || '',
-              role: 'student',
-              phone: profile.phone || '',
-              profile
-            });
-          }
-        });
-        
-        localStorage.setItem('tutoring_users', JSON.stringify(updatedUsers));
-        setAllUsers(updatedUsers);
-    });
+      // (dedup) Повторный обработчик studentProfiles удалён
     newSocket.on('studentProfileUpdated', (data: { studentId: string; profile: StudentProfile }) => {
       setStudentProfiles(prev => ({ ...prev, [data.studentId]: data.profile }));
     });
@@ -1328,14 +1295,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         saveToStorage('tutoring_notifications', userNotifications);
       });
 
-      // Новое уведомление
-      newSocket.on('newNotification', (notification: Notification) => {
-        setNotifications(prev => {
-          const updated = [notification, ...prev];
-          saveToStorage('tutoring_notifications', updated);
-          return updated;
-        });
-      });
+      // (dedup) Повторный обработчик newNotification удалён (он уже зарегистрирован выше)
 
       // Уведомление отмечено как прочитанное
       newSocket.on('notificationMarkedAsRead', (data: { notificationId: string }) => {
@@ -1364,7 +1324,12 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       });
 
     return () => {
-      newSocket.close();
+      try {
+        newSocket.removeAllListeners();
+      } catch {}
+      try {
+        newSocket.disconnect();
+      } catch {}
       socketRef.current = null;
     };
     };
