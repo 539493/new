@@ -993,6 +993,13 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           }
           return prev;
         });
+        // Гарантируем мгновенное отображение нового репетитора у учеников
+        try {
+          loadRegisteredTeachers();
+          if (socketRef.current && isConnected) {
+            socketRef.current.emit('requestAllUsers');
+          }
+        } catch {}
       });
 
       // Слушаем удаление пользователей
@@ -1195,6 +1202,11 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           
           localStorage.setItem('tutoring_users', JSON.stringify(users));
           setAllUsers(users);
+          // Обновляем зарегистрированных репетиторов и запрашиваем актуальный список
+          loadRegisteredTeachers();
+          if (socketRef.current && isConnected) {
+            socketRef.current.emit('requestAllUsers');
+          }
         } catch (e) {
         }
       });
