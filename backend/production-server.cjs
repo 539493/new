@@ -265,6 +265,189 @@ app.get('/api/lessons', (req, res) => {
   res.json(serverData.lessons);
 });
 
+// --- Доп. endpoints для совместимости с фронтендом ---
+
+// Синхронизация всех основных данных
+app.get('/api/sync', (req, res) => {
+  try {
+    res.json({
+      timeSlots: serverData.timeSlots,
+      teacherProfiles: serverData.teacherProfiles,
+      studentProfiles: serverData.studentProfiles,
+      lessons: serverData.lessons,
+      chats: serverData.chats || [],
+      posts: serverData.posts || [],
+      overbookingRequests: serverData.overbookingRequests || []
+    });
+  } catch (error) {
+    console.error('Error in /api/sync:', error);
+    res.status(500).json({ error: 'Failed to sync data' });
+  }
+});
+
+// Регистрация пользователя (ученик/преподаватель)
+app.post('/api/register', async (req, res) => {
+  try {
+    const { email, name, nickname, role, phone } = req.body || {};
+    if (!email || !name || !nickname || !role || !phone) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // Проверяем уникальность email и nickname
+    const allUsers = [
+      ...Object.entries(serverData.teacherProfiles).map(([id, profile]) => ({ id, email: profile.email, nickname: profile.nickname })),
+      ...Object.entries(serverData.studentProfiles).map(([id, profile]) => ({ id, email: profile.email, nickname: profile.nickname }))
+    ];
+    if (allUsers.some(u => u.email === email)) {
+      return res.status(400).json({ error: 'User with this email already exists' });
+    }
+    if (allUsers.some(u => u.nickname === nickname)) {
+      return res.status(400).json({ error: 'User with this nickname already exists' });
+    }
+
+    const id = Date.now().toString();
+    const baseUser = { id, email, name, nickname, role, phone, createdAt: new Date().toISOString() };
+
+    if (role === 'teacher') {
+      serverData.teacherProfiles[id] = {
+        ...baseUser,
+        subjects: [],
+        grades: [],
+        experience: 'experienced',
+        hourlyRate: 1500,
+        country: '',
+        city: '',
+        bio: '',
+        avatar: '',
+        rating: 0,
+        lessonsCount: 0,
+        studentsCount: 0,
+        offlineAvailable: false,
+        overbookingEnabled: true
+      };
+    } else {
+      serverData.studentProfiles[id] = {
+        ...baseUser,
+        grade: '',
+        subjects: [],
+        goals: [],
+        experience: 'beginner',
+        city: '',
+        school: '',
+        bio: '',
+        avatar: ''
+      };
+    }
+
+    await saveServerData();
+
+    // Сообщаем через WebSocket
+    io.emit('userRegistered', baseUser);
+
+    res.status(201).json(baseUser);
+  } catch (error) {
+    console.error('Error registering user:', error);
+    res.status(500).json({ error: 'Failed to register user' });
+  }
+});
+
+// Обновление профиля пользователя (универсально)
+app.post('/api/updateProfile', async (req, res) => {
+  try {
+    const { userId, profileData, role } = req.body || {};
+    if (!userId || !profileData || !role) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    if (role === 'teacher') {
+      if (!serverData.teacherProfiles[userId]) return res.status(404).json({ error: 'Teacher profile not found' });
+      serverData.teacherProfiles[userId] = { ...serverData.teacherProfiles[userId], ...profileData };
+    } else if (role === 'student') {
+      if (!serverData.studentProfiles[userId]) return res.status(404).json({ error: 'Student profile not found' });
+      serverData.studentProfiles[userId] = { ...serverData.studentProfiles[userId], ...profileData };
+    } else {
+      return res.status(400).json({ error: 'Invalid role' });
+    }
+
+    await saveServerData();
+    io.emit('profileUpdated', { id: userId, role, profile: role === 'teacher' ? serverData.teacherProfiles[userId] : serverData.studentProfiles[userId] });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    res.status(500).json({ error: 'Failed to update profile' });
+  }
+});
+
+// Список пользователей (для отображения зарегистрированных преподавателей)
+app.get('/api/users', (req, res) => {
+  try {
+    const users = [];
+    Object.entries(serverData.teacherProfiles).forEach(([id, profile]) => {
+      users.push({ id, email: profile.email || '', name: profile.name || '', nickname: profile.nickname || '', role: 'teacher', phone: profile.phone || '', profile });
+    });
+    Object.entries(serverData.studentProfiles).forEach(([id, profile]) => {
+      users.push({ id, email: profile.email || '', name: profile.name || '', nickname: profile.nickname || '', role: 'student', phone: profile.phone || '', profile });
+    });
+    res.json(users);
+  } catch (error) {
+    console.error('Error getting users:', error);
+    res.status(500).json({ error: 'Failed to get users' });
+  }
+});
+
+// Один пользователь по ID
+app.get('/api/users/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    if (serverData.teacherProfiles[id]) {
+      const p = serverData.teacherProfiles[id];
+      return res.json({ id, email: p.email || '', name: p.name || '', nickname: p.nickname || '', role: 'teacher', phone: p.phone || '', profile: p });
+    }
+    if (serverData.studentProfiles[id]) {
+      const p = serverData.studentProfiles[id];
+      return res.json({ id, email: p.email || '', name: p.name || '', nickname: p.nickname || '', role: 'student', phone: p.phone || '', profile: p });
+    }
+    res.status(404).json({ error: 'User not found' });
+  } catch (error) {
+    console.error('Error getting user:', error);
+    res.status(500).json({ error: 'Failed to get user' });
+  }
+});
+
+// Удаление пользователя (совместимо с вызовом фронта)
+app.delete('/api/delete-user', async (req, res) => {
+  try {
+    const { userId, role } = req.body || {};
+    if (!userId || !role) return res.status(400).json({ error: 'Missing required fields' });
+
+    let deleted = null;
+    if (role === 'teacher' && serverData.teacherProfiles[userId]) {
+      deleted = { id: userId, ...serverData.teacherProfiles[userId] };
+      delete serverData.teacherProfiles[userId];
+    } else if (role === 'student' && serverData.studentProfiles[userId]) {
+      deleted = { id: userId, ...serverData.studentProfiles[userId] };
+      delete serverData.studentProfiles[userId];
+    } else {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Чистим связанные сущности по пользователю
+    serverData.timeSlots = serverData.timeSlots.filter(ts => ts.teacherId !== userId);
+    serverData.lessons = serverData.lessons.filter(l => l.teacherId !== userId && l.studentId !== userId);
+    serverData.chats = (serverData.chats || []).filter(c => !c.participants || !c.participants.includes(userId));
+    serverData.posts = (serverData.posts || []).filter(p => p.userId !== userId);
+    serverData.notifications = (serverData.notifications || []).filter(n => n.userId !== userId);
+
+    await saveServerData();
+    io.emit('userDeleted', { userId, userRole: role });
+    res.json({ success: true, deletedUser: deleted });
+  } catch (error) {
+    console.error('Error delete-user:', error);
+    res.status(500).json({ error: 'Failed to delete user' });
+  }
+});
+
 // Получение преподавателя по ID
 app.get('/api/teachers/:id', (req, res) => {
   const { id } = req.params;
