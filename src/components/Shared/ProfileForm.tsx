@@ -264,6 +264,11 @@ const ProfileForm: React.FC = () => {
 
   const handleProfileSave = (updatedProfile: StudentProfile) => {
     setStudentProfile(updatedProfile);
+    // Сохраняем в локального пользователя и на сервере, как при обычном сохранении
+    if (user) {
+      updateProfile(updatedProfile);
+      updateStudentProfile(user.id, updatedProfile);
+    }
     setShowEditModal(false);
   };
 
@@ -317,12 +322,6 @@ const ProfileForm: React.FC = () => {
         <div className="flex items-center gap-2 ml-4">
           {user.role === 'student' ? (
             <>
-              <button
-                className="btn-primary text-sm px-3 py-2"
-                onClick={() => setShowProfileModal(true)}
-              >
-                Просмотр профиля
-              </button>
               <button
                 className="btn-primary text-sm px-3 py-2"
                 onClick={() => setShowEditModal(true)}
