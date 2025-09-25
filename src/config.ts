@@ -4,12 +4,12 @@
 // URL сервера - локальный в разработке, Render в продакшене
 export const SERVER_URL = import.meta.env.DEV 
   ? 'http://localhost:5000' 
-  : 'https://nauchi.onrender.com';
+  : 'https://na-uchi.onrender.com';
 
 // URL WebSocket - локальный в разработке, Render в продакшене
 export const WEBSOCKET_URL = import.meta.env.DEV 
   ? 'http://localhost:5000' 
-  : 'https://nauchi.onrender.com';
+  : 'https://na-uchi.onrender.com';
 
 // URL внешнего видео чата
 export const EXTERNAL_VIDEO_CHAT_URL = 'https://video-chat-web-lp8d.onrender.com';

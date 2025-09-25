@@ -22,6 +22,7 @@ const log = (message, ...args) => {
 
 // Настройка CORS - упрощенная версия
 const allowedOrigins = [
+  "https://na-uchi.onrender.com",
   "https://nauchi.onrender.com",
   "https://nauchi.netlify.app",
   "https://*.netlify.app"
