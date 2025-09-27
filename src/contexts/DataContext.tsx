@@ -174,11 +174,24 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
       console.log('🔄 Загружаем пользователей из localStorage при инициализации:', users.length);
       
-      // Фильтруем и логируем зарегистрированных преподавателей
-      const teachers = users.filter((u: any) => u.role === 'teacher');
-      console.log('👨‍🏫 Зарегистрированных преподавателей в localStorage:', teachers.length, teachers.map((t: any) => ({ id: t.id, name: t.name })));
+      // Загружаем зарегистрированных преподавателей из отдельного ключа
+      const registeredTeachers = JSON.parse(localStorage.getItem('tutoring_registeredTeachers') || '[]');
+      console.log('👨‍🏫 Зарегистрированных преподавателей (постоянно сохраненных):', registeredTeachers.length);
       
-      return users;
+      // Объединяем обычных пользователей с зарегистрированными преподавателями
+      const allUsersCombined = [...users];
+      registeredTeachers.forEach((teacher: any) => {
+        const exists = allUsersCombined.find((u: any) => u.id === teacher.id);
+        if (!exists) {
+          allUsersCombined.push(teacher);
+        }
+      });
+      
+      // Фильтруем и логируем зарегистрированных преподавателей
+      const teachers = allUsersCombined.filter((u: any) => u.role === 'teacher');
+      console.log('👨‍🏫 Зарегистрированных преподавателей (включая постоянно сохраненных):', teachers.length, teachers.map((t: any) => ({ id: t.id, name: t.name })));
+      
+      return allUsersCombined;
     } catch (error) {
       console.error('❌ Ошибка загрузки пользователей из localStorage:', error);
       return [];
@@ -306,11 +319,24 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
       console.log('👥 Загружено пользователей из localStorage:', users.length);
       
-      // Фильтруем только преподавателей для логирования
-      const teachers = users.filter((u: any) => u.role === 'teacher');
-      console.log('👨‍🏫 Зарегистрированных преподавателей:', teachers.length, teachers.map((t: any) => ({ id: t.id, name: t.name })));
+      // Загружаем зарегистрированных преподавателей из отдельного ключа
+      const registeredTeachers = JSON.parse(localStorage.getItem('tutoring_registeredTeachers') || '[]');
+      console.log('👨‍🏫 Зарегистрированных преподавателей (постоянно сохраненных):', registeredTeachers.length);
       
-      setAllUsers(users);
+      // Объединяем обычных пользователей с зарегистрированными преподавателями
+      const allUsersCombined = [...users];
+      registeredTeachers.forEach((teacher: any) => {
+        const exists = allUsersCombined.find((u: any) => u.id === teacher.id);
+        if (!exists) {
+          allUsersCombined.push(teacher);
+        }
+      });
+      
+      // Фильтруем только преподавателей для логирования
+      const teachers = allUsersCombined.filter((u: any) => u.role === 'teacher');
+      console.log('👨‍🏫 Зарегистрированных преподавателей (включая постоянно сохраненных):', teachers.length, teachers.map((t: any) => ({ id: t.id, name: t.name })));
+      
+      setAllUsers(allUsersCombined);
       
       // Также принудительно обновляем teacherProfiles из localStorage
       const teacherProfilesData = JSON.parse(localStorage.getItem('tutoring_teacherProfiles') || '{}');
@@ -344,6 +370,17 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       teachers.forEach((teacher: any) => {
         console.log(`  - ${teacher.name} (${teacher.email}) - ID: ${teacher.id} - Статус: зарегистрирован`);
       });
+      
+      // Принудительно сохраняем зарегистрированных преподавателей в отдельном ключе
+      const registeredTeachers = teachers.map(teacher => ({
+        ...teacher,
+        isRegistered: true,
+        isOnline: false, // Всегда показываем как зарегистрированных, независимо от онлайн статуса
+        lastSeen: new Date().toISOString()
+      }));
+      
+      // Сохраняем зарегистрированных преподавателей в отдельном ключе для постоянного хранения
+      localStorage.setItem('tutoring_registeredTeachers', JSON.stringify(registeredTeachers));
       
       // Обновляем состояние
       setAllUsers(users);
@@ -996,6 +1033,21 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           if (!exists) {
             const updated = [...prev, newUser];
             saveToStorage('tutoring_users', updated);
+            
+            // Если это преподаватель, сохраняем его в отдельном ключе для постоянного хранения
+            if (newUser.role === 'teacher') {
+              const registeredTeachers = JSON.parse(localStorage.getItem('tutoring_registeredTeachers') || '[]');
+              const teacherToSave = {
+                ...newUser,
+                isRegistered: true,
+                isOnline: false,
+                lastSeen: new Date().toISOString()
+              };
+              const updatedRegisteredTeachers = [...registeredTeachers, teacherToSave];
+              localStorage.setItem('tutoring_registeredTeachers', JSON.stringify(updatedRegisteredTeachers));
+              console.log('👨‍🏫 Преподаватель сохранен для постоянного отображения:', newUser.name);
+            }
+            
             return updated;
           }
           return prev;
@@ -1209,6 +1261,21 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           
           localStorage.setItem('tutoring_users', JSON.stringify(users));
           setAllUsers(users);
+          
+          // Если это преподаватель, сохраняем его в отдельном ключе для постоянного хранения
+          if (newUser.role === 'teacher') {
+            const registeredTeachers = JSON.parse(localStorage.getItem('tutoring_registeredTeachers') || '[]');
+            const teacherToSave = {
+              ...newUser,
+              isRegistered: true,
+              isOnline: false,
+              lastSeen: new Date().toISOString()
+            };
+            const updatedRegisteredTeachers = [...registeredTeachers, teacherToSave];
+            localStorage.setItem('tutoring_registeredTeachers', JSON.stringify(updatedRegisteredTeachers));
+            console.log('👨‍🏫 Преподаватель сохранен для постоянного отображения:', newUser.name);
+          }
+          
           // Обновляем зарегистрированных репетиторов и запрашиваем актуальный список
           loadRegisteredTeachers().catch(console.error);
           if (socketRef.current && isConnected) {
@@ -1913,12 +1980,14 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     setLessons([]);
     setChats([]);
     
-    // Очищаем localStorage
+    // Очищаем localStorage, но НЕ удаляем зарегистрированных преподавателей
     localStorage.removeItem('tutoring_timeSlots');
     localStorage.removeItem('tutoring_lessons');
     localStorage.removeItem('tutoring_chats');
     localStorage.removeItem('tutoring_users');
     localStorage.removeItem('tutoring_currentUser');
+    
+    // НЕ удаляем 'tutoring_registeredTeachers' - они должны остаться для постоянного отображения
     
   };
 
@@ -2353,6 +2422,18 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         setAllUsers: (users: User[]) => {
           setAllUsers(users);
           localStorage.setItem('tutoring_users', JSON.stringify(users));
+          
+          // Также сохраняем зарегистрированных преподавателей в отдельном ключе
+          const teachers = users.filter((u: any) => u.role === 'teacher');
+          if (teachers.length > 0) {
+            const registeredTeachers = teachers.map(teacher => ({
+              ...teacher,
+              isRegistered: true,
+              isOnline: false, // Всегда показываем как зарегистрированных, независимо от онлайн статуса
+              lastSeen: new Date().toISOString()
+            }));
+            localStorage.setItem('tutoring_registeredTeachers', JSON.stringify(registeredTeachers));
+          }
         },
         refreshUsers, // Добавляем функцию для обновления пользователей
         loadRegisteredTeachers, // Функция для загрузки зарегистрированных преподавателей (независимо от онлайн статуса)
