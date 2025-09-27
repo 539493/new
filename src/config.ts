@@ -4,12 +4,12 @@
 // URL сервера - локальный в разработке, Render в продакшене
 export const SERVER_URL = import.meta.env.DEV 
   ? 'http://localhost:5000' 
-  : 'https://na-uchi-backend.onrender.com'; // Замените на ваш реальный URL бэкенда
+  : 'https://na-uchi.onrender.com'; // URL вашего бэкенда на Render
 
 // URL WebSocket - локальный в разработке, Render в продакшене
 export const WEBSOCKET_URL = import.meta.env.DEV 
   ? 'http://localhost:5000' 
-  : 'https://na-uchi-backend.onrender.com'; // Замените на ваш реальный URL бэкенда
+  : 'https://na-uchi.onrender.com'; // URL вашего бэкенда на Render
 
 // URL внешнего видео чата
 export const EXTERNAL_VIDEO_CHAT_URL = 'https://video-chat-web-lp8d.onrender.com';
