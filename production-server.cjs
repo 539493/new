@@ -765,6 +765,12 @@ app.delete('/api/lessons/:id', async (req, res) => {
 
 // Статические файлы
 const distPath = path.join(__dirname, 'dist');
+console.log('📁 Serving static files from:', distPath);
+console.log('📁 Dist directory exists:', fsSync.existsSync(distPath));
+if (fsSync.existsSync(distPath)) {
+  console.log('📁 Dist contents:', fsSync.readdirSync(distPath));
+}
+
 app.use(express.static(distPath, {
   maxAge: IS_PRODUCTION ? '1d' : 0,
   etag: true,
