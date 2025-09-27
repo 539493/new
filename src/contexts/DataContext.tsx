@@ -380,7 +380,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       socketRef.current.emit('requestAllUsers');
     }
     
-    // Принудительно синхронизируем с сервером
+    // Принудительно синхронизируем с сервером (включая слоты)
     forceSyncData().catch(error => {
       console.error('❌ Ошибка при синхронизации данных:', error);
     });
@@ -1420,7 +1420,12 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   // Сохранение в localStorage при изменении состояния
   useEffect(() => {
     saveToStorage('tutoring_timeSlots', timeSlots);
-  }, [timeSlots]);
+    // Принудительно синхронизируем слоты при изменении timeSlots
+    if (timeSlots.length > 0) {
+      console.log('🔄 timeSlots изменились, принудительно синхронизируем с сервером...');
+      forceSyncData().catch(console.error);
+    }
+  }, [timeSlots, forceSyncData]);
 
   useEffect(() => {
     saveToStorage('tutoring_lessons', lessons);

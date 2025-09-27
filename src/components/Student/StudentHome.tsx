@@ -28,21 +28,23 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
     refreshAllData();
   };
 
-  // Автоматически загружаем зарегистрированных преподавателей при загрузке компонента
+  // Автоматически загружаем зарегистрированных преподавателей и слоты при загрузке компонента
   React.useEffect(() => {
-    console.log('🔄 StudentHome: Автоматическая загрузка зарегистрированных преподавателей...');
+    console.log('🔄 StudentHome: Автоматическая загрузка зарегистрированных преподавателей и слотов...');
     loadRegisteredTeachers().catch(console.error);
+    forceSyncData().catch(console.error);
     
     // Устанавливаем периодическую загрузку каждые 10 секунд для гарантии видимости
     const interval = setInterval(() => {
       if (document.visibilityState === 'visible') {
-        console.log('⏰ StudentHome: Периодическая загрузка зарегистрированных преподавателей...');
+        console.log('⏰ StudentHome: Периодическая загрузка зарегистрированных преподавателей и слотов...');
         loadRegisteredTeachers().catch(console.error);
+        forceSyncData().catch(console.error);
       }
     }, 10000); // 10 секунд - более частое обновление
     
     return () => clearInterval(interval);
-  }, [loadRegisteredTeachers]);
+  }, [loadRegisteredTeachers, forceSyncData]);
   const { user } = useAuth();
   
   const [filters, setFilters] = useState<FilterOptions>({});
@@ -243,10 +245,11 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
     console.log('📱 teacherProfiles изменились:', Object.keys(teacherProfiles).length);
     if (Object.keys(teacherProfiles).length > 0) {
       console.log('✅ Найдены локальные профили преподавателей:', Object.keys(teacherProfiles));
-      // Принудительно загружаем репетиторов при изменении профилей
+      // Принудительно загружаем репетиторов и слоты при изменении профилей
       loadRegisteredTeachers().catch(console.error);
+      forceSyncData().catch(console.error);
     }
-  }, [teacherProfiles, loadRegisteredTeachers]);
+  }, [teacherProfiles, loadRegisteredTeachers, forceSyncData]);
 
 
   // Используем общий socket из контекста, без локального второго соединения
@@ -497,16 +500,17 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
     return result;
   }, [serverTeachers, allUsers, timeSlots, teacherProfiles]);
 
-  // Дополнительный эффект для принудительной загрузки репетиторов при изменении allUsers
+  // Дополнительный эффект для принудительной загрузки репетиторов и слотов при изменении allUsers
   React.useEffect(() => {
     console.log('🔄 allUsers изменились:', allUsers?.length || 0);
     if (allUsers && allUsers.length > 0) {
       const teachers = allUsers.filter((u: any) => u.role === 'teacher');
       console.log('👨‍🏫 Обнаружены репетиторы в allUsers:', teachers.length);
-      // Принудительно загружаем репетиторов
+      // Принудительно загружаем репетиторов и слоты
       loadRegisteredTeachers().catch(console.error);
+      forceSyncData().catch(console.error);
     }
-  }, [allUsers, loadRegisteredTeachers]);
+  }, [allUsers, loadRegisteredTeachers, forceSyncData]);
 
   // Дополнительно фильтруем преподавателей по профилю и поиску
   const filteredTeachers = React.useMemo(() => {
@@ -624,12 +628,28 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
     } else {
       loadAvailableSlots();
     }
-  }, [filters, selectedDate, selectedTimeRange, timeSlots]);
+    
+    // Принудительно синхронизируем слоты при изменении timeSlots
+    if (timeSlots.length > 0) {
+      console.log('🔄 timeSlots изменились, синхронизируем с сервером...');
+      forceSyncData().catch(console.error);
+    }
+  }, [filters, selectedDate, selectedTimeRange, timeSlots, forceSyncData]);
 
   // Обновление доступных слотов при изменении списка пользователей
   React.useEffect(() => {
     loadAvailableSlots();
-  }, [allUsers]);
+    // Принудительно синхронизируем слоты при изменении allUsers
+    forceSyncData().catch(console.error);
+  }, [allUsers, forceSyncData]);
+  
+  // Принудительная синхронизация слотов при изменении timeSlots
+  React.useEffect(() => {
+    if (timeSlots.length > 0) {
+      console.log('🔄 timeSlots изменились, принудительно синхронизируем с сервером...');
+      forceSyncData().catch(console.error);
+    }
+  }, [timeSlots, forceSyncData]);
 
   // Обновление списка преподавателей при изменении пользователей
   React.useEffect(() => {
