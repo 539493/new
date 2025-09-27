@@ -764,8 +764,64 @@ app.get('*', (req, res) => {
 io.on('connection', (socket) => {
   log('Client connected:', socket.id);
   
+  // Отправляем текущие данные новому клиенту
+  socket.emit('stats', {
+    timeSlotsCount: serverData.timeSlots.length,
+    lessonsCount: serverData.lessons.length,
+    chatsCount: (serverData.chats || []).length,
+    teacherProfilesCount: Object.keys(serverData.teacherProfiles).length,
+    studentProfilesCount: Object.keys(serverData.studentProfiles).length
+  });
+  
+  // Отправляем все данные для синхронизации
+  socket.emit('initialData', { 
+    timeSlots: serverData.timeSlots, 
+    lessons: serverData.lessons, 
+    chats: serverData.chats || [] 
+  });
+  
+  // Отправляем профили преподавателей
+  socket.emit('teacherProfiles', serverData.teacherProfiles);
+  
+  // Отправляем профили студентов
+  socket.emit('studentProfiles', serverData.studentProfiles);
+  
+  // Отправляем всех пользователей (независимо от онлайн статуса)
+  const allUsers = [];
+  Object.entries(serverData.teacherProfiles).forEach(([id, profile]) => {
+    allUsers.push({
+      id,
+      email: profile.email || '',
+      name: profile.name || '',
+      nickname: profile.nickname || '',
+      role: 'teacher',
+      phone: profile.phone || '',
+      profile: profile,
+      isOnline: false,
+      isRegistered: true
+    });
+  });
+  Object.entries(serverData.studentProfiles).forEach(([id, profile]) => {
+    allUsers.push({
+      id,
+      email: profile.email || '',
+      name: profile.name || '',
+      nickname: profile.nickname || '',
+      role: 'student',
+      phone: profile.phone || '',
+      profile: profile,
+      isOnline: false,
+      isRegistered: true
+    });
+  });
+  
+  log('Sending all users to new client:', allUsers.length);
+  socket.emit('allUsers', allUsers);
+  
   socket.on('disconnect', () => {
     log('Client disconnected:', socket.id);
+    // ВАЖНО: НЕ удаляем репетиторов при отключении!
+    // Репетиторы должны оставаться видимыми всегда
   });
   
   // Обработчики для real-time обновлений
@@ -830,7 +886,8 @@ io.on('connection', (socket) => {
         phone: profile.phone || '',
         avatar: profile.avatar || '',
         profile: profile,
-        isOnline: false // В production версии не отслеживаем онлайн статус
+        isOnline: false, // В production версии не отслеживаем онлайн статус
+        isRegistered: true
       });
     });
     
@@ -845,12 +902,25 @@ io.on('connection', (socket) => {
         phone: profile.phone || '',
         avatar: profile.avatar || '',
         profile: profile,
-        isOnline: false // В production версии не отслеживаем онлайн статус
+        isOnline: false, // В production версии не отслеживаем онлайн статус
+        isRegistered: true
       });
     });
     
     log('Sending all users to client:', users.length);
     socket.emit('allUsers', users);
+  });
+
+  // Обработка запроса всех профилей преподавателей
+  socket.on('requestTeacherProfiles', () => {
+    log('Sending teacher profiles to client:', Object.keys(serverData.teacherProfiles).length);
+    socket.emit('teacherProfiles', serverData.teacherProfiles);
+  });
+
+  // Обработка запроса всех профилей студентов
+  socket.on('requestStudentProfiles', () => {
+    log('Sending student profiles to client:', Object.keys(serverData.studentProfiles).length);
+    socket.emit('studentProfiles', serverData.studentProfiles);
   });
 
   // Обработчик создания слота
