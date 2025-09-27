@@ -692,8 +692,13 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
         console.log('🔄 Запрашиваем все слоты с сервера...');
         socketRef.current.emit('requestAllSlots');
       }
+      
+      // ВАЖНО: Принудительно обновляем преподавателей при изменении слотов
+      console.log('🔄 Обновляем преподавателей при изменении слотов...');
+      refreshUsers();
+      loadRegisteredTeachers().catch(console.error);
     }
-  }, [timeSlots, forceSyncData, socketRef, isConnected]);
+  }, [timeSlots, forceSyncData, socketRef, isConnected, refreshUsers, loadRegisteredTeachers]);
 
   // Обновление списка преподавателей при изменении пользователей
   React.useEffect(() => {

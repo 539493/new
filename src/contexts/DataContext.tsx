@@ -814,6 +814,43 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           const updated = [...prev, newSlot];
           saveToStorage('tutoring_timeSlots', updated);
             console.log('✅ New slot added, total slots:', updated.length);
+            
+            // ВАЖНО: Гарантируем, что репетитор остается видимым после создания слота
+            try {
+              const currentUsers = allUsers || [];
+              const teacherExists = currentUsers.find((u: any) => u.id === newSlot.teacherId);
+              
+              if (!teacherExists) {
+                console.log('⚠️ Репетитор не найден в allUsers после создания слота, добавляем...');
+                const teacherUser = {
+                  id: newSlot.teacherId,
+                  name: newSlot.teacherName,
+                  avatar: newSlot.teacherAvatar || '',
+                  role: 'teacher',
+                  isRegistered: true,
+                  isOnline: false,
+                  lastSeen: new Date().toISOString()
+                };
+                
+                const updatedUsers = [...currentUsers, teacherUser];
+                setAllUsers(updatedUsers);
+                localStorage.setItem('tutoring_users', JSON.stringify(updatedUsers));
+                
+                // Также добавляем в зарегистрированных преподавателей
+                const registeredTeachers = JSON.parse(localStorage.getItem('tutoring_registeredTeachers') || '[]');
+                const teacherExistsInRegistered = registeredTeachers.find((t: any) => t.id === newSlot.teacherId);
+                if (!teacherExistsInRegistered) {
+                  const updatedRegisteredTeachers = [...registeredTeachers, teacherUser];
+                  localStorage.setItem('tutoring_registeredTeachers', JSON.stringify(updatedRegisteredTeachers));
+                  console.log('✅ Репетитор добавлен в зарегистрированных преподавателей');
+                }
+                
+                console.log('✅ Репетитор добавлен в allUsers для гарантии отображения');
+              }
+            } catch (error) {
+              console.error('❌ Ошибка при проверке видимости репетитора:', error);
+            }
+            
             return updated;
           } else {
             // Обновляем существующий слот
@@ -1595,14 +1632,54 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       setTimeSlots(prev => {
         const updated = [...prev, newSlot];
         saveToStorage('tutoring_timeSlots', updated);
+        console.log('✅ Слот создан и сохранен локально:', newSlot.id);
         return updated;
       });
+      
+      // ВАЖНО: Гарантируем, что репетитор остается видимым после создания слота
+      try {
+        const currentUsers = allUsers || [];
+        const teacherExists = currentUsers.find((u: any) => u.id === newSlot.teacherId);
+        
+        if (!teacherExists) {
+          console.log('⚠️ Репетитор не найден в allUsers, добавляем...');
+          const teacherUser = {
+            id: newSlot.teacherId,
+            name: newSlot.teacherName,
+            avatar: newSlot.teacherAvatar || '',
+            role: 'teacher',
+            isRegistered: true,
+            isOnline: false,
+            lastSeen: new Date().toISOString()
+          };
+          
+          const updatedUsers = [...currentUsers, teacherUser];
+          setAllUsers(updatedUsers);
+          localStorage.setItem('tutoring_users', JSON.stringify(updatedUsers));
+          
+          // Также добавляем в зарегистрированных преподавателей
+          const registeredTeachers = JSON.parse(localStorage.getItem('tutoring_registeredTeachers') || '[]');
+          const teacherExistsInRegistered = registeredTeachers.find((t: any) => t.id === newSlot.teacherId);
+          if (!teacherExistsInRegistered) {
+            const updatedRegisteredTeachers = [...registeredTeachers, teacherUser];
+            localStorage.setItem('tutoring_registeredTeachers', JSON.stringify(updatedRegisteredTeachers));
+            console.log('✅ Репетитор добавлен в зарегистрированных преподавателей');
+          }
+          
+          console.log('✅ Репетитор добавлен в allUsers для гарантии отображения');
+        } else {
+          console.log('✅ Репетитор уже существует в allUsers');
+        }
+      } catch (error) {
+        console.error('❌ Ошибка при проверке видимости репетитора:', error);
+      }
       
       // Отправляем слот на сервер, если есть соединение
       if (socketRef.current && isConnected) {
         socketRef.current.emit('createSlot', newSlot);
+        console.log('📡 Слот отправлен на сервер');
       } else {
-        // Если нет соединения, сохраняем слот локально для последующей синхронизации
+        console.log('⚠️ Нет соединения с сервером, слот сохранен локально');
       }
       // Если слот сразу бронируется на ученика, создаём Lesson
       if (isBooked && studentId && studentName) {
@@ -2027,16 +2104,21 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
   // Функция для обновления профиля преподавателя на сервере
   const updateTeacherProfile = (teacherId: string, profile: TeacherProfile) => {
+    console.log('🔄 Обновляем профиль преподавателя:', teacherId, profile);
+    
     // Сохраняем профиль преподавателя в локальном хранилище
     setTeacherProfiles(prev => {
       const updated = { ...prev, [teacherId]: profile };
       saveToStorage('tutoring_teacherProfiles', updated);
+      console.log('✅ Профиль преподавателя сохранен в teacherProfiles');
       return updated;
     });
 
     if (socketRef.current && isConnected) {
       socketRef.current.emit('updateTeacherProfile', { teacherId, profile });
+      console.log('📡 Профиль преподавателя отправлен на сервер');
     }
+    
     // --- Синхронизация профиля в общем списке пользователей ---
     try {
       const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
@@ -2044,8 +2126,27 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         u.id === teacherId ? { ...u, profile, avatar: profile.avatar } : u
       );
       localStorage.setItem('tutoring_users', JSON.stringify(updatedUsers));
+      console.log('✅ Профиль преподавателя обновлен в tutoring_users');
+      
+      // ВАЖНО: Обновляем allUsers в состоянии, чтобы репетитор остался видимым
+      setAllUsers(prev => {
+        const updated = prev.map((u: any) =>
+          u.id === teacherId ? { ...u, profile, avatar: profile.avatar } : u
+        );
+        console.log('✅ allUsers обновлен, репетитор остался видимым');
+        return updated;
+      });
+      
+      // Также обновляем зарегистрированных преподавателей
+      const registeredTeachers = JSON.parse(localStorage.getItem('tutoring_registeredTeachers') || '[]');
+      const updatedRegisteredTeachers = registeredTeachers.map((t: any) =>
+        t.id === teacherId ? { ...t, profile, avatar: profile.avatar } : t
+      );
+      localStorage.setItem('tutoring_registeredTeachers', JSON.stringify(updatedRegisteredTeachers));
+      console.log('✅ Зарегистрированные преподаватели обновлены');
+      
     } catch (e) {
-      console.error('Ошибка обновления списка пользователей:', e);
+      console.error('❌ Ошибка обновления списка пользователей:', e);
     }
   };
 
