@@ -768,7 +768,9 @@ const possiblePaths = [
   path.join(__dirname, 'dist'),
   path.join(__dirname, '..', 'dist'),
   path.join(process.cwd(), 'dist'),
-  path.join(process.cwd(), '..', 'dist')
+  path.join(process.cwd(), '..', 'dist'),
+  __dirname, // корень проекта
+  process.cwd() // рабочая директория
 ];
 
 let distPath = null;
