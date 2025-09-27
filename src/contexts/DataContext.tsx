@@ -30,7 +30,7 @@ interface DataContextType {
   allUsers: User[];
   setAllUsers: (users: User[]) => void;
   refreshUsers: () => void; // Добавляем функцию для обновления пользователей
-  loadRegisteredTeachers: () => any[]; // Функция для загрузки зарегистрированных преподавателей (независимо от онлайн статуса)
+  loadRegisteredTeachers: () => Promise<any[]>; // Функция для загрузки зарегистрированных преподавателей (независимо от онлайн статуса)
   refreshAllData: () => void; // Функция для принудительного обновления всех данных
   forceSyncData: () => Promise<void>; // Функция для принудительной синхронизации с сервером
   uploadLocalDataToServer: () => Promise<any>; // Функция для загрузки локальных данных на сервер
@@ -229,7 +229,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   // Функция для загрузки пользователей с сервера
   const loadUsersFromServer = async () => {
     try {
-      console.log('🔄 Загружаем пользователей с сервера...');
+      console.log('🔄 Загружаем пользователей с сервера Render...');
       const response = await fetch(`${SERVER_URL}/api/users`);
       
       if (!response.ok) {
@@ -238,7 +238,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       }
       
       const serverUsers = await response.json();
-      console.log('✅ Пользователи загружены с сервера:', serverUsers.length);
+      console.log('✅ Пользователи загружены с сервера Render:', serverUsers.length);
       
       // Объединяем с локальными пользователями
       const localUsers = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
@@ -252,7 +252,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       );
       
       console.log('✅ Уникальные пользователи:', uniqueUsers.length);
-      console.log('👨‍🏫 Преподаватели:', uniqueUsers.filter(u => u.role === 'teacher').length);
+      console.log('👨‍🏫 Преподаватели (включая офлайн):', uniqueUsers.filter(u => u.role === 'teacher').length);
       console.log('👨‍🎓 Студенты:', uniqueUsers.filter(u => u.role === 'student').length);
       
       setAllUsers(uniqueUsers);
@@ -325,17 +325,24 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   };
 
   // Функция для принудительной загрузки зарегистрированных преподавателей (независимо от онлайн статуса)
-  const loadRegisteredTeachers = () => {
+  const loadRegisteredTeachers = async () => {
     try {
       console.log('👨‍🏫 Принудительная загрузка зарегистрированных преподавателей...');
       
-      // Загружаем из localStorage
+      // Сначала пытаемся загрузить с сервера Render
+      try {
+        await loadUsersFromServer();
+      } catch (serverError) {
+        console.warn('⚠️ Не удалось загрузить с сервера, используем локальные данные:', serverError);
+      }
+      
+      // Загружаем из localStorage (включая данные с сервера)
       const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
       const teachers = users.filter((u: any) => u.role === 'teacher');
       
-      console.log('📱 Зарегистрированных преподавателей в localStorage:', teachers.length);
+      console.log('📱 Зарегистрированных преподавателей (включая офлайн):', teachers.length);
       teachers.forEach((teacher: any) => {
-        console.log(`  - ${teacher.name} (${teacher.email}) - ID: ${teacher.id}`);
+        console.log(`  - ${teacher.name} (${teacher.email}) - ID: ${teacher.id} - Статус: зарегистрирован`);
       });
       
       // Обновляем состояние
@@ -360,12 +367,12 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   const refreshAllData = () => {
     console.log('🔄 Принудительное обновление всех данных...');
     // Сначала принудительно загружаем зарегистрированных преподавателей (независимо от онлайн статуса)
-    loadRegisteredTeachers();
+    loadRegisteredTeachers().catch(console.error);
     // Затем обновляем локальные данные
     refreshUsers();
     // Затем загружаем с сервера (если есть соединение)
-    loadUsersFromServer();
-    loadLessonsFromServer();
+    loadUsersFromServer().catch(console.error);
+    loadLessonsFromServer().catch(console.error);
     
     // Запрашиваем все слоты и пользователей с сервера
     if (socketRef.current && isConnected) {
@@ -629,7 +636,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         loadInitialData();
         loadLessonsFromServer();
         // Принудительно загружаем репетиторов даже при отсутствии сервера
-        loadRegisteredTeachers();
+        loadRegisteredTeachers().catch(console.error);
         return;
       }
 
@@ -703,7 +710,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       loadInitialData();
         loadLessonsFromServer();
         // Принудительно загружаем репетиторов даже при ошибке подключения
-        loadRegisteredTeachers();
+        loadRegisteredTeachers().catch(console.error);
     });
 
     // Получаем все актуальные данные при подключении
@@ -1203,7 +1210,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           localStorage.setItem('tutoring_users', JSON.stringify(users));
           setAllUsers(users);
           // Обновляем зарегистрированных репетиторов и запрашиваем актуальный список
-          loadRegisteredTeachers();
+          loadRegisteredTeachers().catch(console.error);
           if (socketRef.current && isConnected) {
             socketRef.current.emit('requestAllUsers');
           }

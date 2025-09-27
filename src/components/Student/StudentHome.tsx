@@ -31,13 +31,13 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
   // Автоматически загружаем зарегистрированных преподавателей при загрузке компонента
   React.useEffect(() => {
     console.log('🔄 StudentHome: Автоматическая загрузка зарегистрированных преподавателей...');
-    loadRegisteredTeachers();
+    loadRegisteredTeachers().catch(console.error);
     
     // Устанавливаем периодическую загрузку каждые 10 секунд для гарантии видимости
     const interval = setInterval(() => {
       if (document.visibilityState === 'visible') {
         console.log('⏰ StudentHome: Периодическая загрузка зарегистрированных преподавателей...');
-        loadRegisteredTeachers();
+        loadRegisteredTeachers().catch(console.error);
       }
     }, 10000); // 10 секунд - более частое обновление
     
@@ -244,7 +244,7 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
     if (Object.keys(teacherProfiles).length > 0) {
       console.log('✅ Найдены локальные профили преподавателей:', Object.keys(teacherProfiles));
       // Принудительно загружаем репетиторов при изменении профилей
-      loadRegisteredTeachers();
+      loadRegisteredTeachers().catch(console.error);
     }
   }, [teacherProfiles, loadRegisteredTeachers]);
 
@@ -504,7 +504,7 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
       const teachers = allUsers.filter((u: any) => u.role === 'teacher');
       console.log('👨‍🏫 Обнаружены репетиторы в allUsers:', teachers.length);
       // Принудительно загружаем репетиторов
-      loadRegisteredTeachers();
+      loadRegisteredTeachers().catch(console.error);
     }
   }, [allUsers, loadRegisteredTeachers]);
 
