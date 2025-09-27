@@ -763,23 +763,56 @@ app.delete('/api/lessons/:id', async (req, res) => {
   }
 });
 
-// Статические файлы
-const distPath = path.join(__dirname, 'dist');
-console.log('📁 Serving static files from:', distPath);
-console.log('📁 Dist directory exists:', fsSync.existsSync(distPath));
-if (fsSync.existsSync(distPath)) {
-  console.log('📁 Dist contents:', fsSync.readdirSync(distPath));
+// Статические файлы - проверяем несколько возможных путей
+const possiblePaths = [
+  path.join(__dirname, 'dist'),
+  path.join(__dirname, '..', 'dist'),
+  path.join(process.cwd(), 'dist'),
+  path.join(process.cwd(), '..', 'dist')
+];
+
+let distPath = null;
+for (const testPath of possiblePaths) {
+  if (fsSync.existsSync(testPath)) {
+    distPath = testPath;
+    console.log('📁 Found dist directory at:', distPath);
+    break;
+  }
 }
 
-app.use(express.static(distPath, {
-  maxAge: IS_PRODUCTION ? '1d' : 0,
-  etag: true,
-  lastModified: true
-}));
+if (!distPath) {
+  console.error('❌ Dist directory not found in any of the expected locations');
+  console.log('📁 Current working directory:', process.cwd());
+  console.log('📁 __dirname:', __dirname);
+  console.log('📁 Possible paths checked:', possiblePaths);
+} else {
+  console.log('📁 Dist contents:', fsSync.readdirSync(distPath));
+  
+  app.use(express.static(distPath, {
+    maxAge: IS_PRODUCTION ? '1d' : 0,
+    etag: true,
+    lastModified: true
+  }));
+}
+
+// Тестовый endpoint для проверки
+app.get('/api/test', (req, res) => {
+  res.json({
+    message: 'Server is running',
+    distPath: distPath,
+    distExists: distPath ? fsSync.existsSync(distPath) : false,
+    workingDir: process.cwd(),
+    __dirname: __dirname
+  });
+});
 
 // Fallback для SPA
 app.get('*', (req, res) => {
-  res.sendFile(path.join(distPath, 'index.html'));
+  if (distPath) {
+    res.sendFile(path.join(distPath, 'index.html'));
+  } else {
+    res.status(404).send('Frontend files not found. Please check deployment.');
+  }
 });
 
 // Socket.IO обработчики
