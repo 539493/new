@@ -850,6 +850,21 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         });
     });
 
+    // Слушаем бронирование уроков
+    newSocket.on('lessonBooked', (lesson: Lesson) => {
+        console.log('Lesson booked via WebSocket:', lesson);
+        setLessons(prev => {
+          const exists = prev.find(l => l.id === lesson.id);
+          if (!exists) {
+            const updated = [...prev, lesson];
+            saveToStorage('tutoring_lessons', updated);
+            console.log('New lesson added via WebSocket, total lessons:', updated.length);
+            return updated;
+          }
+          return prev;
+        });
+    });
+
     // Слушаем новые чаты
     newSocket.on('chatCreated', (newChat: Chat) => {
       setChats(prev => {

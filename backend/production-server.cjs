@@ -809,6 +809,50 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Обработка запроса всех слотов
+  socket.on('requestAllSlots', () => {
+    log('Sending all slots to client:', serverData.timeSlots.length);
+    socket.emit('allSlots', serverData.timeSlots);
+  });
+
+  // Обработка запроса всех пользователей
+  socket.on('requestAllUsers', () => {
+    const users = [];
+    
+    // ВСЕГДА добавляем ВСЕХ преподавателей из teacherProfiles (независимо от онлайн статуса)
+    Object.entries(serverData.teacherProfiles).forEach(([id, profile]) => {
+      users.push({
+        id,
+        email: profile.email || '',
+        name: profile.name || '',
+        nickname: profile.nickname || '',
+        role: 'teacher',
+        phone: profile.phone || '',
+        avatar: profile.avatar || '',
+        profile: profile,
+        isOnline: false // В production версии не отслеживаем онлайн статус
+      });
+    });
+    
+    // ВСЕГДА добавляем ВСЕХ студентов из studentProfiles (независимо от онлайн статуса)
+    Object.entries(serverData.studentProfiles).forEach(([id, profile]) => {
+      users.push({
+        id,
+        email: profile.email || '',
+        name: profile.name || '',
+        nickname: profile.nickname || '',
+        role: 'student',
+        phone: profile.phone || '',
+        avatar: profile.avatar || '',
+        profile: profile,
+        isOnline: false // В production версии не отслеживаем онлайн статус
+      });
+    });
+    
+    log('Sending all users to client:', users.length);
+    socket.emit('allUsers', users);
+  });
+
   // Обработчик создания слота
   socket.on('createSlot', (data) => {
     log('Received createSlot:', data);
@@ -820,6 +864,29 @@ io.on('connection', (socket) => {
       io.emit('slotCreated', slot);
       log('Slot created and broadcasted');
     }
+  });
+
+  // Обработка бронирования слота
+  socket.on('bookSlot', (data) => {
+    log('Received bookSlot:', data);
+    const { slotId, lesson, bookedStudentId } = data;
+    
+    // Обновляем статус слота и устанавливаем bookedStudentId
+    const slotIndex = serverData.timeSlots.findIndex(slot => slot.id === slotId);
+    if (slotIndex !== -1) {
+      serverData.timeSlots[slotIndex].isBooked = true;
+      serverData.timeSlots[slotIndex].bookedStudentId = bookedStudentId || lesson.studentId;
+    }
+    
+    // Добавляем урок
+    serverData.lessons.push(lesson);
+    
+    // Сохраняем данные в файл
+    saveServerData();
+    
+    // Отправляем обновление всем клиентам
+    io.emit('slotBooked', data);
+    log('Slot booked and broadcasted');
   });
 
   // Обработчик бронирования урока
@@ -855,6 +922,32 @@ io.on('connection', (socket) => {
         log('Lesson booked and broadcasted');
       }
     }
+  });
+
+  // Обработка отмены бронирования
+  socket.on('cancelSlot', (data) => {
+    log('Received cancelSlot:', data);
+    const { slotId, lessonId } = data;
+    
+    // Обновляем статус слота и очищаем bookedStudentId
+    const slotIndex = serverData.timeSlots.findIndex(slot => slot.id === slotId);
+    if (slotIndex !== -1) {
+      serverData.timeSlots[slotIndex].isBooked = false;
+      serverData.timeSlots[slotIndex].bookedStudentId = undefined;
+    }
+    
+    // Удаляем урок
+    const lessonIndex = serverData.lessons.findIndex(lesson => lesson.id === lessonId);
+    if (lessonIndex !== -1) {
+      serverData.lessons.splice(lessonIndex, 1);
+    }
+    
+    // Сохраняем данные в файл
+    saveServerData();
+    
+    // Отправляем обновление всем клиентам
+    io.emit('slotCancelled', data);
+    log('Slot cancelled and broadcasted');
   });
 
   // Обработчик завершения урока
