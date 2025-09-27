@@ -24,8 +24,10 @@ const log = (message, ...args) => {
 const allowedOrigins = [
   "https://na-uchi.onrender.com",
   "https://nauchi.onrender.com",
+  "https://nauchii.onrender.com", // Добавляем правильный домен фронтенда
   "https://nauchi.netlify.app",
-  "https://*.netlify.app"
+  "https://*.netlify.app",
+  "https://*.onrender.com" // Разрешаем все поддомены Render
 ];
 
 // Кэш для CORS проверок
@@ -33,21 +35,37 @@ const corsCache = new Map();
 
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
+    console.log('🌐 CORS request from origin:', origin);
+    
+    if (!origin) {
+      console.log('✅ CORS: No origin (server-to-server)');
+      return callback(null, true);
+    }
     
     // Проверяем кэш
     if (corsCache.has(origin)) {
-      return callback(null, corsCache.get(origin));
+      const cached = corsCache.get(origin);
+      console.log('📋 CORS: Using cached result:', cached);
+      return callback(null, cached);
     }
     
     const isAllowed = allowedOrigins.some(allowedOrigin => {
       if (allowedOrigin.includes('*')) {
         const pattern = allowedOrigin.replace('*', '.*');
-        return new RegExp(pattern).test(origin);
+        const matches = new RegExp(pattern).test(origin);
+        if (matches) {
+          console.log('✅ CORS: Pattern match:', allowedOrigin, '->', origin);
+        }
+        return matches;
       }
-      return allowedOrigin === origin;
+      const exactMatch = allowedOrigin === origin;
+      if (exactMatch) {
+        console.log('✅ CORS: Exact match:', allowedOrigin);
+      }
+      return exactMatch;
     });
     
+    console.log('🔍 CORS: Origin', origin, 'allowed:', isAllowed);
     corsCache.set(origin, isAllowed);
     callback(null, isAllowed);
   },
@@ -1162,14 +1180,22 @@ const HOST = process.env.HOST || '0.0.0.0';
 
 const startServer = async () => {
   try {
+    console.log('🔄 Загружаем данные сервера...');
     await loadServerData();
+    console.log('✅ Данные сервера загружены успешно');
     
     server.listen(PORT, HOST, () => {
-      console.log(` Сервер запущен на http://${HOST}:${PORT}`);
+      console.log(`🚀 Сервер запущен на http://${HOST}:${PORT}`);
+      console.log(`🌐 CORS разрешен для: ${allowedOrigins.join(', ')}`);
+      console.log('🔗 Доступные API endpoints:');
+      console.log('  - GET /api/users');
+      console.log('  - GET /api/teachers');
+      console.log('  - GET /api/sync');
+      console.log('  - GET /api/test');
       
       if (DEBUG) {
         const stats = getServerStats();
-        console.log(' Статистика сервера:');
+        console.log('📊 Статистика сервера:');
         console.log(`    Преподавателей: ${stats.teacherProfilesCount}`);
         console.log(`    Студентов: ${stats.studentProfilesCount}`);
         console.log(`    Слотов: ${stats.timeSlotsCount}`);
@@ -1177,7 +1203,7 @@ const startServer = async () => {
       }
     });
   } catch (error) {
-    console.error('Error starting server:', error);
+    console.error('❌ Error starting server:', error);
     process.exit(1);
   }
 };
