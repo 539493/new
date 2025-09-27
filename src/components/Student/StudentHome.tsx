@@ -20,7 +20,7 @@ interface StudentHomeProps {
 }
 
 const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
-  const { bookLesson, timeSlots, allUsers, refreshUsers, refreshAllData, forceSyncData, sendMessageToUser, teacherProfiles, loadRegisteredTeachers, setAllUsers, socketRef } = useData();
+  const { bookLesson, timeSlots, allUsers, refreshUsers, refreshAllData, forceSyncData, sendMessageToUser, teacherProfiles, loadRegisteredTeachers, setAllUsers, socketRef, isConnected } = useData();
   
   // Функция для принудительного обновления данных
   const handleRefreshData = () => {
@@ -535,6 +535,12 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
 
     // ВСЕГДА показываем всех преподавателей, независимо от наличия слотов или онлайн статуса
     console.log('- Показываем ВСЕХ преподавателей (независимо от онлайн статуса):', teachers.length);
+    
+    // Принудительно запрашиваем все слоты с сервера для синхронизации
+    if (socketRef?.current && isConnected) {
+      console.log('🔄 Запрашиваем все слоты с сервера для синхронизации...');
+      socketRef.current.emit('requestAllSlots');
+    }
 
     // Применяем фильтры по профилям преподавателей (если есть активные фильтры)
     if (hasActiveFilters) {
@@ -648,8 +654,14 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
     if (timeSlots.length > 0) {
       console.log('🔄 timeSlots изменились, принудительно синхронизируем с сервером...');
       forceSyncData().catch(console.error);
+      
+      // Дополнительно запрашиваем все слоты с сервера
+      if (socketRef?.current && isConnected) {
+        console.log('🔄 Запрашиваем все слоты с сервера...');
+        socketRef.current.emit('requestAllSlots');
+      }
     }
-  }, [timeSlots, forceSyncData]);
+  }, [timeSlots, forceSyncData, socketRef, isConnected]);
 
   // Обновление списка преподавателей при изменении пользователей
   React.useEffect(() => {
@@ -698,7 +710,13 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
   React.useEffect(() => {
     // Загружаем доступные слоты при любом изменении timeSlots
     loadAvailableSlots();
-  }, [timeSlots]);
+    
+    // Принудительно запрашиваем все слоты с сервера при монтировании
+    if (socketRef?.current && isConnected) {
+      console.log('🔄 StudentHome: Запрашиваем все слоты с сервера при монтировании...');
+      socketRef.current.emit('requestAllSlots');
+    }
+  }, [timeSlots, socketRef, isConnected]);
 
   const handleTeacherClick = async (teacher: any) => {
     console.log('Teacher clicked:', teacher);

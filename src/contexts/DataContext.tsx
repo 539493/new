@@ -774,8 +774,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
     // Слушаем все слоты при подключении для синхронизации
     newSocket.on('allSlots', (allSlots: TimeSlot[]) => {
+      console.log('✅ Received all slots from server:', allSlots.length);
       setTimeSlots(allSlots);
       saveToStorage('tutoring_timeSlots', allSlots);
+      console.log('✅ All slots synchronized, total slots:', allSlots.length);
       });
 
       // Слушаем всех пользователей при подключении для синхронизации
@@ -792,22 +794,26 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
     // Слушаем обновления слотов от других клиентов
     newSocket.on('slotCreated', (newSlot: TimeSlot) => {
-        console.log('Slot created via WebSocket:', newSlot);
+        console.log('✅ Slot created via WebSocket:', newSlot);
       setTimeSlots(prev => {
         const exists = prev.find(slot => slot.id === newSlot.id);
         if (!exists) {
           const updated = [...prev, newSlot];
           saveToStorage('tutoring_timeSlots', updated);
-            console.log('New slot added, total slots:', updated.length);
+            console.log('✅ New slot added, total slots:', updated.length);
             return updated;
           } else {
             // Обновляем существующий слот
             const updated = prev.map(slot => slot.id === newSlot.id ? newSlot : slot);
             saveToStorage('tutoring_timeSlots', updated);
-            console.log('Existing slot updated, total slots:', updated.length);
+            console.log('✅ Existing slot updated, total slots:', updated.length);
           return updated;
         }
       });
+      
+      // Принудительно обновляем данные для всех компонентов
+      console.log('🔄 Принудительно обновляем данные после создания слота...');
+      forceSyncData().catch(console.error);
     });
 
     // Слушаем обновления бронирования
