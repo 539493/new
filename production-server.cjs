@@ -764,7 +764,7 @@ app.delete('/api/lessons/:id', async (req, res) => {
 });
 
 // Статические файлы
-const distPath = path.join(__dirname, '..', 'dist');
+const distPath = path.join(__dirname, 'dist');
 app.use(express.static(distPath, {
   maxAge: IS_PRODUCTION ? '1d' : 0,
   etag: true,
