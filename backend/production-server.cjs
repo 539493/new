@@ -343,6 +343,21 @@ app.post('/api/register', async (req, res) => {
 
     // Сообщаем через WebSocket
     io.emit('userRegistered', baseUser);
+    
+    // Отправляем обновленные профили в зависимости от роли
+    if (role === 'teacher') {
+      io.emit('teacherProfiles', serverData.teacherProfiles);
+    } else if (role === 'student') {
+      io.emit('studentProfiles', serverData.studentProfiles);
+    }
+    
+    // Отправляем обновленные данные всем клиентам для синхронизации
+    io.emit('dataUpdated', {
+      type: 'userRegistered',
+      timeSlots: serverData.timeSlots,
+      teacherProfiles: serverData.teacherProfiles,
+      studentProfiles: serverData.studentProfiles
+    });
 
     res.status(201).json(baseUser);
   } catch (error) {
@@ -371,6 +386,14 @@ app.post('/api/updateProfile', async (req, res) => {
 
     await saveServerData();
     io.emit('profileUpdated', { id: userId, role, profile: role === 'teacher' ? serverData.teacherProfiles[userId] : serverData.studentProfiles[userId] });
+    
+    // Отправляем обновленные данные всем клиентам для синхронизации
+    io.emit('dataUpdated', {
+      type: 'profileUpdated',
+      timeSlots: serverData.timeSlots,
+      teacherProfiles: serverData.teacherProfiles,
+      studentProfiles: serverData.studentProfiles
+    });
 
     res.json({ success: true });
   } catch (error) {
@@ -861,6 +884,26 @@ io.on('connection', (socket) => {
       io.emit('teacherProfileUpdated', { teacherId: data.teacherId, profile: data.profile });
       io.emit('profileUpdated', { type: 'teacher', userId: data.teacherId, profile: data.profile });
       
+      // Отправляем событие регистрации для синхронизации между устройствами
+      const userData = {
+        id: data.teacherId,
+        email: data.profile.email || '',
+        name: data.profile.name || '',
+        nickname: data.profile.nickname || '',
+        role: 'teacher',
+        phone: data.profile.phone || '',
+        createdAt: data.profile.createdAt || new Date().toISOString()
+      };
+      io.emit('userRegistered', userData);
+      
+      // Отправляем обновленные данные всем клиентам для синхронизации
+      io.emit('dataUpdated', {
+        type: 'teacherProfileUpdated',
+        timeSlots: serverData.timeSlots,
+        teacherProfiles: serverData.teacherProfiles,
+        studentProfiles: serverData.studentProfiles
+      });
+      
       log('Teacher profile updated and broadcasted');
     }
   });
@@ -932,6 +975,15 @@ io.on('connection', (socket) => {
       saveServerData();
       
       io.emit('slotCreated', slot);
+      
+      // Отправляем обновленные данные всем клиентам для синхронизации
+      io.emit('dataUpdated', {
+        type: 'slotCreated',
+        timeSlots: serverData.timeSlots,
+        teacherProfiles: serverData.teacherProfiles,
+        studentProfiles: serverData.studentProfiles
+      });
+      
       log('Slot created and broadcasted');
     }
   });
