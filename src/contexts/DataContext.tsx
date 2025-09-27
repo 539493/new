@@ -329,6 +329,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         const exists = allUsersCombined.find((u: any) => u.id === teacher.id);
         if (!exists) {
           allUsersCombined.push(teacher);
+          console.log('✅ Добавлен зарегистрированный преподаватель:', teacher.name);
+        } else {
+          console.log('⏭️ Преподаватель уже существует:', teacher.name);
         }
       });
       
@@ -336,7 +339,16 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       const teachers = allUsersCombined.filter((u: any) => u.role === 'teacher');
       console.log('👨‍🏫 Зарегистрированных преподавателей (включая постоянно сохраненных):', teachers.length, teachers.map((t: any) => ({ id: t.id, name: t.name })));
       
-      setAllUsers(allUsersCombined);
+      // ВАЖНО: НЕ перезаписываем allUsers, если они уже содержат нужных преподавателей
+      const currentUsers = allUsers || [];
+      const currentTeachers = currentUsers.filter((u: any) => u.role === 'teacher');
+      
+      if (teachers.length > currentTeachers.length) {
+        setAllUsers(allUsersCombined);
+        console.log('✅ Обновлены пользователи, добавлено преподавателей:', teachers.length - currentTeachers.length);
+      } else {
+        console.log('⏭️ Пользователи уже актуальны, обновление не требуется');
+      }
       
       // Также принудительно обновляем teacherProfiles из localStorage
       const teacherProfilesData = JSON.parse(localStorage.getItem('tutoring_teacherProfiles') || '{}');
@@ -346,7 +358,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       console.log('✅ Обновление пользователей завершено');
     } catch (error) {
       console.error('❌ Ошибка при обновлении пользователей:', error);
-      setAllUsers([]);
+      // НЕ очищаем allUsers при ошибке - это может привести к потере данных
+      console.log('⚠️ Сохраняем текущих пользователей при ошибке');
     }
   };
 

@@ -124,16 +124,35 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
           // Обновляем состояние серверных преподавателей
           setServerTeachers(teachers);
           
-          // Обновляем allUsers в контексте, чтобы гарантировать отображение
+          // НЕ перезаписываем allUsers полностью - только добавляем новых пользователей
           if (Array.isArray(usersData)) {
-            setAllUsers(usersData);
+            // Получаем текущих пользователей из контекста
+            const currentUsers = allUsers || [];
+            const mergedUsers = [...currentUsers];
+            
+            // Добавляем только новых пользователей, не перезаписывая существующих
+            usersData.forEach((serverUser: any) => {
+              const exists = mergedUsers.find((u: any) => u.id === serverUser.id);
+              if (!exists) {
+                mergedUsers.push(serverUser);
+                console.log('➕ Добавлен новый пользователь с сервера:', serverUser.name);
+              } else {
+                console.log('⏭️ Пользователь уже существует:', serverUser.name);
+              }
+            });
+            
+            // Обновляем только если есть изменения
+            if (mergedUsers.length !== currentUsers.length) {
+              setAllUsers(mergedUsers);
+              console.log('✅ Обновлены пользователи, добавлено новых:', mergedUsers.length - currentUsers.length);
+            }
           }
           
-          // Обновляем allUsers в контексте (поддерживающий вызов)
-          refreshUsers();
+          // НЕ вызываем refreshUsers() - это может очистить локальные данные
+          // refreshUsers();
           
-          // Принудительно обновляем данные в контексте
-          refreshAllData();
+          // Принудительно обновляем данные в контексте (но не перезаписываем)
+          // refreshAllData();
         } else {
           console.warn('⚠️ Сервер вернул не-JSON ответ для пользователей');
           setServerTeachers([]);
@@ -169,9 +188,22 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
           // Также прокидываем их в allUsers (не повредит, данные объединятся через уникальные id)
           try {
             const users = Array.isArray(allUsers) ? allUsers : [];
-            const merged = [...users, ...teachersData];
+            const merged = [...users];
+            
+            // Добавляем только новых преподавателей
+            teachersData.forEach((teacher: any) => {
+              const exists = merged.find((u: any) => u.id === teacher.id);
+              if (!exists) {
+                merged.push(teacher);
+                console.log('➕ Добавлен новый преподаватель через /api/teachers:', teacher.name);
+              }
+            });
+            
             const uniqueUsers = merged.filter((u, index, self) => index === self.findIndex(x => x.id === u.id));
-            setAllUsers(uniqueUsers);
+            if (uniqueUsers.length !== users.length) {
+              setAllUsers(uniqueUsers);
+              console.log('✅ Обновлены пользователи через /api/teachers, добавлено новых:', uniqueUsers.length - users.length);
+            }
           } catch {}
         } else {
           console.warn('⚠️ Сервер вернул не-JSON ответ для преподавателей');
