@@ -204,7 +204,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       clearLocalProfileCaches();
       
       // Сначала регистрируем на сервере
-      console.log('🌐 Attempting server registration at:', `${SERVER_URL}/api/register`);
+      console.log('🌐 SERVER_URL value:', SERVER_URL);
+      console.log('🌐 Full registration URL:', `${SERVER_URL}/api/register`);
+      
+      // Проверяем, что URL не содержит двойных слешей
+      const registrationUrl = `${SERVER_URL}/api/register`;
+      if (registrationUrl.includes('//api/')) {
+        console.error('❌ URL contains double slashes:', registrationUrl);
+        alert('Ошибка конфигурации URL. Обратитесь к администратору.');
+        return false;
+      }
+      
       console.log('📤 Registration data:', { email, name, nickname, role, phone });
       
       const response = await fetch(`${SERVER_URL}/api/register`, {

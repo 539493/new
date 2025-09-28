@@ -1,17 +1,20 @@
 ﻿// Конфигурация для локального и продакшн сервера
-export const SERVER_URL = import.meta.env.DEV 
-  ? 'http://localhost:5000' 
-  : import.meta.env.VITE_SERVER_URL || 'https://nauchi09.onrender.com';
+const getServerUrl = () => {
+  const baseUrl = import.meta.env.DEV 
+    ? 'http://localhost:5000' 
+    : import.meta.env.VITE_SERVER_URL || 'https://nauchi09.onrender.com';
+  
+  // Убираем trailing slash если есть
+  return baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+};
+
+export const SERVER_URL = getServerUrl();
 
 // URL WebSocket - локальный в разработке, продакшн на Render
-export const WEBSOCKET_URL = import.meta.env.DEV 
-  ? 'http://localhost:5000' 
-  : import.meta.env.VITE_SERVER_URL || 'https://nauchi09.onrender.com';
+export const WEBSOCKET_URL = getServerUrl();
 
 // URL внешнего видео чата
-export const EXTERNAL_VIDEO_CHAT_URL = import.meta.env.DEV 
-  ? 'http://localhost:5000' 
-  : import.meta.env.VITE_SERVER_URL || 'https://nauchi09.onrender.com';
+export const EXTERNAL_VIDEO_CHAT_URL = getServerUrl();
 
 // Настройки Socket.IO для работы с сервером
 export const SOCKET_CONFIG = {
