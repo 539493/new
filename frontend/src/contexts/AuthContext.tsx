@@ -132,14 +132,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Инициализация при монтировании
   useEffect(() => {
-    const initializeAuth = () => {
+    const initializeAuth = async () => {
       try {
+        // Проверяем доступность сервера
+        console.log('🔍 Checking server availability...');
+        const serverCheck = await fetch(`${SERVER_URL}/api/health`);
+        
+        if (serverCheck.ok) {
+          console.log('✅ Server is available');
+        } else {
+          console.warn('⚠️ Server health check failed');
+        }
+        
         // Проверяем, есть ли пользователи в системе
         const users = loadUsersFromStorage();
-        // Система готова к работе с реальными пользователями
+        console.log('👥 Loaded users from storage:', users.length);
         
         setIsInitialized(true);
       } catch (error) {
+        console.error('❌ Server not available:', error);
+        console.log('🔄 Will retry connection in DataContext...');
         setIsInitialized(true); // Все равно помечаем как инициализированный
       }
     };
@@ -215,18 +227,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (!response.ok) {
         const errorText = await response.text();
-        // Server registration failed
+        console.error('❌ Server registration failed:', response.status, errorText);
         
         // Пытаемся парсить JSON ошибки
         try {
           const errorData = JSON.parse(errorText);
-          alert(errorData.error || 'Ошибка регистрации на сервере');
+          console.error('❌ Server error details:', errorData);
+          alert(`Ошибка сервера: ${errorData.error || 'Неизвестная ошибка'}`);
         } catch {
-          alert('Ошибка регистрации на сервере. Используется локальная регистрация.');
+          console.error('❌ Server error (non-JSON):', errorText);
+          alert(`Ошибка сервера: ${errorText || 'Неизвестная ошибка'}`);
         }
         
-        // Переходим к локальной регистрации
-        throw new Error('Server registration failed');
+        // НЕ переходим к локальной регистрации - принудительно используем сервер
+        throw new Error('Server registration failed - server is required');
       }
 
       const serverUser = await response.json();
@@ -298,153 +312,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       return true;
     } catch (error) {
-      // Fallback к локальной регистрации, если сервер недоступен
-      
-      const users = loadUsersFromStorage();
-      
-      // Проверяем уникальность email и nickname
-      const emailExists = users.some(u => u.email === email);
-      const nicknameExists = users.some(u => u.nickname === nickname);
-      
-      if (emailExists) {
-        alert('Пользователь с таким email уже существует');
-        return false;
-      }
-      
-      if (nicknameExists) {
-        alert('Пользователь с таким никнеймом уже существует');
-        return false;
-      }
-      
-      // Создаем базовый профиль в зависимости от роли
-      const baseProfile = role === 'teacher' ? {
-        subjects: [],
-        experience: 'experienced' as const,
-        grades: [],
-        goals: [],
-        lessonTypes: [],
-        durations: [],
-        formats: [],
-        offlineAvailable: false,
-        city: '',
-        overbookingEnabled: false,
-        bio: '',
-        avatar: '',
-        rating: 0,
-        hourlyRate: 1500,
-        age: undefined,
-        experienceYears: undefined,
-        education: {
-          university: '',
-          degree: '',
-          graduationYear: undefined,
-          courses: []
-        }
-      } as TeacherProfile : {
-        grade: '',
-        bio: '',
-        avatar: '',
-        subjects: [],
-        age: undefined,
-        school: '',
-        city: '',
-        phone: '',
-        parentName: '',
-        parentPhone: '',
-        goals: [],
-        interests: [],
-        learningStyle: 'mixed' as const,
-        experience: 'beginner' as const,
-        preferredFormats: [],
-        preferredDurations: [],
-        timeZone: '',
-      } as StudentProfile;
-
-      const newUser: User = {
-        id: uuidv4(),
-        email,
-        name,
-        nickname,
-        role,
-        phone,
-        profile: baseProfile,
-        avatar: baseProfile.avatar
-      };
-      
-      const updatedUsers = [...users, newUser];
-      saveUsersToStorage(updatedUsers);
-      setUser(newUser);
-      saveUserToStorage(newUser);
-      
-      // Если это преподаватель, сохраняем его профиль в teacherProfiles
-      if (role === 'teacher') {
-        const currentTeacherProfiles = JSON.parse(localStorage.getItem('tutoring_teacherProfiles') || '{}');
-        currentTeacherProfiles[newUser.id] = baseProfile;
-        localStorage.setItem('tutoring_teacherProfiles', JSON.stringify(currentTeacherProfiles));
-        console.log('✅ Профиль преподавателя сохранен локально:', newUser.id);
-        
-        // Отправляем событие для обновления DataContext
-        window.dispatchEvent(new CustomEvent('customStorage', {
-          detail: {
-            key: 'tutoring_teacherProfiles',
-            newValue: JSON.stringify(currentTeacherProfiles)
-          }
-        }));
-      }
-      
-      // Если это студент, сохраняем его профиль в studentProfiles
-      if (role === 'student') {
-        const currentStudentProfiles = JSON.parse(localStorage.getItem('tutoring_studentProfiles') || '{}');
-        currentStudentProfiles[newUser.id] = baseProfile;
-        localStorage.setItem('tutoring_studentProfiles', JSON.stringify(currentStudentProfiles));
-        console.log('✅ Профиль студента сохранен локально:', newUser.id);
-        
-        // Отправляем событие для обновления DataContext
-        window.dispatchEvent(new CustomEvent('customStorage', {
-          detail: {
-            key: 'tutoring_studentProfiles',
-            newValue: JSON.stringify(currentStudentProfiles)
-          }
-        }));
-      }
-      
-      // Пытаемся загрузить локальные данные на сервер
-      try {
-        const localTeacherProfiles = JSON.parse(localStorage.getItem('tutoring_teacherProfiles') || '{}');
-        const localStudentProfiles = JSON.parse(localStorage.getItem('tutoring_studentProfiles') || '{}');
-        const localUsers = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
-        
-        // Если есть локальные данные, пытаемся их загрузить на сервер
-        if (Object.keys(localTeacherProfiles).length > 0 || Object.keys(localStudentProfiles).length > 0) {
-          const uploadResponse = await fetch(`${SERVER_URL}/api/upload-local-data`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              teacherProfiles: localTeacherProfiles,
-              studentProfiles: localStudentProfiles,
-              users: localUsers
-            })
-          });
-          
-          if (uploadResponse.ok) {
-            const result = await uploadResponse.json();
-            console.log('✅ Локальные данные загружены на сервер:', result);
-            alert('Регистрация выполнена локально и данные синхронизированы с сервером!');
-          } else {
-            console.warn('⚠️ Не удалось загрузить локальные данные на сервер');
-            alert('Регистрация выполнена локально. Данные будут синхронизированы при подключении к серверу.');
-          }
-        } else {
-          alert('Регистрация выполнена локально. Данные будут синхронизированы при подключении к серверу.');
-        }
-      } catch (uploadError) {
-        console.warn('⚠️ Ошибка загрузки локальных данных на сервер:', uploadError);
-        alert('Регистрация выполнена локально. Данные будут синхронизированы при подключении к серверу.');
-      }
-      
-      return true;
+      // Сервер недоступен - показываем ошибку и не регистрируем локально
+      console.error('❌ Server registration failed:', error);
+      alert('Сервер недоступен. Регистрация невозможна. Попробуйте позже.');
+      return false;
     }
   };
 
