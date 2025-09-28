@@ -707,6 +707,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         console.log('✅ Connected to server via Socket.IO');
         console.log(`🌐 Server URL: ${SERVER_URL}`);
         console.log(`🔌 Socket ID: ${newSocket.id}`);
+        console.log('🎉 WebSocket connection established successfully!');
         
         // При подключении принудительно обновляем все данные
         console.log('🔄 Первоначальное подключение - обновляем данные...');

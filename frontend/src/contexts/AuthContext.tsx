@@ -192,6 +192,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       clearLocalProfileCaches();
       
       // Сначала регистрируем на сервере
+      console.log('🌐 Attempting server registration at:', `${SERVER_URL}/api/register`);
+      console.log('📤 Registration data:', { email, name, nickname, role, phone });
+      
       const response = await fetch(`${SERVER_URL}/api/register`, {
         method: 'POST',
         headers: {
@@ -206,6 +209,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           phone
         })
       });
+      
+      console.log('📡 Server response status:', response.status);
+      console.log('📡 Server response ok:', response.ok);
 
       if (!response.ok) {
         const errorText = await response.text();
