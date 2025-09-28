@@ -5,10 +5,11 @@
   "main": "backend/server.cjs",
   "scripts": {
     "start": "node backend/server.cjs",
-    "build": "cd frontend && npm install && npm run build",
-    "install:all": "npm install && cd frontend && npm install",
+    "build": "npm install && cd frontend && npm install && npm run build",
+    "install:all": "npm install && npm run install:frontend",
+    "install:frontend": "cd frontend && npm install",
     "dev": "concurrently \"npm run start\" \"cd frontend && npm run dev\"",
-    "postinstall": "cd frontend && npm install",
+    "postinstall": "npm run install:frontend",
     "test:deployment": "node test-deployment.js",
     "test:local": "node test-deployment.js http://localhost:5000",
     "test:render": "node test-deployment.js https://your-app-name.onrender.com"

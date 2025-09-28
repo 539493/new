@@ -1,17 +1,17 @@
 ﻿// Конфигурация для локального и продакшн сервера
 export const SERVER_URL = import.meta.env.DEV 
   ? 'http://localhost:5000' 
-  : import.meta.env.VITE_SERVER_URL || 'https://your-app-name.onrender.com';
+  : import.meta.env.VITE_SERVER_URL || 'https://YOUR_ACTUAL_APP_NAME.onrender.com';
 
 // URL WebSocket - локальный в разработке, продакшн на Render
 export const WEBSOCKET_URL = import.meta.env.DEV 
   ? 'http://localhost:5000' 
-  : import.meta.env.VITE_SERVER_URL || 'https://your-app-name.onrender.com';
+  : import.meta.env.VITE_SERVER_URL || 'https://YOUR_ACTUAL_APP_NAME.onrender.com';
 
 // URL внешнего видео чата
 export const EXTERNAL_VIDEO_CHAT_URL = import.meta.env.DEV 
   ? 'http://localhost:5000' 
-  : import.meta.env.VITE_SERVER_URL || 'https://your-app-name.onrender.com';
+  : import.meta.env.VITE_SERVER_URL || 'https://YOUR_ACTUAL_APP_NAME.onrender.com';
 
 // Настройки Socket.IO для работы с сервером
 export const SOCKET_CONFIG = {
