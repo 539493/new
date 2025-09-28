@@ -8,24 +8,24 @@ const path = require('path');
 const app = express();
 const server = http.createServer(app);
 
-// ��������� CORS ��� ���� �������
+// ��������� CORS ��� ���� �������
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:3001", 
   "http://localhost:5173",
   "http://localhost:4173",
-  "https://na-uchi.onrender.com",
-  "https://nauchi.netlify.app",
   "https://*.netlify.app",
-  "https://*.vercel.app"
+  "https://*.vercel.app",
+  "https://*.onrender.com",
+  "https://*.render.com"
 ];
 
 app.use(cors({
   origin: function (origin, callback) {
-    // ��������� ������� ��� origin (��������, ��������� ����������)
+    // ��������� ������� ��� origin (��������, ��������� ����������)
     if (!origin) return callback(null, true);
     
-    // ���������, ������������� �� origin ����������� �������
+    // ���������, ������������� �� origin ����������� �������
     const isAllowed = allowedOrigins.some(allowedOrigin => {
       if (allowedOrigin.includes('*')) {
         const pattern = allowedOrigin.replace('*', '.*');
@@ -45,13 +45,13 @@ app.use(cors({
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
 }));
 
-// Middleware ��� �������� JSON
+// Middleware ��� �������� JSON
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ������� �������� API �������
+// ������� �������� API �������
 app.get('/api/test', (req, res) => {
-  res.json({ message: 'API ��������!', timestamp: new Date().toISOString() });
+  res.json({ message: 'API ��������!', timestamp: new Date().toISOString() });
 });
 
 // API маршруты - должны быть ПЕРЕД статическими файлами
@@ -92,7 +92,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Обслуживание статических файлов фронтенда
-app.use(express.static(path.join(__dirname, '../dist')));
+app.use(express.static(path.join(__dirname, '../frontend/dist')));
 
 // Создание Socket.IO сервера
 const io = new Server(server, {
@@ -255,6 +255,12 @@ io.on('connection', (socket) => {
   // Отправляем профили преподавателей новому клиенту
   socket.emit('teacherProfiles', teacherProfiles);
   
+  // Отправляем все посты новому клиенту
+  socket.emit('allPosts', posts);
+  
+  // Отправляем все уведомления новому клиенту
+  socket.emit('allNotifications', notifications);
+  
   // Отправляем все слоты для синхронизации
   socket.emit('allSlots', timeSlots);
   
@@ -288,6 +294,18 @@ io.on('connection', (socket) => {
   });
   socket.emit('allUsers', allUsers);
   console.log('📡 Отправляем всех пользователей новому клиенту:', allUsers.length);
+  
+  // Отправляем полную синхронизацию данных для нового клиента
+  socket.emit('fullSync', {
+    teacherProfiles,
+    studentProfiles,
+    timeSlots,
+    lessons,
+    chats,
+    posts,
+    notifications,
+    overbookingRequests
+  });
   
   // Обработка запроса всех слотов
   socket.on('requestAllSlots', () => {
@@ -1822,7 +1840,7 @@ app.get('*', (req, res) => {
   }
   
   // Для всех остальных маршрутов возвращаем SPA
-  res.sendFile(path.join(__dirname, '../dist/index.html'));
+  res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
 });
 
 // Запуск сервера

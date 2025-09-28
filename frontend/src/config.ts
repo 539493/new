@@ -1,18 +1,17 @@
-﻿// Конфигурация для локального сервера в режиме разработки
-// В продакшене используется Render сервер
-
-// URL сервера - локальный в разработке, Render в продакшене
+﻿// Конфигурация для локального и продакшн сервера
 export const SERVER_URL = import.meta.env.DEV 
   ? 'http://localhost:5000' 
-  : 'https://na-uchi.onrender.com'; // URL вашего бэкенда на Render
+  : import.meta.env.VITE_SERVER_URL || 'https://your-app-name.onrender.com';
 
-// URL WebSocket - локальный в разработке, Render в продакшене
+// URL WebSocket - локальный в разработке, продакшн на Render
 export const WEBSOCKET_URL = import.meta.env.DEV 
   ? 'http://localhost:5000' 
-  : 'https://na-uchi.onrender.com'; // URL вашего бэкенда на Render
+  : import.meta.env.VITE_SERVER_URL || 'https://your-app-name.onrender.com';
 
 // URL внешнего видео чата
-export const EXTERNAL_VIDEO_CHAT_URL = 'https://video-chat-web-lp8d.onrender.com';
+export const EXTERNAL_VIDEO_CHAT_URL = import.meta.env.DEV 
+  ? 'http://localhost:5000' 
+  : import.meta.env.VITE_SERVER_URL || 'https://your-app-name.onrender.com';
 
 // Настройки Socket.IO для работы с сервером
 export const SOCKET_CONFIG = {

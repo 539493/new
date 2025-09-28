@@ -462,7 +462,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       // Отправляем обновление на сервер
       if (typeof window !== 'undefined') {
-        // Всегда отправляем на production сервер Render
+        // Отправляем на сервер
         fetch(`${SERVER_URL}/api/updateProfile`, {
           method: 'POST',
           headers: {

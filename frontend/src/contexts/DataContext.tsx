@@ -242,7 +242,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   // Функция для загрузки пользователей с сервера
   const loadUsersFromServer = async () => {
     try {
-      console.log('🔄 Загружаем пользователей с сервера Render...');
+      console.log('🔄 Загружаем пользователей с сервера...');
       const response = await fetch(`${SERVER_URL}/api/users`);
       
       if (!response.ok) {
@@ -251,7 +251,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       }
       
       const serverUsers = await response.json();
-      console.log('✅ Пользователи загружены с сервера Render:', serverUsers.length);
+      console.log('✅ Пользователи загружены с сервера:', serverUsers.length);
       
       // Объединяем с локальными пользователями
       const localUsers = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
@@ -368,7 +368,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     try {
       console.log('👨‍🏫 Принудительная загрузка зарегистрированных преподавателей...');
       
-      // Сначала пытаемся загрузить с сервера Render
+      // Сначала пытаемся загрузить с сервера
       try {
         await loadUsersFromServer();
       } catch (serverError) {

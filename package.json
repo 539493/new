@@ -1,18 +1,25 @@
 {
   "name": "tutoring-platform-backend",
   "version": "1.0.0",
-  "description": "Tutoring Platform Backend for Render deployment",
-  "main": "production-server.cjs",
+  "description": "Tutoring Platform Backend",
+  "main": "backend/server.cjs",
   "scripts": {
-    "start": "node production-server.cjs",
-    "build": "echo 'Backend build completed'"
+    "start": "node backend/server.cjs",
+    "build": "cd frontend && npm install && npm run build",
+    "install:all": "npm install && cd frontend && npm install",
+    "dev": "concurrently \"npm run start\" \"cd frontend && npm run dev\"",
+    "postinstall": "cd frontend && npm install",
+    "test:deployment": "node test-deployment.js",
+    "test:local": "node test-deployment.js http://localhost:5000",
+    "test:render": "node test-deployment.js https://your-app-name.onrender.com"
   },
   "dependencies": {
     "express": "^4.18.2",
     "cors": "^2.8.5",
     "socket.io": "^4.7.2",
     "multer": "^1.4.5-lts.1",
-    "fs-extra": "^11.1.1"
+    "fs-extra": "^11.1.1",
+    "concurrently": "^8.2.2"
   },
   "engines": {
     "node": ">=18.0.0"
