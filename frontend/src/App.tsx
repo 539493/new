@@ -75,6 +75,10 @@ const AppContent: React.FC = () => {
             return user.role === 'student' ? <StudentLessons setActiveTab={setActiveTab} /> : null;
           case 'students':
             return user.role === 'teacher' ? <TeacherStudents /> : null;
+          case 'new-students':
+            return user.role === 'teacher' ? <TeacherStudents /> : null;
+          case 'classes':
+            return user.role === 'teacher' ? <TeacherStudents /> : null;
           case 'materials':
             return user.role === 'teacher' ? <TeacherMaterials /> : null;
           case 'chats':

@@ -11,8 +11,11 @@ interface NavigationProps {
 const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange }) => {
   const { user, logout } = useAuth();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showStudentsMenu, setShowStudentsMenu] = useState(false);
   const profileBtnRef = useRef<HTMLButtonElement | null>(null);
+  const studentsBtnRef = useRef<HTMLButtonElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const studentsMenuRef = useRef<HTMLDivElement | null>(null);
 
   // Закрытие меню при клике вне его
   useEffect(() => {
@@ -27,10 +30,19 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange }) => {
       ) {
         setShowProfileMenu(false);
       }
+      if (
+        showStudentsMenu &&
+        studentsMenuRef.current &&
+        !studentsMenuRef.current.contains(target) &&
+        studentsBtnRef.current &&
+        !studentsBtnRef.current.contains(target)
+      ) {
+        setShowStudentsMenu(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showProfileMenu]);
+  }, [showProfileMenu, showStudentsMenu]);
 
   const studentTabs = [
     { id: 'home', label: 'Главная', icon: Home },
@@ -65,13 +77,20 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange }) => {
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const isTeacherProfileButton = user?.role === 'teacher' && tab.id === 'profile';
+                const isStudentsButton = user?.role === 'teacher' && tab.id === 'students';
                 return (
                   <button
                     key={tab.id}
-                    ref={isTeacherProfileButton ? profileBtnRef : null}
+                    ref={isTeacherProfileButton ? profileBtnRef : isStudentsButton ? studentsBtnRef : null}
                     onClick={() => {
                       if (isTeacherProfileButton) {
                         setShowProfileMenu((v) => !v);
+                        setShowStudentsMenu(false);
+                        return;
+                      }
+                      if (isStudentsButton) {
+                        setShowStudentsMenu((v) => !v);
+                        setShowProfileMenu(false);
                         return;
                       }
                       onTabChange(tab.id);
@@ -102,32 +121,34 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange }) => {
                     <span>Просмотреть профиль</span>
                   </button>
                   <button
-                    onClick={() => { setShowProfileMenu(false); onTabChange('slots'); }}
-                    className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-border-dark transition-colors flex items-center gap-2"
-                  >
-                    <span className="inline-block h-2 w-2 rounded-full bg-green-500"></span>
-                    <span>Слоты</span>
-                  </button>
-                  <button
-                    onClick={() => { setShowProfileMenu(false); onTabChange('calendar'); }}
-                    className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-border-dark transition-colors flex items-center gap-2"
-                  >
-                    <span className="inline-block h-2 w-2 rounded-full bg-purple-500"></span>
-                    <span>Календарь</span>
-                  </button>
-                  <button
-                    onClick={() => { setShowProfileMenu(false); onTabChange('students'); }}
-                    className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-border-dark transition-colors flex items-center gap-2"
-                  >
-                    <span className="inline-block h-2 w-2 rounded-full bg-amber-500"></span>
-                    <span>Ученики</span>
-                  </button>
-                  <button
                     onClick={() => { setShowProfileMenu(false); onTabChange('materials'); }}
                     className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-border-dark transition-colors flex items-center gap-2"
                   >
                     <span className="inline-block h-2 w-2 rounded-full bg-pink-500"></span>
                     <span>Материалы</span>
+                  </button>
+                </div>
+              )}
+              {/* Выпадающее меню учеников */}
+              {user?.role === 'teacher' && showStudentsMenu && (
+                <div
+                  ref={studentsMenuRef}
+                  className="absolute top-14 left-0 w-64 bg-white dark:bg-card-dark border border-border-light dark:border-border-dark rounded-xl shadow-2xl py-2 z-50"
+                >
+                  <div className="px-4 py-2 text-xs uppercase tracking-wide text-gray-400">Ученики</div>
+                  <button
+                    onClick={() => { setShowStudentsMenu(false); onTabChange('new-students'); }}
+                    className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-border-dark transition-colors flex items-center gap-2"
+                  >
+                    <span className="inline-block h-2 w-2 rounded-full bg-green-500"></span>
+                    <span>Новые ученики</span>
+                  </button>
+                  <button
+                    onClick={() => { setShowStudentsMenu(false); onTabChange('classes'); }}
+                    className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-border-dark transition-colors flex items-center gap-2"
+                  >
+                    <span className="inline-block h-2 w-2 rounded-full bg-blue-500"></span>
+                    <span>Классы</span>
                   </button>
                 </div>
               )}
@@ -172,6 +193,11 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange }) => {
                     if (user?.role === 'teacher' && tab.id === 'profile') {
                       // На мобильных просто переключаемся на профиль
                       onTabChange('profile');
+                      return;
+                    }
+                    if (user?.role === 'teacher' && tab.id === 'students') {
+                      // На мобильных просто переключаемся на учеников
+                      onTabChange('students');
                       return;
                     }
                     onTabChange(tab.id);
