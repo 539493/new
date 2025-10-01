@@ -174,7 +174,8 @@ function saveServerData() {
       lessons,
       chats,
       posts,
-      notifications
+      notifications,
+      classes
     };
     
     console.log('Saving server data:', {
@@ -214,6 +215,8 @@ let pendingOverbookingForTeacher = {};
 let posts = Array.isArray(serverData.posts) ? serverData.posts : [];
 // Хранилище для уведомлений
 let notifications = Array.isArray(serverData.notifications) ? serverData.notifications : [];
+// Хранилище для классов
+let classes = Array.isArray(serverData.classes) ? serverData.classes : [];
 
 // Тестовое сохранение при запуске для проверки работы функции
 saveServerData();
@@ -1829,6 +1832,121 @@ app.post('/api/upload-local-data', (req, res) => {
       error: 'Failed to upload local data',
       details: error.message 
     });
+  }
+});
+
+// API для классов
+// Получить все классы преподавателя
+app.get('/api/classes', (req, res) => {
+  try {
+    const { teacherId } = req.query;
+    if (!teacherId) {
+      return res.status(400).json({ error: 'Teacher ID is required' });
+    }
+    
+    const teacherClasses = classes.filter(cls => cls.teacherId === teacherId);
+    res.json(teacherClasses);
+  } catch (error) {
+    console.error('Error getting classes:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Создать новый класс
+app.post('/api/classes', (req, res) => {
+  try {
+    const { name, description, subject, grade, color, teacherId } = req.body;
+    
+    if (!name || !teacherId) {
+      return res.status(400).json({ error: 'Name and teacherId are required' });
+    }
+    
+    const newClass = {
+      id: Date.now().toString(),
+      name,
+      description: description || '',
+      subject: subject || '',
+      grade: grade || '',
+      color: color || '#3B82F6',
+      students: [],
+      teacherId,
+      createdAt: new Date().toISOString()
+    };
+    
+    classes.push(newClass);
+    saveServerData();
+    
+    res.status(201).json(newClass);
+  } catch (error) {
+    console.error('Error creating class:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Добавить ученика в класс
+app.post('/api/classes/:classId/students', (req, res) => {
+  try {
+    const { classId } = req.params;
+    const { studentId } = req.body;
+    
+    if (!studentId) {
+      return res.status(400).json({ error: 'Student ID is required' });
+    }
+    
+    const classIndex = classes.findIndex(cls => cls.id === classId);
+    if (classIndex === -1) {
+      return res.status(404).json({ error: 'Class not found' });
+    }
+    
+    if (!classes[classIndex].students.includes(studentId)) {
+      classes[classIndex].students.push(studentId);
+      saveServerData();
+    }
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error adding student to class:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Удалить ученика из класса
+app.delete('/api/classes/:classId/students/:studentId', (req, res) => {
+  try {
+    const { classId, studentId } = req.params;
+    
+    const classIndex = classes.findIndex(cls => cls.id === classId);
+    if (classIndex === -1) {
+      return res.status(404).json({ error: 'Class not found' });
+    }
+    
+    classes[classIndex].students = classes[classIndex].students.filter(id => id !== studentId);
+    saveServerData();
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error removing student from class:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Удалить класс
+app.delete('/api/classes/:classId', (req, res) => {
+  try {
+    const { classId } = req.params;
+    
+    const classIndex = classes.findIndex(cls => cls.id === classId);
+    if (classIndex === -1) {
+      return res.status(404).json({ error: 'Class not found' });
+    }
+    
+    classes.splice(classIndex, 1);
+    saveServerData();
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting class:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 

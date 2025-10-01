@@ -8,6 +8,8 @@ import StudentHome from './components/Student/StudentHome';
 import TeacherHome from './components/Teacher/TeacherHome';
 import TeacherSlots from './components/Teacher/TeacherSlots';
 import TeacherStudents from './components/Teacher/TeacherStudents';
+import TeacherNewStudents from './components/Teacher/TeacherNewStudents';
+import TeacherClasses from './components/Teacher/TeacherClasses';
 import TeacherCalendar from './components/Teacher/TeacherCalendar';
 import TeacherMaterials from './components/Teacher/TeacherMaterials';
 import StudentLessons from './components/Student/StudentLessons';
@@ -76,9 +78,9 @@ const AppContent: React.FC = () => {
           case 'students':
             return user.role === 'teacher' ? <TeacherStudents /> : null;
           case 'new-students':
-            return user.role === 'teacher' ? <TeacherStudents /> : null;
+            return user.role === 'teacher' ? <TeacherNewStudents /> : null;
           case 'classes':
-            return user.role === 'teacher' ? <TeacherStudents /> : null;
+            return user.role === 'teacher' ? <TeacherClasses /> : null;
           case 'materials':
             return user.role === 'teacher' ? <TeacherMaterials /> : null;
           case 'chats':
