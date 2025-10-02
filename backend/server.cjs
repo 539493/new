@@ -1950,6 +1950,34 @@ app.delete('/api/classes/:classId', (req, res) => {
   }
 });
 
+// Получить классы ученика
+app.get('/api/student/classes', (req, res) => {
+  try {
+    const { studentId } = req.query;
+    if (!studentId) {
+      return res.status(400).json({ error: 'Student ID is required' });
+    }
+    
+    // Находим все классы, в которых есть этот ученик
+    const studentClasses = classes.filter(cls => cls.students.includes(studentId));
+    
+    // Добавляем информацию о преподавателе к каждому классу
+    const classesWithTeacherInfo = studentClasses.map(cls => {
+      const teacherProfile = teacherProfiles[cls.teacherId];
+      return {
+        ...cls,
+        teacherName: teacherProfile ? teacherProfile.name : 'Неизвестный преподаватель',
+        teacherAvatar: teacherProfile ? teacherProfile.avatar : ''
+      };
+    });
+    
+    res.json(classesWithTeacherInfo);
+  } catch (error) {
+    console.error('Error getting student classes:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Обработчик для SPA маршрутов - должен быть последним
 app.get('*', (req, res) => {
   // Не обрабатываем API маршруты через SPA

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Calendar, 
   Clock, 
@@ -21,19 +21,40 @@ import {
   CalendarDays,
   Timer,
   Target,
-  Sparkles
+  Sparkles,
+  BookOpen,
+  GraduationCap,
+  UserCheck
 } from 'lucide-react';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { SERVER_URL } from '../../config';
 
 interface StudentLessonsProps {
   setActiveTab: (tab: string) => void;
+}
+
+interface StudentClass {
+  id: string;
+  name: string;
+  description: string;
+  subject: string;
+  grade: string;
+  students: string[];
+  teacherId: string;
+  teacherName: string;
+  teacherAvatar: string;
+  createdAt: string;
+  color: string;
 }
 
 const StudentLessons: React.FC<StudentLessonsProps> = ({ setActiveTab }) => {
   const { lessons, cancelLesson, rescheduleLesson, getOrCreateChat } = useData();
   const { user } = useAuth();
 
+  const [activeSubTab, setActiveSubTab] = useState<'lessons' | 'classes'>('lessons');
+  const [classes, setClasses] = useState<StudentClass[]>([]);
+  const [loadingClasses, setLoadingClasses] = useState(false);
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [selectedLesson, setSelectedLesson] = useState<any>(null);
   const [newDate, setNewDate] = useState('');
@@ -42,6 +63,32 @@ const StudentLessons: React.FC<StudentLessonsProps> = ({ setActiveTab }) => {
   const userLessons = lessons.filter(lesson => lesson.studentId === user?.id);
   const scheduledLessons = userLessons.filter(lesson => lesson.status === 'scheduled');
   const completedLessons = userLessons.filter(lesson => lesson.status === 'completed');
+
+  // Загрузка классов ученика
+  useEffect(() => {
+    if (user && activeSubTab === 'classes') {
+      loadStudentClasses();
+    }
+  }, [user, activeSubTab]);
+
+  const loadStudentClasses = async () => {
+    if (!user) return;
+    
+    setLoadingClasses(true);
+    try {
+      const response = await fetch(`${SERVER_URL}/api/student/classes?studentId=${user.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setClasses(data);
+      } else {
+        console.error('Failed to load student classes');
+      }
+    } catch (error) {
+      console.error('Error loading student classes:', error);
+    } finally {
+      setLoadingClasses(false);
+    }
+  };
 
   const handleOpenChat = (teacherId: string, teacherName: string) => {
     if (user) {
@@ -242,71 +289,229 @@ const StudentLessons: React.FC<StudentLessonsProps> = ({ setActiveTab }) => {
     </div>
   );
 
+  const ClassCard = ({ classItem }: { classItem: StudentClass }) => (
+    <div className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-blue-200">
+      {/* Header с цветом класса */}
+      <div 
+        className="p-4 text-white relative overflow-hidden"
+        style={{ backgroundColor: classItem.color }}
+      >
+        <div className="absolute top-0 right-0 w-24 h-24 bg-white opacity-10 rounded-full -translate-y-12 translate-x-12"></div>
+        <div className="absolute bottom-0 left-0 w-16 h-16 bg-white opacity-10 rounded-full translate-y-8 -translate-x-8"></div>
+        
+        <div className="relative z-10">
+          <div className="flex items-start justify-between mb-3">
+            <div className="flex-1">
+              <h3 className="text-lg font-bold mb-1">{classItem.name}</h3>
+              <div className="flex items-center space-x-2">
+                <User className="h-4 w-4 text-white opacity-80" />
+                <span className="text-white opacity-90 text-sm font-medium">{classItem.teacherName}</span>
+              </div>
+            </div>
+            <div className="flex items-center space-x-1 bg-white bg-opacity-20 px-2 py-1 rounded-full">
+              <Users className="h-3 w-3" />
+              <span className="text-xs font-medium">{classItem.students.length}</span>
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-3 text-white opacity-90">
+            <div className="flex items-center space-x-2">
+              <BookOpen className="h-4 w-4" />
+              <span className="text-xs font-medium">{classItem.subject}</span>
+            </div>
+            {classItem.grade && (
+              <div className="flex items-center space-x-1">
+                <GraduationCap className="h-4 w-4" />
+                <span className="text-xs font-medium">{classItem.grade}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Основная информация */}
+      <div className="p-4">
+        {classItem.description && (
+          <div className="mb-4">
+            <p className="text-gray-600 text-sm leading-relaxed">{classItem.description}</p>
+          </div>
+        )}
+
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-2">
+            <div className="p-1.5 bg-blue-100 rounded-md">
+              <Calendar className="h-4 w-4 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 font-medium">Создан</p>
+              <p className="text-sm font-semibold text-gray-900">
+                {new Date(classItem.createdAt).toLocaleDateString('ru-RU')}
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <div className="p-1.5 bg-green-100 rounded-md">
+              <UserCheck className="h-4 w-4 text-green-600" />
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-gray-500 font-medium">Участников</p>
+              <p className="text-sm font-semibold text-gray-900">{classItem.students.length}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Действия */}
+        <div className="space-y-3">
+          <div className="grid grid-cols-1 gap-2">
+            <button
+              onClick={() => handleOpenChat(classItem.teacherId, classItem.teacherName)}
+              className="flex items-center justify-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg text-sm font-medium hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
+            >
+              <MessageCircle className="h-4 w-4" />
+              <span>Написать преподавателю</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Декоративные элементы */}
+      <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+        <div className="w-2 h-2 bg-white rounded-full"></div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Заголовок страницы */}
         <div className="text-center mb-8">
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
-            Мои уроки
+            {activeSubTab === 'lessons' ? 'Мои уроки' : 'Мои классы'}
           </h1>
           
           <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
-            Управляйте вашими запланированными и завершенными уроками. 
-            Отслеживайте прогресс и достигайте новых высот в обучении.
+            {activeSubTab === 'lessons' 
+              ? 'Управляйте вашими запланированными и завершенными уроками. Отслеживайте прогресс и достигайте новых высот в обучении.'
+              : 'Просматривайте классы, в которые вас добавили преподаватели. Общайтесь с учителями и одноклассниками.'
+            }
           </p>
         </div>
 
-        {/* Статистика */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Calendar className="h-6 w-6 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-xl font-bold text-gray-900">{scheduledLessons.length}</p>
-                <p className="text-sm text-gray-600">Запланировано</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <CheckCircle className="h-6 w-6 text-green-600" />
-              </div>
-              <div>
-                <p className="text-xl font-bold text-gray-900">{completedLessons.length}</p>
-                <p className="text-sm text-gray-600">Завершено</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <TrendingUp className="h-6 w-6 text-purple-600" />
-              </div>
-              <div>
-                <p className="text-xl font-bold text-gray-900">{userLessons.length}</p>
-                <p className="text-sm text-gray-600">Всего уроков</p>
-              </div>
+        {/* Вкладки */}
+        <div className="flex justify-center mb-8">
+          <div className="bg-white rounded-2xl p-1 shadow-lg border border-gray-200">
+            <div className="flex space-x-1">
+              <button
+                onClick={() => setActiveSubTab('lessons')}
+                className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-200 ${
+                  activeSubTab === 'lessons'
+                    ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md'
+                    : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
+                }`}
+              >
+                <Calendar className="h-4 w-4" />
+                <span>Мои уроки</span>
+              </button>
+              <button
+                onClick={() => setActiveSubTab('classes')}
+                className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-200 ${
+                  activeSubTab === 'classes'
+                    ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-md'
+                    : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50'
+                }`}
+              >
+                <Users className="h-4 w-4" />
+                <span>Мои классы</span>
+              </button>
             </div>
           </div>
         </div>
 
-        {/* Запланированные уроки */}
-        <div className="mb-12">
-          <div className="flex items-center space-x-3 mb-6">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Calendar className="h-6 w-6 text-blue-600" />
+        {/* Статистика */}
+        {activeSubTab === 'lessons' ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Calendar className="h-6 w-6 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-xl font-bold text-gray-900">{scheduledLessons.length}</p>
+                  <p className="text-sm text-gray-600">Запланировано</p>
+                </div>
+              </div>
             </div>
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">Запланированные уроки</h2>
-              <p className="text-sm text-gray-600">Ваши предстоящие занятия</p>
+            
+            <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <CheckCircle className="h-6 w-6 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-xl font-bold text-gray-900">{completedLessons.length}</p>
+                  <p className="text-sm text-gray-600">Завершено</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <TrendingUp className="h-6 w-6 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-xl font-bold text-gray-900">{userLessons.length}</p>
+                  <p className="text-sm text-gray-600">Всего уроков</p>
+                </div>
+              </div>
             </div>
           </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+            <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <Users className="h-6 w-6 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-xl font-bold text-gray-900">{classes.length}</p>
+                  <p className="text-sm text-gray-600">Всего классов</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <BookOpen className="h-6 w-6 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-xl font-bold text-gray-900">
+                    {classes.reduce((acc, cls) => acc + cls.students.length, 0)}
+                  </p>
+                  <p className="text-sm text-gray-600">Всего участников</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Контент в зависимости от активной вкладки */}
+        {activeSubTab === 'lessons' ? (
+          <>
+            {/* Запланированные уроки */}
+            <div className="mb-12">
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Calendar className="h-6 w-6 text-blue-600" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">Запланированные уроки</h2>
+                  <p className="text-sm text-gray-600">Ваши предстоящие занятия</p>
+                </div>
+              </div>
           
           {scheduledLessons.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -372,25 +577,93 @@ const StudentLessons: React.FC<StudentLessonsProps> = ({ setActiveTab }) => {
           )}
         </div>
 
-        {/* Призыв к действию */}
-        <div className="text-center py-12 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 rounded-2xl text-white shadow-xl">
-          <div className="max-w-xl mx-auto px-6">
-            <h3 className="text-2xl font-bold mb-3">Готовы к следующему уроку?</h3>
-            <p className="text-lg text-blue-100 mb-6">
-              Продолжайте обучение и достигайте новых высот вместе с нашими преподавателями
-            </p>
-            <button 
-              onClick={() => {
-                console.log('🔍 Переход к главной странице для поиска преподавателя');
-                setActiveTab('home');
-              }}
-              className="inline-flex items-center space-x-2 px-6 py-3 bg-white text-blue-600 rounded-lg font-semibold text-base hover:bg-gray-50 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-            >
-              <PlayCircle className="h-5 w-5" />
-              <span>Найти преподавателя</span>
-            </button>
-          </div>
-        </div>
+            {/* Призыв к действию для уроков */}
+            <div className="text-center py-12 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 rounded-2xl text-white shadow-xl">
+              <div className="max-w-xl mx-auto px-6">
+                <h3 className="text-2xl font-bold mb-3">Готовы к следующему уроку?</h3>
+                <p className="text-lg text-blue-100 mb-6">
+                  Продолжайте обучение и достигайте новых высот вместе с нашими преподавателями
+                </p>
+                <button 
+                  onClick={() => {
+                    console.log('🔍 Переход к главной странице для поиска преподавателя');
+                    setActiveTab('home');
+                  }}
+                  className="inline-flex items-center space-x-2 px-6 py-3 bg-white text-blue-600 rounded-lg font-semibold text-base hover:bg-gray-50 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                >
+                  <PlayCircle className="h-5 w-5" />
+                  <span>Найти преподавателя</span>
+                </button>
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Мои классы */}
+            <div className="mb-12">
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <Users className="h-6 w-6 text-purple-600" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">Мои классы</h2>
+                  <p className="text-sm text-gray-600">Классы, в которые вас добавили преподаватели</p>
+                </div>
+              </div>
+              
+              {loadingClasses ? (
+                <div className="text-center py-12 bg-white rounded-xl shadow-md border border-gray-100">
+                  <div className="mx-auto h-16 w-16 bg-gradient-to-br from-purple-100 to-indigo-100 rounded-full flex items-center justify-center mb-4 animate-pulse">
+                    <Users className="h-8 w-8 text-purple-600" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">Загружаем классы...</h3>
+                  <p className="text-sm text-gray-600">Пожалуйста, подождите</p>
+                </div>
+              ) : classes.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {classes.map((classItem) => (
+                    <ClassCard key={classItem.id} classItem={classItem} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 bg-white rounded-xl shadow-md border border-gray-100">
+                  <div className="mx-auto h-16 w-16 bg-gradient-to-br from-purple-100 to-indigo-100 rounded-full flex items-center justify-center mb-4">
+                    <Users className="h-8 w-8 text-purple-600" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">Пока нет классов</h3>
+                  <p className="text-sm text-gray-600 mb-4 max-w-sm mx-auto">
+                    Когда преподаватель добавит вас в класс, он появится здесь. 
+                    Вы сможете общаться с учителем и видеть информацию о классе.
+                  </p>
+                  <div className="inline-flex items-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-lg font-medium">
+                    <Target className="h-4 w-4" />
+                    <span>Ожидание приглашения</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Призыв к действию для классов */}
+            <div className="text-center py-12 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 rounded-2xl text-white shadow-xl">
+              <div className="max-w-xl mx-auto px-6">
+                <h3 className="text-2xl font-bold mb-3">Хотите присоединиться к классу?</h3>
+                <p className="text-lg text-purple-100 mb-6">
+                  Найдите преподавателя и попросите добавить вас в один из его классов
+                </p>
+                <button 
+                  onClick={() => {
+                    console.log('🔍 Переход к главной странице для поиска преподавателя');
+                    setActiveTab('home');
+                  }}
+                  className="inline-flex items-center space-x-2 px-6 py-3 bg-white text-purple-600 rounded-lg font-semibold text-base hover:bg-gray-50 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                >
+                  <Users className="h-5 w-5" />
+                  <span>Найти преподавателя</span>
+                </button>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Модальное окно переноса урока */}
