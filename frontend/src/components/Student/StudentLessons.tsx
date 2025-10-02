@@ -29,6 +29,7 @@ import {
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { SERVER_URL } from '../../config';
+import ClassDetails from '../Shared/ClassDetails';
 
 interface StudentLessonsProps {
   setActiveTab: (tab: string) => void;
@@ -57,6 +58,7 @@ const StudentLessons: React.FC<StudentLessonsProps> = ({ setActiveTab }) => {
   const [loadingClasses, setLoadingClasses] = useState(false);
   const [hasLoadedClasses, setHasLoadedClasses] = useState(false);
   const [showClassesNotification, setShowClassesNotification] = useState(false);
+  const [selectedClassForDetails, setSelectedClassForDetails] = useState<StudentClass | null>(null);
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [selectedLesson, setSelectedLesson] = useState<any>(null);
   const [newDate, setNewDate] = useState('');
@@ -342,7 +344,10 @@ const StudentLessons: React.FC<StudentLessonsProps> = ({ setActiveTab }) => {
   );
 
   const ClassCard = ({ classItem }: { classItem: StudentClass }) => (
-    <div className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-blue-200">
+    <div 
+      className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-blue-200 cursor-pointer"
+      onClick={() => setSelectedClassForDetails(classItem)}
+    >
       {/* Header с цветом класса */}
       <div 
         className="p-4 text-white relative overflow-hidden"
@@ -417,7 +422,10 @@ const StudentLessons: React.FC<StudentLessonsProps> = ({ setActiveTab }) => {
         <div className="space-y-3">
           <div className="grid grid-cols-1 gap-2">
             <button
-              onClick={() => handleOpenChat(classItem.teacherId, classItem.teacherName)}
+              onClick={(e) => {
+                e.stopPropagation(); // Предотвращаем открытие деталей класса
+                handleOpenChat(classItem.teacherId, classItem.teacherName);
+              }}
               className="flex items-center justify-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg text-sm font-medium hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
             >
               <MessageCircle className="h-4 w-4" />
@@ -849,6 +857,15 @@ const StudentLessons: React.FC<StudentLessonsProps> = ({ setActiveTab }) => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Модальное окно детального просмотра класса */}
+      {selectedClassForDetails && (
+        <ClassDetails
+          classData={selectedClassForDetails}
+          onClose={() => setSelectedClassForDetails(null)}
+          userRole="student"
+        />
       )}
     </div>
   );

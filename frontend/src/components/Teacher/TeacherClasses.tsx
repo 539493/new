@@ -13,13 +13,15 @@ import {
   GraduationCap,
   BookOpen,
   Calendar,
-  Clock
+  Clock,
+  Eye
 } from "lucide-react";
 import { useData } from "../../contexts/DataContext";
 import { useAuth } from "../../contexts/AuthContext";
 import { SERVER_URL } from "../../config";
 import type { StudentProfile } from "../../types";
 import { Lesson } from "../../types";
+import ClassDetails from "../Shared/ClassDetails";
 
 interface Class {
   id: string;
@@ -49,6 +51,7 @@ const TeacherClasses: React.FC = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showAddStudentModal, setShowAddStudentModal] = useState(false);
   const [selectedClass, setSelectedClass] = useState<Class | null>(null);
+  const [selectedClassForDetails, setSelectedClassForDetails] = useState<Class | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -256,6 +259,13 @@ const TeacherClasses: React.FC = () => {
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-xl font-semibold text-gray-900">{cls.name}</h3>
                   <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => setSelectedClassForDetails(cls)}
+                      className="p-2 text-gray-400 hover:text-green-600 transition-colors"
+                      title="Открыть класс"
+                    >
+                      <Eye className="w-5 h-5" />
+                    </button>
                     <button
                       onClick={() => {
                         setSelectedClass(cls);
@@ -517,6 +527,15 @@ const TeacherClasses: React.FC = () => {
             )}
           </div>
         </div>
+      )}
+
+      {/* Модальное окно детального просмотра класса */}
+      {selectedClassForDetails && (
+        <ClassDetails
+          classData={selectedClassForDetails}
+          onClose={() => setSelectedClassForDetails(null)}
+          userRole="teacher"
+        />
       )}
     </div>
   );
