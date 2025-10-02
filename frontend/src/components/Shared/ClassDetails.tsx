@@ -57,8 +57,6 @@ type ActiveTab = 'board' | 'materials' | 'homework' | 'studyPlan';
 const ClassDetails: React.FC<ClassDetailsProps> = ({ classData, onClose, userRole }) => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<ActiveTab | null>(null);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [hoveredTab, setHoveredTab] = useState<ActiveTab | null>(null);
   const [content, setContent] = useState<ClassContent>({
     board: [],
     materials: [],
@@ -157,17 +155,12 @@ const ClassDetails: React.FC<ClassDetailsProps> = ({ classData, onClose, userRol
     if (activeTab === tabId) {
       // Если кликнули на активную вкладку - закрываем её
       setActiveTab(null);
-      setIsSidebarCollapsed(false);
     } else {
-      // Иначе открываем новую вкладку и сворачиваем панель
+      // Иначе открываем новую вкладку
       setActiveTab(tabId);
-      setIsSidebarCollapsed(true);
     }
   };
 
-  const handleTabHover = (tabId: ActiveTab | null) => {
-    setHoveredTab(tabId);
-  };
 
   const renderTabContent = () => {
     if (!activeTab) {
@@ -258,30 +251,23 @@ const ClassDetails: React.FC<ClassDetailsProps> = ({ classData, onClose, userRol
           <div className="flex flex-1 overflow-hidden">
             
             {/* Боковая панель с вкладками */}
-            <div className={`${isSidebarCollapsed ? 'w-16' : 'w-80'} border-r border-gray-200 bg-gray-50 flex flex-col transition-all duration-300`}>
+            <div className="w-80 border-r border-gray-200 bg-gray-50 flex flex-col">
               <div className="p-4">
-                {!isSidebarCollapsed && (
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Функции класса</h3>
-                )}
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Функции класса</h3>
                 <div className="space-y-2">
                   {tabConfig.map((tab) => {
                     const Icon = tab.icon;
                     const isActive = activeTab === tab.id;
-                    const isHovered = hoveredTab === tab.id;
-                    const shouldShowText = !isSidebarCollapsed || isHovered;
                     
                     return (
                       <button
                         key={tab.id}
                         onClick={() => handleTabClick(tab.id)}
-                        onMouseEnter={() => handleTabHover(tab.id)}
-                        onMouseLeave={() => handleTabHover(null)}
-                        className={`w-full flex items-center ${shouldShowText ? 'space-x-3' : 'justify-center'} p-3 rounded-xl text-left transition-all duration-200 ${
+                        className={`w-full flex items-center space-x-3 p-3 rounded-xl text-left transition-all duration-200 ${
                           isActive
                             ? getActiveButtonClass(tab.color)
                             : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
                         }`}
-                        title={isSidebarCollapsed ? tab.label : undefined}
                       >
                         <div className={`p-2 rounded-lg ${
                           isActive 
@@ -294,16 +280,14 @@ const ClassDetails: React.FC<ClassDetailsProps> = ({ classData, onClose, userRol
                               : getInactiveIconClass(tab.color)
                           }`} />
                         </div>
-                        {shouldShowText && (
-                          <div className="flex-1">
-                            <div className="font-medium text-sm">{tab.label}</div>
-                            <div className={`text-xs ${
-                              isActive ? 'text-white text-opacity-80' : 'text-gray-500'
-                            }`}>
-                              {tab.description}
-                            </div>
+                        <div className="flex-1">
+                          <div className="font-medium text-sm">{tab.label}</div>
+                          <div className={`text-xs ${
+                            isActive ? 'text-white text-opacity-80' : 'text-gray-500'
+                          }`}>
+                            {tab.description}
                           </div>
-                        )}
+                        </div>
                       </button>
                     );
                   })}
