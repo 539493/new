@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   X,
   Users,
@@ -19,7 +19,22 @@ import {
   CheckCircle,
   Clock,
   AlertCircle,
-  ArrowLeft
+  ArrowLeft,
+  MousePointer,
+  Hand,
+  Type,
+  Square,
+  ArrowRight,
+  Pen,
+  Eraser,
+  Image,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  RotateCw,
+  Settings,
+  Phone,
+  ChevronUp
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { SERVER_URL } from '../../config';
@@ -276,80 +291,298 @@ const ClassDetails: React.FC<ClassDetailsProps> = ({ classData, onClose, userRol
 const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; content: any[] }> = ({ 
   classId, userRole, content 
 }) => {
-  const [posts, setPosts] = useState<any[]>([]);
-  const [newPost, setNewPost] = useState('');
-  const [isCreating, setIsCreating] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [currentTool, setCurrentTool] = useState('pen');
+  const [brushSize, setBrushSize] = useState(2);
+  const [brushColor, setBrushColor] = useState('#000000');
+  const [zoom, setZoom] = useState(100);
+  const [showStudentConnection, setShowStudentConnection] = useState(false);
+
+  // Инициализация canvas
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Устанавливаем размеры canvas
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+
+    // Настройки по умолчанию
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = brushColor;
+    ctx.lineWidth = brushSize;
+
+    // Рисуем сетку
+    drawGrid(ctx, canvas.width, canvas.height);
+  }, []);
+
+  const drawGrid = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
+    const gridSize = 20;
+    ctx.strokeStyle = '#f0f0f0';
+    ctx.lineWidth = 1;
+
+    for (let x = 0; x <= width; x += gridSize) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, height);
+      ctx.stroke();
+    }
+
+    for (let y = 0; y <= height; y += gridSize) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(width, y);
+      ctx.stroke();
+    }
+  };
+
+  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (currentTool === 'hand') return;
+    
+    setIsDrawing(true);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+  };
+
+  const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!isDrawing || currentTool === 'hand') return;
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    if (currentTool === 'pen') {
+      ctx.strokeStyle = brushColor;
+      ctx.lineWidth = brushSize;
+      ctx.lineTo(x, y);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+    } else if (currentTool === 'eraser') {
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.lineWidth = brushSize * 2;
+      ctx.lineTo(x, y);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.globalCompositeOperation = 'source-over';
+    }
+  };
+
+  const stopDrawing = () => {
+    setIsDrawing(false);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.beginPath();
+  };
+
+  const clearCanvas = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawGrid(ctx, canvas.width, canvas.height);
+  };
+
+  const tools = [
+    { id: 'pointer', icon: MousePointer, label: 'Указатель' },
+    { id: 'hand', icon: Hand, label: 'Рука' },
+    { id: 'text', icon: Type, label: 'Текст' },
+    { id: 'square', icon: Square, label: 'Прямоугольник' },
+    { id: 'arrow', icon: ArrowRight, label: 'Стрелка' },
+    { id: 'pen', icon: Pen, label: 'Кисть' },
+    { id: 'eraser', icon: Eraser, label: 'Ластик' },
+    { id: 'image', icon: Image, label: 'Изображение' }
+  ];
 
   return (
-    <div className="flex-1 flex flex-col p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900">Доска занятий</h2>
-          <p className="text-sm text-gray-600">Объявления и обсуждения класса</p>
-        </div>
-        {userRole === 'teacher' && (
-          <button
-            onClick={() => setIsCreating(true)}
-            className="flex items-center space-x-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-          >
-            <Plus className="h-4 w-4" />
-            <span>Новое объявление</span>
-          </button>
-        )}
-      </div>
-
-      <div className="flex-1 overflow-y-auto">
-        {posts.length === 0 ? (
-          <div className="text-center py-12">
-            <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Пока нет объявлений</h3>
-            <p className="text-sm text-gray-600">
-              {userRole === 'teacher' 
-                ? 'Создайте первое объявление для класса'
-                : 'Объявления от преподавателя появятся здесь'
-              }
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {posts.map((post) => (
-              <div key={post.id} className="bg-white rounded-lg border border-gray-200 p-4">
-                {/* Контент постов */}
+    <div className="flex-1 flex flex-col bg-white">
+      {/* Верхняя панель */}
+      <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
+        <div className="flex items-center space-x-4">
+          {/* Навигация */}
+          <div className="flex items-center space-x-2">
+            <button className="p-2 hover:bg-gray-200 rounded-lg">
+              <div className="w-4 h-4 flex flex-col space-y-1">
+                <div className="w-full h-0.5 bg-gray-600"></div>
+                <div className="w-full h-0.5 bg-gray-600"></div>
+                <div className="w-full h-0.5 bg-gray-600"></div>
               </div>
-            ))}
+            </button>
+            <button className="p-2 hover:bg-gray-200 rounded-lg">
+              <RotateCcw className="w-4 h-4 text-gray-600" />
+            </button>
+            <button className="p-2 hover:bg-gray-200 rounded-lg">
+              <RotateCw className="w-4 h-4 text-gray-600" />
+            </button>
           </div>
-        )}
+
+          {/* Масштаб */}
+          <div className="flex items-center space-x-2">
+            <button 
+              onClick={() => setZoom(Math.max(25, zoom - 25))}
+              className="p-2 hover:bg-gray-200 rounded-lg"
+            >
+              <ZoomOut className="w-4 h-4 text-gray-600" />
+            </button>
+            <span className="text-sm font-medium text-gray-700 min-w-[60px] text-center">
+              {zoom}%
+            </span>
+            <button 
+              onClick={() => setZoom(Math.min(200, zoom + 25))}
+              className="p-2 hover:bg-gray-200 rounded-lg"
+            >
+              <ZoomIn className="w-4 h-4 text-gray-600" />
+            </button>
+          </div>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          {/* Настройки */}
+          <button className="p-2 hover:bg-gray-200 rounded-lg relative">
+            <Settings className="w-4 h-4 text-gray-600" />
+            <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full flex items-center justify-center">
+              <span className="text-xs text-white font-bold">2</span>
+            </div>
+          </button>
+
+          {/* Участники */}
+          <button className="p-2 hover:bg-gray-200 rounded-lg relative">
+            <Users className="w-4 h-4 text-gray-600" />
+            <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full flex items-center justify-center">
+              <span className="text-xs text-white">🔥</span>
+            </div>
+          </button>
+
+          {/* Профиль */}
+          <button className="w-8 h-8 bg-pink-200 rounded-full flex items-center justify-center">
+            <span className="text-sm font-bold text-pink-600">M</span>
+          </button>
+
+          {/* Закрыть */}
+          <button className="p-2 hover:bg-gray-200 rounded-lg">
+            <X className="w-4 h-4 text-gray-600" />
+          </button>
+        </div>
       </div>
 
-      {/* Модальное окно создания объявления */}
-      {isCreating && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6">
-            <h3 className="text-lg font-bold mb-4">Новое объявление</h3>
-            <textarea
-              value={newPost}
-              onChange={(e) => setNewPost(e.target.value)}
-              placeholder="Напишите объявление..."
-              className="w-full h-32 p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+      <div className="flex flex-1 overflow-hidden">
+        {/* Левая панель инструментов */}
+        <div className="w-16 bg-gray-50 border-r border-gray-200 flex flex-col items-center py-4 space-y-2">
+          {tools.map((tool) => {
+            const Icon = tool.icon;
+            const isActive = currentTool === tool.id;
+            return (
+              <button
+                key={tool.id}
+                onClick={() => setCurrentTool(tool.id)}
+                className={`p-3 rounded-lg transition-colors ${
+                  isActive 
+                    ? 'bg-blue-100 text-blue-600' 
+                    : 'text-gray-600 hover:bg-gray-200'
+                }`}
+                title={tool.label}
+              >
+                <Icon className="w-5 h-5" />
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Основная область canvas */}
+        <div className="flex-1 flex flex-col">
+          <div className="flex-1 relative overflow-hidden">
+            <canvas
+              ref={canvasRef}
+              className="w-full h-full cursor-crosshair"
+              onMouseDown={startDrawing}
+              onMouseMove={draw}
+              onMouseUp={stopDrawing}
+              onMouseLeave={stopDrawing}
+              style={{ 
+                background: 'white',
+                backgroundImage: `
+                  linear-gradient(rgba(0,0,0,0.1) 1px, transparent 1px),
+                  linear-gradient(90deg, rgba(0,0,0,0.1) 1px, transparent 1px)
+                `,
+                backgroundSize: '20px 20px'
+              }}
             />
-            <div className="flex space-x-3 mt-4">
-              <button
-                onClick={() => setIsCreating(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                Отмена
-              </button>
-              <button
-                onClick={() => {
-                  // Логика создания поста
-                  setIsCreating(false);
-                  setNewPost('');
-                }}
-                className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-              >
-                Опубликовать
-              </button>
+          </div>
+
+          {/* Нижняя панель */}
+          <div className="p-4 border-t border-gray-200 bg-gray-50">
+            <button 
+              onClick={() => setShowStudentConnection(!showStudentConnection)}
+              className="flex items-center space-x-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              <Phone className="w-4 h-4" />
+              <span>Связь с учениками</span>
+              <ChevronUp className={`w-4 h-4 transition-transform ${showStudentConnection ? 'rotate-180' : ''}`} />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Панель настроек кисти */}
+      {currentTool === 'pen' && (
+        <div className="absolute top-20 left-20 bg-white rounded-lg shadow-lg p-4 border border-gray-200">
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Размер кисти</label>
+              <input
+                type="range"
+                min="1"
+                max="20"
+                value={brushSize}
+                onChange={(e) => setBrushSize(Number(e.target.value))}
+                className="w-full"
+              />
+              <span className="text-xs text-gray-500">{brushSize}px</span>
             </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Цвет</label>
+              <input
+                type="color"
+                value={brushColor}
+                onChange={(e) => setBrushColor(e.target.value)}
+                className="w-full h-8 rounded border border-gray-300"
+              />
+            </div>
+            <button
+              onClick={clearCanvas}
+              className="w-full px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+            >
+              Очистить доску
+            </button>
           </div>
         </div>
       )}
