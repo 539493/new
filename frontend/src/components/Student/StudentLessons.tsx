@@ -55,6 +55,8 @@ const StudentLessons: React.FC<StudentLessonsProps> = ({ setActiveTab }) => {
   const [activeSubTab, setActiveSubTab] = useState<'lessons' | 'classes'>('lessons');
   const [classes, setClasses] = useState<StudentClass[]>([]);
   const [loadingClasses, setLoadingClasses] = useState(false);
+  const [hasLoadedClasses, setHasLoadedClasses] = useState(false);
+  const [showClassesNotification, setShowClassesNotification] = useState(false);
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [selectedLesson, setSelectedLesson] = useState<any>(null);
   const [newDate, setNewDate] = useState('');
@@ -71,6 +73,28 @@ const StudentLessons: React.FC<StudentLessonsProps> = ({ setActiveTab }) => {
     }
   }, [user, activeSubTab]);
 
+  // Предварительная загрузка классов для показа индикаторов
+  useEffect(() => {
+    if (user && !hasLoadedClasses) {
+      loadStudentClassesPreload();
+    }
+  }, [user, hasLoadedClasses]);
+
+  // Показать уведомление о классах, если они есть
+  useEffect(() => {
+    if (hasLoadedClasses && classes.length > 0 && activeSubTab === 'lessons') {
+      const hasSeenNotification = localStorage.getItem(`classes-notification-${user?.id}`);
+      if (!hasSeenNotification) {
+        setShowClassesNotification(true);
+        // Автоматически скрыть через 5 секунд
+        const timer = setTimeout(() => {
+          setShowClassesNotification(false);
+        }, 5000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [hasLoadedClasses, classes.length, activeSubTab, user?.id]);
+
   const loadStudentClasses = async () => {
     if (!user) return;
     
@@ -80,6 +104,7 @@ const StudentLessons: React.FC<StudentLessonsProps> = ({ setActiveTab }) => {
       if (response.ok) {
         const data = await response.json();
         setClasses(data);
+        setHasLoadedClasses(true);
       } else {
         console.error('Failed to load student classes');
       }
@@ -90,10 +115,37 @@ const StudentLessons: React.FC<StudentLessonsProps> = ({ setActiveTab }) => {
     }
   };
 
+  const loadStudentClassesPreload = async () => {
+    if (!user) return;
+    
+    try {
+      const response = await fetch(`${SERVER_URL}/api/student/classes?studentId=${user.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setClasses(data);
+        setHasLoadedClasses(true);
+      }
+    } catch (error) {
+      console.error('Error preloading student classes:', error);
+    }
+  };
+
   const handleOpenChat = (teacherId: string, teacherName: string) => {
     if (user) {
       const chatId = getOrCreateChat(user.id, teacherId, user.name, teacherName);
     }
+  };
+
+  const handleCloseClassesNotification = () => {
+    setShowClassesNotification(false);
+    if (user) {
+      localStorage.setItem(`classes-notification-${user.id}`, 'seen');
+    }
+  };
+
+  const handleGoToClasses = () => {
+    setActiveSubTab('classes');
+    handleCloseClassesNotification();
   };
 
   const handleCancelLesson = (lessonId: string) => {
@@ -393,7 +445,16 @@ const StudentLessons: React.FC<StudentLessonsProps> = ({ setActiveTab }) => {
           
           <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
             {activeSubTab === 'lessons' 
-              ? 'Управляйте вашими запланированными и завершенными уроками. Отслеживайте прогресс и достигайте новых высот в обучении.'
+              ? (
+                <span>
+                  Управляйте вашими запланированными и завершенными уроками. Отслеживайте прогресс и достигайте новых высот в обучении.
+                  <br />
+                  <span className="text-purple-600 font-semibold cursor-pointer hover:text-purple-700 transition-colors text-base" 
+                        onClick={() => setActiveSubTab('classes')}>
+                    💡 Также посмотрите ваши классы →
+                  </span>
+                </span>
+              )
               : 'Просматривайте классы, в которые вас добавили преподаватели. Общайтесь с учителями и одноклассниками.'
             }
           </p>
@@ -416,7 +477,7 @@ const StudentLessons: React.FC<StudentLessonsProps> = ({ setActiveTab }) => {
               </button>
               <button
                 onClick={() => setActiveSubTab('classes')}
-                className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-200 ${
+                className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-200 relative ${
                   activeSubTab === 'classes'
                     ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-md'
                     : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50'
@@ -424,10 +485,58 @@ const StudentLessons: React.FC<StudentLessonsProps> = ({ setActiveTab }) => {
               >
                 <Users className="h-4 w-4" />
                 <span>Мои классы</span>
+                {/* Индикатор новой функциональности */}
+                {classes.length === 0 && activeSubTab !== 'classes' && (
+                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full animate-pulse"></div>
+                )}
+                {classes.length > 0 && activeSubTab !== 'classes' && (
+                  <div className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs font-bold">{classes.length}</span>
+                  </div>
+                )}
               </button>
             </div>
           </div>
         </div>
+
+        {/* Уведомление о классах */}
+        {showClassesNotification && (
+          <div className="fixed top-20 right-4 z-50 max-w-sm">
+            <div className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-2xl shadow-2xl p-4 border border-purple-400 animate-slide-in-right">
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0 p-2 bg-white bg-opacity-20 rounded-lg">
+                  <Users className="h-5 w-5" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-semibold text-sm mb-1">🎉 У вас есть классы!</h4>
+                  <p className="text-xs text-purple-100 mb-3">
+                    Преподаватель добавил вас в {classes.length} {classes.length === 1 ? 'класс' : 'класса'}. Посмотрите!
+                  </p>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={handleGoToClasses}
+                      className="px-3 py-1.5 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg text-xs font-medium transition-all duration-200"
+                    >
+                      Посмотреть
+                    </button>
+                    <button
+                      onClick={handleCloseClassesNotification}
+                      className="px-3 py-1.5 bg-white bg-opacity-10 hover:bg-opacity-20 rounded-lg text-xs font-medium transition-all duration-200"
+                    >
+                      Позже
+                    </button>
+                  </div>
+                </div>
+                <button
+                  onClick={handleCloseClassesNotification}
+                  className="flex-shrink-0 p-1 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Статистика */}
         {activeSubTab === 'lessons' ? (
@@ -528,16 +637,28 @@ const StudentLessons: React.FC<StudentLessonsProps> = ({ setActiveTab }) => {
               <p className="text-sm text-gray-600 mb-4 max-w-sm mx-auto">
                 Забронируйте свой первый урок на главной странице и начните свой путь к знаниям
               </p>
-              <button 
-                onClick={() => {
-                  console.log('🎯 Переход к главной странице для бронирования урока');
-                  setActiveTab('home');
-                }}
-                className="inline-flex items-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-              >
-                <Zap className="h-4 w-4" />
-                <span>Забронировать урок</span>
-              </button>
+              <div className="space-y-3">
+                <button 
+                  onClick={() => {
+                    console.log('🎯 Переход к главной странице для бронирования урока');
+                    setActiveTab('home');
+                  }}
+                  className="inline-flex items-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                >
+                  <Zap className="h-4 w-4" />
+                  <span>Забронировать урок</span>
+                </button>
+                <div className="text-center">
+                  <p className="text-xs text-gray-500 mb-2">или</p>
+                  <button 
+                    onClick={() => setActiveSubTab('classes')}
+                    className="inline-flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-lg font-medium text-sm hover:from-purple-600 hover:to-indigo-600 transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
+                  >
+                    <Users className="h-4 w-4" />
+                    <span>Посмотреть мои классы</span>
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>
