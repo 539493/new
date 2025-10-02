@@ -56,7 +56,7 @@ type ActiveTab = 'board' | 'materials' | 'homework' | 'studyPlan';
 
 const ClassDetails: React.FC<ClassDetailsProps> = ({ classData, onClose, userRole }) => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<ActiveTab>('board');
+  const [activeTab, setActiveTab] = useState<ActiveTab | null>(null);
   const [content, setContent] = useState<ClassContent>({
     board: [],
     materials: [],
@@ -151,7 +151,33 @@ const ClassDetails: React.FC<ClassDetailsProps> = ({ classData, onClose, userRol
     }
   ];
 
+  const handleTabClick = (tabId: ActiveTab) => {
+    if (activeTab === tabId) {
+      // Если кликнули на активную вкладку - закрываем её
+      setActiveTab(null);
+    } else {
+      // Иначе открываем новую вкладку
+      setActiveTab(tabId);
+    }
+  };
+
   const renderTabContent = () => {
+    if (!activeTab) {
+      return (
+        <div className="flex-1 flex items-center justify-center bg-gray-50">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+              <MessageSquare className="w-8 h-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Выберите функцию класса</h3>
+            <p className="text-sm text-gray-600">
+              Нажмите на одну из функций слева, чтобы открыть её
+            </p>
+          </div>
+        </div>
+      );
+    }
+
     switch (activeTab) {
       case 'board':
         return <ClassBoard classId={classData.id} userRole={userRole} content={content.board} />;
@@ -234,7 +260,7 @@ const ClassDetails: React.FC<ClassDetailsProps> = ({ classData, onClose, userRol
                     return (
                       <button
                         key={tab.id}
-                        onClick={() => setActiveTab(tab.id)}
+                        onClick={() => handleTabClick(tab.id)}
                         className={`w-full flex items-center space-x-3 p-3 rounded-xl text-left transition-all duration-200 ${
                           isActive
                             ? getActiveButtonClass(tab.color)
