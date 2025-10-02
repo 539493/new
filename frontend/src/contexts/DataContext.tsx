@@ -869,7 +869,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
     // Слушаем обновления бронирования
     newSocket.on('slotBooked', (data: { slotId: string; lesson: Lesson; bookedStudentId?: string }) => {
-        console.log('Slot booked via WebSocket:', data);
+        console.log('📡 Получено событие slotBooked:', data);
+        console.log('🔍 Обновляем слоты и уроки...');
         setTimeSlots(prev => {
           const updated = prev.map(slot => 
           slot.id === data.slotId ? { ...slot, isBooked: true, bookedStudentId: data.bookedStudentId || data.lesson.studentId } : slot
@@ -887,6 +888,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         }
         return prev;
       });
+      console.log('✅ Слот и урок обновлены успешно');
     });
 
     // Слушаем отмены бронирования
@@ -1720,8 +1722,22 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
   // Изменяю функцию bookLesson, чтобы принимать комментарий
   const bookLesson = (slotId: string, studentId: string, studentName: string, comment?: string) => {
+    console.log('🔍 bookLesson вызвана:', { slotId, studentId, studentName, comment });
+    console.log('🔍 Доступные слоты:', timeSlots.length);
+    console.log('🔍 WebSocket соединение:', { isConnected, socketRef: !!socketRef.current });
+    
     const slot = timeSlots.find(s => s.id === slotId);
-    if (!slot || slot.isBooked) {
+    console.log('🔍 Найденный слот:', slot);
+    
+    if (!slot) {
+      console.error('❌ Слот не найден:', slotId);
+      alert('Слот не найден. Попробуйте обновить страницу.');
+      return;
+    }
+    
+    if (slot.isBooked) {
+      console.error('❌ Слот уже забронирован:', slot);
+      alert('Этот слот уже забронирован другим учеником.');
       return;
     }
 
@@ -1767,8 +1783,14 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
     // Отправляем информацию о бронировании на сервер
     if (socketRef.current && isConnected) {
+      console.log('📡 Отправляем bookSlot на сервер:', { slotId, lesson: newLesson, bookedStudentId: studentId });
       socketRef.current.emit('bookSlot', { slotId, lesson: newLesson, bookedStudentId: studentId });
+      console.log('✅ Событие bookSlot отправлено');
+    } else {
+      console.warn('⚠️ WebSocket не подключен, бронирование только локально');
     }
+    
+    console.log('✅ Бронирование завершено успешно');
   };
 
   const cancelLesson = (lessonId: string) => {

@@ -418,16 +418,31 @@ const StudentHome: React.FC<StudentHomeProps> = ({ setActiveTab }) => {
 
 
   const handleConfirmBooking = async (comment: string) => {
+    console.log('🎯 handleConfirmBooking вызвана:', { user: user?.id, selectedBookingSlot: selectedBookingSlot?.id, comment });
+    
     if (user && selectedBookingSlot) {
-      bookLesson(selectedBookingSlot.id, user.id, user.name, comment);
-      
-      setTimeout(() => {
-        if (Object.keys(filters).length === 0 && !selectedDate && !selectedTimeRange) {
-          loadAvailableSlots();
-        } else {
-          applyFilters(false);
-        }
-      }, 100);
+      try {
+        console.log('📞 Вызываем bookLesson...');
+        bookLesson(selectedBookingSlot.id, user.id, user.name, comment);
+        console.log('✅ bookLesson вызвана успешно');
+        
+        // Закрываем модальное окно
+        setShowBookingModal(false);
+        setSelectedBookingSlot(null);
+        
+        setTimeout(() => {
+          if (Object.keys(filters).length === 0 && !selectedDate && !selectedTimeRange) {
+            loadAvailableSlots();
+          } else {
+            applyFilters(false);
+          }
+        }, 100);
+      } catch (error) {
+        console.error('❌ Ошибка при бронировании:', error);
+        alert('Произошла ошибка при бронировании. Попробуйте еще раз.');
+      }
+    } else {
+      console.error('❌ Нет пользователя или выбранного слота:', { user: !!user, selectedBookingSlot: !!selectedBookingSlot });
     }
   };
 
