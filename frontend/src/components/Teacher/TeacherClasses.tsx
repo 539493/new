@@ -52,6 +52,7 @@ const TeacherClasses: React.FC = () => {
   const [showAddStudentModal, setShowAddStudentModal] = useState(false);
   const [selectedClass, setSelectedClass] = useState<Class | null>(null);
   const [selectedClassForDetails, setSelectedClassForDetails] = useState<Class | null>(null);
+  const [showClassDetails, setShowClassDetails] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -208,6 +209,20 @@ const TeacherClasses: React.FC = () => {
     student.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Если показываем детали класса, рендерим ClassDetails
+  if (showClassDetails && selectedClassForDetails) {
+    return (
+      <ClassDetails
+        classData={selectedClassForDetails}
+        onClose={() => {
+          setShowClassDetails(false);
+          setSelectedClassForDetails(null);
+        }}
+        userRole="teacher"
+      />
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
@@ -260,7 +275,10 @@ const TeacherClasses: React.FC = () => {
                   <h3 className="text-xl font-semibold text-gray-900">{cls.name}</h3>
                   <div className="flex items-center space-x-2">
                     <button
-                      onClick={() => setSelectedClassForDetails(cls)}
+                      onClick={() => {
+                        setSelectedClassForDetails(cls);
+                        setShowClassDetails(true);
+                      }}
                       className="p-2 text-gray-400 hover:text-green-600 transition-colors"
                       title="Открыть класс"
                     >
@@ -529,14 +547,6 @@ const TeacherClasses: React.FC = () => {
         </div>
       )}
 
-      {/* Модальное окно детального просмотра класса */}
-      {selectedClassForDetails && (
-        <ClassDetails
-          classData={selectedClassForDetails}
-          onClose={() => setSelectedClassForDetails(null)}
-          userRole="teacher"
-        />
-      )}
     </div>
   );
 };

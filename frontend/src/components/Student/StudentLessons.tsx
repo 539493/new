@@ -59,6 +59,7 @@ const StudentLessons: React.FC<StudentLessonsProps> = ({ setActiveTab }) => {
   const [hasLoadedClasses, setHasLoadedClasses] = useState(false);
   const [showClassesNotification, setShowClassesNotification] = useState(false);
   const [selectedClassForDetails, setSelectedClassForDetails] = useState<StudentClass | null>(null);
+  const [showClassDetails, setShowClassDetails] = useState(false);
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [selectedLesson, setSelectedLesson] = useState<any>(null);
   const [newDate, setNewDate] = useState('');
@@ -346,7 +347,10 @@ const StudentLessons: React.FC<StudentLessonsProps> = ({ setActiveTab }) => {
   const ClassCard = ({ classItem }: { classItem: StudentClass }) => (
     <div 
       className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-blue-200 cursor-pointer"
-      onClick={() => setSelectedClassForDetails(classItem)}
+      onClick={() => {
+        setSelectedClassForDetails(classItem);
+        setShowClassDetails(true);
+      }}
     >
       {/* Header с цветом класса */}
       <div 
@@ -441,6 +445,20 @@ const StudentLessons: React.FC<StudentLessonsProps> = ({ setActiveTab }) => {
       </div>
     </div>
   );
+
+  // Если показываем детали класса, рендерим ClassDetails
+  if (showClassDetails && selectedClassForDetails) {
+    return (
+      <ClassDetails
+        classData={selectedClassForDetails}
+        onClose={() => {
+          setShowClassDetails(false);
+          setSelectedClassForDetails(null);
+        }}
+        userRole="student"
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
@@ -859,14 +877,6 @@ const StudentLessons: React.FC<StudentLessonsProps> = ({ setActiveTab }) => {
         </div>
       )}
 
-      {/* Модальное окно детального просмотра класса */}
-      {selectedClassForDetails && (
-        <ClassDetails
-          classData={selectedClassForDetails}
-          onClose={() => setSelectedClassForDetails(null)}
-          userRole="student"
-        />
-      )}
     </div>
   );
 };

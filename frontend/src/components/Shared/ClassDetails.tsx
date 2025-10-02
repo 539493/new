@@ -18,7 +18,8 @@ import {
   Download,
   CheckCircle,
   Clock,
-  AlertCircle
+  AlertCircle,
+  ArrowLeft
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { SERVER_URL } from '../../config';
@@ -151,8 +152,8 @@ const ClassDetails: React.FC<ClassDetailsProps> = ({ classData, onClose, userRol
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-7xl w-full h-[90vh] flex overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
+      <div className="w-full h-screen flex overflow-hidden">
         
         {/* Заголовок класса */}
         <div className="w-full flex flex-col">
@@ -196,9 +197,10 @@ const ClassDetails: React.FC<ClassDetailsProps> = ({ classData, onClose, userRol
               </div>
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors"
+                className="flex items-center space-x-2 px-4 py-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg transition-colors"
               >
-                <X className="h-6 w-6" />
+                <ArrowLeft className="h-5 w-5" />
+                <span className="font-medium">Назад</span>
               </button>
             </div>
           </div>
