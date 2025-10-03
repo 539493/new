@@ -264,13 +264,13 @@ const ClassDetails: React.FC<ClassDetailsProps> = ({ classData, onClose, userRol
           {/* Основной контент */}
           <div className="flex flex-1 overflow-hidden">
             
-            {/* Боковая панель с вкладками */}
-            <div className={`${isSidebarCollapsed ? 'w-16' : 'w-80'} border-r border-gray-200 bg-gray-50 flex flex-col transition-all duration-300`}>
-              <div className="p-4">
+            {/* Боковая панель с вкладками - горизонтальная */}
+            <div className={`${isSidebarCollapsed ? 'w-12' : 'w-64'} border-r border-gray-200 bg-gray-50 flex flex-col transition-all duration-300`}>
+              <div className="p-3">
                 {!isSidebarCollapsed && (
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Функции класса</h3>
+                  <h3 className="text-sm font-semibold text-gray-900 mb-3">Функции класса</h3>
                 )}
-                <div className="space-y-2">
+                <div className={`${isSidebarCollapsed ? 'space-y-1' : 'grid grid-cols-2 gap-2'}`}>
                   {tabConfig.map((tab) => {
                     const Icon = tab.icon;
                     const isActive = activeTab === tab.id;
@@ -283,27 +283,27 @@ const ClassDetails: React.FC<ClassDetailsProps> = ({ classData, onClose, userRol
                         onClick={() => handleTabClick(tab.id)}
                         onMouseEnter={() => handleTabHover(tab.id)}
                         onMouseLeave={() => handleTabHover(null)}
-                        className={`w-full flex items-center ${shouldShowText ? 'space-x-3' : 'justify-center'} p-3 rounded-xl text-left transition-all duration-200 ${
+                        className={`${isSidebarCollapsed ? 'w-full flex justify-center' : 'flex flex-col items-center'} p-2 rounded-lg text-center transition-all duration-200 ${
                           isActive
                             ? getActiveButtonClass(tab.color)
                             : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
                         }`}
                         title={isSidebarCollapsed ? tab.label : undefined}
                       >
-                        <div className={`p-2 rounded-lg ${
+                        <div className={`${isSidebarCollapsed ? 'p-1.5' : 'p-2 mb-1'} rounded-lg ${
                           isActive 
                             ? 'bg-white bg-opacity-20' 
                             : getInactiveIconBgClass(tab.color)
                         }`}>
-                          <Icon className={`h-4 w-4 ${
+                          <Icon className={`${isSidebarCollapsed ? 'h-3 w-3' : 'h-4 w-4'} ${
                             isActive 
                               ? 'text-white' 
                               : getInactiveIconClass(tab.color)
                           }`} />
                         </div>
-                        {shouldShowText && (
-                          <div className="flex-1">
-                            <div className="font-medium text-sm">{tab.label}</div>
+                        {shouldShowText && !isSidebarCollapsed && (
+                          <div className="text-center">
+                            <div className="font-medium text-xs">{tab.label}</div>
                             <div className={`text-xs ${
                               isActive ? 'text-white text-opacity-80' : 'text-gray-500'
                             }`}>
@@ -315,7 +315,7 @@ const ClassDetails: React.FC<ClassDetailsProps> = ({ classData, onClose, userRol
                                   e.stopPropagation();
                                   handleTabSelect(tab.id);
                                 }}
-                                className="mt-2 px-3 py-1 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg text-xs font-medium transition-colors"
+                                className="mt-1 px-2 py-1 bg-white bg-opacity-20 hover:bg-opacity-30 rounded text-xs font-medium transition-colors"
                               >
                                 Открыть
                               </button>
