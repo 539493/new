@@ -360,6 +360,11 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
   const [brushColor, setBrushColor] = useState('#000000');
   const [zoom, setZoom] = useState(100);
   const [showStudentConnection, setShowStudentConnection] = useState(false);
+  const [history, setHistory] = useState<ImageData[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  const [isPanning, setIsPanning] = useState(false);
+  const [panStart, setPanStart] = useState({ x: 0, y: 0 });
+  const [canvasOffset, setCanvasOffset] = useState({ x: 0, y: 0 });
 
   // Инициализация canvas
   useEffect(() => {
@@ -389,7 +394,52 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
     ctx.lineWidth = brushSize;
 
     console.log('Canvas initialized with fixed dimensions:', CANVAS_WIDTH, 'x', CANVAS_HEIGHT);
+    
+    // Сохраняем начальное состояние в историю
+    saveToHistory();
   }, []);
+
+  // Функции для работы с историей
+  const saveToHistory = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const newHistory = history.slice(0, historyIndex + 1);
+    newHistory.push(imageData);
+    
+    setHistory(newHistory);
+    setHistoryIndex(newHistory.length - 1);
+  };
+
+  const undo = () => {
+    if (historyIndex > 0) {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      setHistoryIndex(historyIndex - 1);
+      ctx.putImageData(history[historyIndex - 1], 0, 0);
+    }
+  };
+
+  const redo = () => {
+    if (historyIndex < history.length - 1) {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      setHistoryIndex(historyIndex + 1);
+      ctx.putImageData(history[historyIndex + 1], 0, 0);
+    }
+  };
 
 
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -462,6 +512,9 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
     if (!ctx) return;
 
     ctx.beginPath();
+    
+    // Сохраняем в историю после завершения рисования
+    saveToHistory();
   };
 
   const clearCanvas = () => {
@@ -472,6 +525,33 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
     if (!ctx) return;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    saveToHistory();
+  };
+
+  // Функции для панорамирования (инструмент "Рука")
+  const startPanning = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (currentTool === 'hand') {
+      setIsPanning(true);
+      setPanStart({ x: e.clientX, y: e.clientY });
+    }
+  };
+
+  const pan = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (isPanning && currentTool === 'hand') {
+      const deltaX = e.clientX - panStart.x;
+      const deltaY = e.clientY - panStart.y;
+      
+      setCanvasOffset(prev => ({
+        x: prev.x + deltaX,
+        y: prev.y + deltaY
+      }));
+      
+      setPanStart({ x: e.clientX, y: e.clientY });
+    }
+  };
+
+  const stopPanning = () => {
+    setIsPanning(false);
   };
 
   const tools = [
@@ -499,10 +579,18 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
                 <div className="w-full h-0.5 bg-gray-600"></div>
               </div>
             </button>
-            <button className="p-2 hover:bg-gray-200 rounded-lg">
+            <button 
+              onClick={undo}
+              disabled={historyIndex <= 0}
+              className="p-2 hover:bg-gray-200 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               <RotateCcw className="w-4 h-4 text-gray-600" />
             </button>
-            <button className="p-2 hover:bg-gray-200 rounded-lg">
+            <button 
+              onClick={redo}
+              disabled={historyIndex >= history.length - 1}
+              className="p-2 hover:bg-gray-200 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               <RotateCw className="w-4 h-4 text-gray-600" />
             </button>
           </div>
@@ -523,6 +611,12 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
               className="p-2 hover:bg-gray-200 rounded-lg"
             >
               <ZoomIn className="w-4 h-4 text-gray-600" />
+            </button>
+            <button 
+              onClick={() => setZoom(100)}
+              className="p-2 hover:bg-gray-200 rounded-lg text-xs"
+            >
+              Сброс
             </button>
           </div>
         </div>
@@ -584,13 +678,43 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
           <div className="flex-1 relative overflow-hidden">
             <canvas
               ref={canvasRef}
-              className="w-full h-full cursor-crosshair"
-              onMouseDown={startDrawing}
-              onMouseMove={draw}
-              onMouseUp={stopDrawing}
-              onMouseLeave={stopDrawing}
+              className={`w-full h-full ${
+                currentTool === 'hand' ? 'cursor-grab' : 
+                currentTool === 'pointer' ? 'cursor-pointer' : 
+                'cursor-crosshair'
+              }`}
+              onMouseDown={(e) => {
+                if (currentTool === 'hand') {
+                  startPanning(e);
+                } else {
+                  startDrawing(e);
+                }
+              }}
+              onMouseMove={(e) => {
+                if (currentTool === 'hand') {
+                  pan(e);
+                } else {
+                  draw(e);
+                }
+              }}
+              onMouseUp={(e) => {
+                if (currentTool === 'hand') {
+                  stopPanning();
+                } else {
+                  stopDrawing();
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (currentTool === 'hand') {
+                  stopPanning();
+                } else {
+                  stopDrawing();
+                }
+              }}
               style={{ 
-                background: 'white'
+                background: 'white',
+                transform: `translate(${canvasOffset.x}px, ${canvasOffset.y}px) scale(${zoom / 100})`,
+                transformOrigin: '0 0'
               }}
             />
           </div>
