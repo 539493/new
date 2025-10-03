@@ -214,16 +214,16 @@ const ClassDetails: React.FC<ClassDetailsProps> = ({ classData, onClose, userRol
         {/* Заголовок класса */}
         <div className="w-full flex flex-col">
           <div 
-            className="p-4 text-white relative overflow-hidden"
+            className="p-3 text-white relative overflow-hidden"
             style={{ backgroundColor: classData.color }}
           >
             <div className="absolute top-0 right-0 w-20 h-20 bg-white opacity-10 rounded-full -translate-y-10 translate-x-10"></div>
             <div className="relative z-10 flex items-center justify-between">
               <div className="flex-1">
-                <div className="flex items-center space-x-3 mb-1">
-                  <h1 className="text-xl font-bold">{classData.name}</h1>
-                  <div className="flex items-center space-x-1 bg-white bg-opacity-20 px-2 py-1 rounded-full">
-                    <Users className="h-3 w-3" />
+                <div className="flex items-center space-x-2 mb-1">
+                  <h1 className="text-lg font-bold">{classData.name}</h1>
+                  <div className="flex items-center space-x-1 bg-white bg-opacity-20 px-1.5 py-0.5 rounded-full">
+                    <Users className="h-2.5 w-2.5" />
                     <span className="text-xs font-medium">{classData.students?.length || 0}</span>
                   </div>
                 </div>
@@ -265,10 +265,10 @@ const ClassDetails: React.FC<ClassDetailsProps> = ({ classData, onClose, userRol
           <div className="flex flex-1 overflow-hidden">
             
             {/* Боковая панель с вкладками */}
-            <div className={`${isSidebarCollapsed ? 'w-16' : 'w-80'} border-r border-gray-200 bg-gray-50 flex flex-col transition-all duration-300`}>
-              <div className="p-4">
+            <div className={`${isSidebarCollapsed ? 'w-12' : 'w-64'} border-r border-gray-200 bg-gray-50 flex flex-col transition-all duration-300`}>
+              <div className="p-3">
                 {!isSidebarCollapsed && (
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Функции класса</h3>
+                  <h3 className="text-sm font-semibold text-gray-900 mb-3">Функции класса</h3>
                 )}
                 <div className="space-y-2">
                   {tabConfig.map((tab) => {
@@ -283,19 +283,19 @@ const ClassDetails: React.FC<ClassDetailsProps> = ({ classData, onClose, userRol
                         onClick={() => handleTabClick(tab.id)}
                         onMouseEnter={() => handleTabHover(tab.id)}
                         onMouseLeave={() => handleTabHover(null)}
-                        className={`w-full flex items-center ${shouldShowText ? 'space-x-3' : 'justify-center'} p-3 rounded-xl text-left transition-all duration-200 ${
+                        className={`w-full flex items-center ${shouldShowText ? 'space-x-2' : 'justify-center'} p-2 rounded-lg text-left transition-all duration-200 ${
                           isActive
                             ? getActiveButtonClass(tab.color)
                             : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
                         }`}
                         title={isSidebarCollapsed ? tab.label : undefined}
                       >
-                        <div className={`p-2 rounded-lg ${
+                        <div className={`p-1.5 rounded-md ${
                           isActive 
                             ? 'bg-white bg-opacity-20' 
                             : getInactiveIconBgClass(tab.color)
                         }`}>
-                          <Icon className={`h-4 w-4 ${
+                          <Icon className={`h-3.5 w-3.5 ${
                             isActive 
                               ? 'text-white' 
                               : getInactiveIconClass(tab.color)
@@ -303,7 +303,7 @@ const ClassDetails: React.FC<ClassDetailsProps> = ({ classData, onClose, userRol
                         </div>
                         {shouldShowText && (
                           <div className="flex-1">
-                            <div className="font-medium text-sm">{tab.label}</div>
+                            <div className="font-medium text-xs">{tab.label}</div>
                             <div className={`text-xs ${
                               isActive ? 'text-white text-opacity-80' : 'text-gray-500'
                             }`}>
@@ -315,7 +315,7 @@ const ClassDetails: React.FC<ClassDetailsProps> = ({ classData, onClose, userRol
                                   e.stopPropagation();
                                   handleTabSelect(tab.id);
                                 }}
-                                className="mt-2 px-3 py-1 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg text-xs font-medium transition-colors"
+                                className="mt-1 px-2 py-0.5 bg-white bg-opacity-20 hover:bg-opacity-30 rounded text-xs font-medium transition-colors"
                               >
                                 Открыть
                               </button>
@@ -374,9 +374,9 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Фиксированные размеры canvas для точного позиционирования
-    const CANVAS_WIDTH = 1200;
-    const CANVAS_HEIGHT = 800;
+    // Увеличенные размеры canvas для полноэкранного отображения
+    const CANVAS_WIDTH = 2400;
+    const CANVAS_HEIGHT = 1600;
     
     canvas.width = CANVAS_WIDTH;
     canvas.height = CANVAS_HEIGHT;
