@@ -369,15 +369,18 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Простая установка размеров
-    const resizeCanvas = () => {
-      const rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width;
-      canvas.height = rect.height;
-    };
-
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
+    // Фиксированные размеры canvas для точного позиционирования
+    const CANVAS_WIDTH = 1200;
+    const CANVAS_HEIGHT = 800;
+    
+    canvas.width = CANVAS_WIDTH;
+    canvas.height = CANVAS_HEIGHT;
+    
+    // Устанавливаем CSS размеры для отображения
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    canvas.style.maxWidth = '100%';
+    canvas.style.maxHeight = '100%';
 
     // Настройки по умолчанию
     ctx.lineCap = 'round';
@@ -385,9 +388,7 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
     ctx.strokeStyle = brushColor;
     ctx.lineWidth = brushSize;
 
-    return () => {
-      window.removeEventListener('resize', resizeCanvas);
-    };
+    console.log('Canvas initialized with fixed dimensions:', CANVAS_WIDTH, 'x', CANVAS_HEIGHT);
   }, []);
 
 
@@ -399,14 +400,21 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
     if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    
+    // Точное позиционирование с учетом фиксированных размеров canvas
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
     ctx.beginPath();
     ctx.moveTo(x, y);
+    
+    console.log('Start drawing at:', { x, y, scaleX, scaleY, canvasWidth: canvas.width, canvasHeight: canvas.height });
   };
 
   const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -416,8 +424,13 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
     if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    
+    // Точное позиционирование с учетом фиксированных размеров canvas
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
