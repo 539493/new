@@ -369,9 +369,19 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Устанавливаем размеры canvas
-    canvas.width = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;
+    // Устанавливаем размеры canvas с учетом DPI
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    
+    // Масштабируем контекст для четкости
+    ctx.scale(dpr, dpr);
+    
+    // Устанавливаем размеры canvas для CSS
+    canvas.style.width = rect.width + 'px';
+    canvas.style.height = rect.height + 'px';
 
     // Настройки по умолчанию
     ctx.lineCap = 'round';
@@ -391,8 +401,11 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
     if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -408,8 +421,11 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
     if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
