@@ -379,29 +379,9 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
     ctx.strokeStyle = brushColor;
     ctx.lineWidth = brushSize;
 
-    // Рисуем сетку
-    drawGrid(ctx, canvas.width, canvas.height);
+    // Настройки canvas готовы
   }, []);
 
-  const drawGrid = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
-    const gridSize = 20;
-    ctx.strokeStyle = '#f0f0f0';
-    ctx.lineWidth = 1;
-
-    for (let x = 0; x <= width; x += gridSize) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, height);
-      ctx.stroke();
-    }
-
-    for (let y = 0; y <= height; y += gridSize) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(width, y);
-      ctx.stroke();
-    }
-  };
 
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (currentTool === 'hand') return;
@@ -471,7 +451,6 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
     if (!ctx) return;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawGrid(ctx, canvas.width, canvas.height);
   };
 
   const tools = [
@@ -590,12 +569,7 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
               onMouseUp={stopDrawing}
               onMouseLeave={stopDrawing}
               style={{ 
-                background: 'white',
-                backgroundImage: `
-                  linear-gradient(rgba(0,0,0,0.1) 1px, transparent 1px),
-                  linear-gradient(90deg, rgba(0,0,0,0.1) 1px, transparent 1px)
-                `,
-                backgroundSize: '20px 20px'
+                background: 'white'
               }}
             />
           </div>
@@ -614,36 +588,36 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
         </div>
       </div>
 
-      {/* Панель настроек кисти */}
+      {/* Панель настроек кисти - только для кисти */}
       {currentTool === 'pen' && (
-        <div className="absolute top-20 left-20 bg-white rounded-lg shadow-lg p-4 border border-gray-200">
-          <div className="space-y-3">
+        <div className="absolute top-20 left-20 bg-white rounded-lg shadow-lg p-3 border border-gray-200 z-10">
+          <div className="space-y-2">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Размер кисти</label>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Размер кисти</label>
               <input
                 type="range"
                 min="1"
                 max="20"
                 value={brushSize}
                 onChange={(e) => setBrushSize(Number(e.target.value))}
-                className="w-full"
+                className="w-24"
               />
-              <span className="text-xs text-gray-500">{brushSize}px</span>
+              <span className="text-xs text-gray-500 ml-2">{brushSize}px</span>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Цвет</label>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Цвет</label>
               <input
                 type="color"
                 value={brushColor}
                 onChange={(e) => setBrushColor(e.target.value)}
-                className="w-full h-8 rounded border border-gray-300"
+                className="w-8 h-6 rounded border border-gray-300"
               />
             </div>
             <button
               onClick={clearCanvas}
-              className="w-full px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+              className="w-full px-2 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600 transition-colors"
             >
-              Очистить доску
+              Очистить
             </button>
           </div>
         </div>
