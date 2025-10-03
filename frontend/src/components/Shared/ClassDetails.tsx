@@ -214,49 +214,49 @@ const ClassDetails: React.FC<ClassDetailsProps> = ({ classData, onClose, userRol
         {/* Заголовок класса */}
         <div className="w-full flex flex-col">
           <div 
-            className="p-6 text-white relative overflow-hidden"
+            className="p-4 text-white relative overflow-hidden"
             style={{ backgroundColor: classData.color }}
           >
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -translate-y-16 translate-x-16"></div>
+            <div className="absolute top-0 right-0 w-20 h-20 bg-white opacity-10 rounded-full -translate-y-10 translate-x-10"></div>
             <div className="relative z-10 flex items-center justify-between">
               <div className="flex-1">
-                <div className="flex items-center space-x-4 mb-2">
-                  <h1 className="text-2xl font-bold">{classData.name}</h1>
-                  <div className="flex items-center space-x-1 bg-white bg-opacity-20 px-3 py-1 rounded-full">
-                    <Users className="h-4 w-4" />
-                    <span className="text-sm font-medium">{classData.students?.length || 0}</span>
+                <div className="flex items-center space-x-3 mb-1">
+                  <h1 className="text-xl font-bold">{classData.name}</h1>
+                  <div className="flex items-center space-x-1 bg-white bg-opacity-20 px-2 py-1 rounded-full">
+                    <Users className="h-3 w-3" />
+                    <span className="text-xs font-medium">{classData.students?.length || 0}</span>
                   </div>
                 </div>
-                <div className="flex items-center space-x-6 text-white text-opacity-90">
+                <div className="flex items-center space-x-4 text-white text-opacity-90">
                   {classData.subject && (
-                    <div className="flex items-center space-x-2">
-                      <BookOpen className="h-4 w-4" />
-                      <span className="text-sm">{classData.subject}</span>
+                    <div className="flex items-center space-x-1">
+                      <BookOpen className="h-3 w-3" />
+                      <span className="text-xs">{classData.subject}</span>
                     </div>
                   )}
                   {classData.grade && (
-                    <div className="flex items-center space-x-2">
-                      <GraduationCap className="h-4 w-4" />
-                      <span className="text-sm">{classData.grade}</span>
+                    <div className="flex items-center space-x-1">
+                      <GraduationCap className="h-3 w-3" />
+                      <span className="text-xs">{classData.grade}</span>
                     </div>
                   )}
                   {classData.teacherName && (
-                    <div className="flex items-center space-x-2">
-                      <User className="h-4 w-4" />
-                      <span className="text-sm">{classData.teacherName}</span>
+                    <div className="flex items-center space-x-1">
+                      <User className="h-3 w-3" />
+                      <span className="text-xs">{classData.teacherName}</span>
                     </div>
                   )}
                 </div>
                 {classData.description && (
-                  <p className="mt-2 text-white text-opacity-80 text-sm">{classData.description}</p>
+                  <p className="mt-1 text-white text-opacity-80 text-xs">{classData.description}</p>
                 )}
               </div>
               <button
                 onClick={onClose}
-                className="flex items-center space-x-2 px-4 py-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg transition-colors"
+                className="flex items-center space-x-1 px-3 py-1.5 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg transition-colors"
               >
-                <ArrowLeft className="h-5 w-5" />
-                <span className="font-medium">Назад</span>
+                <ArrowLeft className="h-4 w-4" />
+                <span className="font-medium text-sm">Назад</span>
               </button>
             </div>
           </div>
@@ -264,13 +264,13 @@ const ClassDetails: React.FC<ClassDetailsProps> = ({ classData, onClose, userRol
           {/* Основной контент */}
           <div className="flex flex-1 overflow-hidden">
             
-            {/* Боковая панель с вкладками - горизонтальная */}
-            <div className={`${isSidebarCollapsed ? 'w-12' : 'w-64'} border-r border-gray-200 bg-gray-50 flex flex-col transition-all duration-300`}>
-              <div className="p-3">
+            {/* Боковая панель с вкладками */}
+            <div className={`${isSidebarCollapsed ? 'w-16' : 'w-80'} border-r border-gray-200 bg-gray-50 flex flex-col transition-all duration-300`}>
+              <div className="p-4">
                 {!isSidebarCollapsed && (
-                  <h3 className="text-sm font-semibold text-gray-900 mb-3">Функции класса</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Функции класса</h3>
                 )}
-                <div className={`${isSidebarCollapsed ? 'space-y-1' : 'grid grid-cols-2 gap-2'}`}>
+                <div className="space-y-2">
                   {tabConfig.map((tab) => {
                     const Icon = tab.icon;
                     const isActive = activeTab === tab.id;
@@ -283,27 +283,27 @@ const ClassDetails: React.FC<ClassDetailsProps> = ({ classData, onClose, userRol
                         onClick={() => handleTabClick(tab.id)}
                         onMouseEnter={() => handleTabHover(tab.id)}
                         onMouseLeave={() => handleTabHover(null)}
-                        className={`${isSidebarCollapsed ? 'w-full flex justify-center' : 'flex flex-col items-center'} p-2 rounded-lg text-center transition-all duration-200 ${
+                        className={`w-full flex items-center ${shouldShowText ? 'space-x-3' : 'justify-center'} p-3 rounded-xl text-left transition-all duration-200 ${
                           isActive
                             ? getActiveButtonClass(tab.color)
                             : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
                         }`}
                         title={isSidebarCollapsed ? tab.label : undefined}
                       >
-                        <div className={`${isSidebarCollapsed ? 'p-1.5' : 'p-2 mb-1'} rounded-lg ${
+                        <div className={`p-2 rounded-lg ${
                           isActive 
                             ? 'bg-white bg-opacity-20' 
                             : getInactiveIconBgClass(tab.color)
                         }`}>
-                          <Icon className={`${isSidebarCollapsed ? 'h-3 w-3' : 'h-4 w-4'} ${
+                          <Icon className={`h-4 w-4 ${
                             isActive 
                               ? 'text-white' 
                               : getInactiveIconClass(tab.color)
                           }`} />
                         </div>
-                        {shouldShowText && !isSidebarCollapsed && (
-                          <div className="text-center">
-                            <div className="font-medium text-xs">{tab.label}</div>
+                        {shouldShowText && (
+                          <div className="flex-1">
+                            <div className="font-medium text-sm">{tab.label}</div>
                             <div className={`text-xs ${
                               isActive ? 'text-white text-opacity-80' : 'text-gray-500'
                             }`}>
@@ -315,7 +315,7 @@ const ClassDetails: React.FC<ClassDetailsProps> = ({ classData, onClose, userRol
                                   e.stopPropagation();
                                   handleTabSelect(tab.id);
                                 }}
-                                className="mt-1 px-2 py-1 bg-white bg-opacity-20 hover:bg-opacity-30 rounded text-xs font-medium transition-colors"
+                                className="mt-2 px-3 py-1 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg text-xs font-medium transition-colors"
                               >
                                 Открыть
                               </button>
