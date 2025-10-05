@@ -376,20 +376,20 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
     const vpRect = vp.getBoundingClientRect();
     const scale = Math.max(0.01, zoom / 100);
 
-    // Координаты внутри viewport (с учетом смещения панорамирования)
+    // Базовые CSS‑размеры canvas (до transform), у нас = размеру viewport
+    const baseCssW = canvas.offsetWidth || vp.clientWidth || 1;
+    const baseCssH = canvas.offsetHeight || vp.clientHeight || 1;
+    // Фактические отображаемые размеры после scale
+    const displayW = baseCssW * scale;
+    const displayH = baseCssH * scale;
+
+    // Координаты внутри прямоугольника отображаемого canvas (учитываем pan)
     const localX = (e.clientX - vpRect.left) - canvasOffset.x;
     const localY = (e.clientY - vpRect.top) - canvasOffset.y;
 
-    // Учитываем масштаб отображения
-    const unscaledX = localX / scale;
-    const unscaledY = localY / scale;
-
-    // Преобразуем из css-пикселей viewport в внутренние пиксели canvas
-    const cssToInternalX = canvas.width / (vp.clientWidth || 1);
-    const cssToInternalY = canvas.height / (vp.clientHeight || 1);
-
-    const x = unscaledX * cssToInternalX;
-    const y = unscaledY * cssToInternalY;
+    // Нормализуем относительно отображаемой области и переводим во внутренние пиксели
+    const x = (localX / displayW) * canvas.width;
+    const y = (localY / displayH) * canvas.height;
 
     return { x, y };
   };
@@ -409,17 +409,11 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
     canvas.width = CANVAS_WIDTH;
     canvas.height = CANVAS_HEIGHT;
     
-    // Устанавливаем CSS размеры под текущий zoom, чтобы после scale(canvas) он заполнял viewport
-    const applySize = () => {
-      const vp = viewportRef.current;
-      if (!vp) return;
-      const scale = Math.max(0.01, zoom / 100);
-      canvas.style.width = `${vp.clientWidth / scale}px`;
-      canvas.style.height = `${vp.clientHeight / scale}px`;
-      canvas.style.maxWidth = 'none';
-      canvas.style.maxHeight = 'none';
-    };
-    applySize();
+    // Устанавливаем CSS размеры для отображения
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    canvas.style.maxWidth = '100%';
+    canvas.style.maxHeight = '100%';
 
     // Настройки по умолчанию
     ctx.lineCap = 'round';
@@ -432,30 +426,6 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
     // Сохраняем начальное состояние в историю
     saveToHistory();
   }, []);
-
-  // Держим CSS размер canvas согласованным с текущим zoom и размерами viewport
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const vp = viewportRef.current;
-    if (!canvas || !vp) return;
-
-    const applySize = () => {
-      const scale = Math.max(0.01, zoom / 100);
-      canvas.style.width = `${vp.clientWidth / scale}px`;
-      canvas.style.height = `${vp.clientHeight / scale}px`;
-    };
-
-    applySize();
-    const ro = new ResizeObserver(applySize);
-    ro.observe(vp);
-    window.addEventListener('orientationchange', applySize);
-    window.addEventListener('resize', applySize);
-    return () => {
-      ro.disconnect();
-      window.removeEventListener('orientationchange', applySize);
-      window.removeEventListener('resize', applySize);
-    };
-  }, [zoom]);
 
   // Функции для работы с историей
   const saveToHistory = () => {
