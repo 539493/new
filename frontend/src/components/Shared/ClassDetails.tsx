@@ -365,6 +365,7 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const [canvasOffset, setCanvasOffset] = useState({ x: 0, y: 0 });
+  const viewportRef = useRef<HTMLDivElement>(null);
 
   // Инициализация canvas
   useEffect(() => {
@@ -442,21 +443,20 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
   };
 
 
-  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const startDrawing = (e: React.MouseEvent) => {
     if (currentTool === 'hand') return;
     
     setIsDrawing(true);
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const rect = canvas.getBoundingClientRect();
-    
-    // Точное позиционирование с учетом фиксированных размеров canvas
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    
-    const x = (e.clientX - rect.left) * scaleX;
-    const y = (e.clientY - rect.top) * scaleY;
+    // Координаты считаем относительно viewport с учетом масштаба и смещения
+    const vp = viewportRef.current;
+    if (!vp) return;
+    const vpRect = vp.getBoundingClientRect();
+    const scale = zoom / 100;
+    const x = ((e.clientX - vpRect.left) - canvasOffset.x) / scale;
+    const y = ((e.clientY - vpRect.top) - canvasOffset.y) / scale;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -467,20 +467,18 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
     console.log('Start drawing at:', { x, y, scaleX, scaleY, canvasWidth: canvas.width, canvasHeight: canvas.height });
   };
 
-  const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const draw = (e: React.MouseEvent) => {
     if (!isDrawing || currentTool === 'hand') return;
 
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const rect = canvas.getBoundingClientRect();
-    
-    // Точное позиционирование с учетом фиксированных размеров canvas
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    
-    const x = (e.clientX - rect.left) * scaleX;
-    const y = (e.clientY - rect.top) * scaleY;
+    const vp = viewportRef.current;
+    if (!vp) return;
+    const vpRect = vp.getBoundingClientRect();
+    const scale = zoom / 100;
+    const x = ((e.clientX - vpRect.left) - canvasOffset.x) / scale;
+    const y = ((e.clientY - vpRect.top) - canvasOffset.y) / scale;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -529,14 +527,14 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
   };
 
   // Функции для панорамирования (инструмент "Рука")
-  const startPanning = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const startPanning = (e: React.MouseEvent) => {
     if (currentTool === 'hand') {
       setIsPanning(true);
       setPanStart({ x: e.clientX, y: e.clientY });
     }
   };
 
-  const pan = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const pan = (e: React.MouseEvent) => {
     if (isPanning && currentTool === 'hand') {
       const deltaX = e.clientX - panStart.x;
       const deltaY = e.clientY - panStart.y;
@@ -675,7 +673,7 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
 
         {/* Основная область canvas */}
         <div className="flex-1 flex flex-col">
-          <div className="flex-1 relative overflow-hidden">
+          <div ref={viewportRef} className="flex-1 relative overflow-hidden">
             <canvas
               ref={canvasRef}
               className={`w-full h-full ${
@@ -683,6 +681,16 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
                 currentTool === 'pointer' ? 'cursor-pointer' : 
                 'cursor-crosshair'
               }`}
+              style={{ 
+                background: 'white',
+                transform: `translate(${canvasOffset.x}px, ${canvasOffset.y}px) scale(${zoom / 100})`,
+                transformOrigin: '0 0',
+                pointerEvents: 'none'
+              }}
+            />
+            {/* Перехватываем события на оверлее, чтобы хиты работали на любом масштабе */}
+            <div
+              className="absolute inset-0"
               onMouseDown={(e) => {
                 if (currentTool === 'hand') {
                   startPanning(e);
@@ -710,11 +718,6 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
                 } else {
                   stopDrawing();
                 }
-              }}
-              style={{ 
-                background: 'white',
-                transform: `translate(${canvasOffset.x}px, ${canvasOffset.y}px) scale(${zoom / 100})`,
-                transformOrigin: '0 0'
               }}
             />
           </div>
