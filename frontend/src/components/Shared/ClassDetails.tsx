@@ -386,8 +386,17 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
     const displayH = baseCssH * scale;
 
     // Координаты внутри прямоугольника отображаемого canvas (учитываем pan)
-    const localX = (e.clientX - vpRect.left) - canvasOffset.x;
-    const localY = (e.clientY - vpRect.top) - canvasOffset.y;
+    let localX = (e.clientX - vpRect.left) - canvasOffset.x;
+    let localY = (e.clientY - vpRect.top) - canvasOffset.y;
+
+    // Если пользователь кликает вне видимого прямоугольника(canvas после scale),
+    // координаты попадают в "пустую" область viewport. Клампим их в границы
+    // отображаемой области, чтобы рисование продолжалось по всему экрану
+    // (вне зависимоти от того, меньше ли displayW/H ширины/высоты viewport).
+    const displayW = baseCssW * scale;
+    const displayH = baseCssH * scale;
+    localX = Math.max(0, Math.min(localX, displayW));
+    localY = Math.max(0, Math.min(localY, displayH));
 
     // Нормализуем относительно отображаемой области и переводим во внутренние пиксели
     const x = (localX / displayW) * canvas.width;
