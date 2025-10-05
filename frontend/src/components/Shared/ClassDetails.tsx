@@ -561,7 +561,7 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
 
   // Функции для панорамирования (инструмент "Рука")
   const startPanning = (e: React.MouseEvent) => {
-    if (currentTool === 'hand') {
+    if (currentTool === 'hand' || (e as any).button === 1) {
       setIsPanning(true);
       setPanStart({ x: e.clientX, y: e.clientY });
     }
@@ -584,6 +584,57 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
   const stopPanning = () => {
     setIsPanning(false);
   };
+
+  const clamp = (val: number, min: number, max: number) => Math.max(min, Math.min(max, val));
+
+  // Зум к курсору: сохраняем под курсором ту же точку холста
+  const setZoomAtPointer = (clientX: number, clientY: number, deltaY: number) => {
+    const vp = viewportRef.current;
+    if (!vp) return;
+    const vpRect = vp.getBoundingClientRect();
+
+    // Текущий и целевой масштаб
+    const oldScale = Math.max(0.01, zoom / 100);
+    const step = deltaY > 0 ? -25 : 25; // колесо вниз — уменьшаем
+    const newZoom = clamp(zoom + step, 25, 200);
+    const newScale = Math.max(0.01, newZoom / 100);
+    if (newZoom === zoom) return;
+
+    // Позиция курсора в viewport
+    const cursorX = clientX - vpRect.left;
+    const cursorY = clientY - vpRect.top;
+
+    // Вычисляем точку холста, которая сейчас под курсором
+    // canvasPoint = (cursor - offset) / oldScale
+    const canvasPointX = (cursorX - canvasOffset.x) / oldScale;
+    const canvasPointY = (cursorY - canvasOffset.y) / oldScale;
+
+    // Новый offset так, чтобы та же canvasPoint осталась под курсором
+    const newOffsetX = cursorX - canvasPointX * newScale;
+    const newOffsetY = cursorY - canvasPointY * newScale;
+
+    setCanvasOffset({ x: newOffsetX, y: newOffsetY });
+    setZoom(newZoom);
+  };
+
+  // Колесо мыши: CTRL/CMD + колесо — зум к курсору; просто колесо — панорамирование по вертикали/горизонтали
+  useEffect(() => {
+    const vp = viewportRef.current;
+    if (!vp) return;
+
+    const onWheel = (e: WheelEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        setZoomAtPointer(e.clientX, e.clientY, e.deltaY);
+      } else {
+        // Скролл — лёгкое панорамирование
+        setCanvasOffset(prev => ({ x: prev.x - e.deltaX, y: prev.y - e.deltaY }));
+      }
+    };
+
+    vp.addEventListener('wheel', onWheel, { passive: false });
+    return () => vp.removeEventListener('wheel', onWheel as any);
+  }, [zoom, canvasOffset]);
 
   const tools = [
     { id: 'pointer', icon: MousePointer, label: 'Указатель' },
