@@ -366,6 +366,15 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const [canvasOffset, setCanvasOffset] = useState({ x: 0, y: 0 });
   const viewportRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  type BoardItem =
+    | { id: string; type: 'text'; x: number; y: number; color: string; fontSize: number; text: string; width: number; height: number }
+    | { id: string; type: 'image'; x: number; y: number; width: number; height: number; img: HTMLImageElement };
+  const [items, setItems] = useState<BoardItem[]>([]);
+  const [dragItemId, setDragItemId] = useState<string | null>(null);
+  const [dragOffset, setDragOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [dragSnapshot, setDragSnapshot] = useState<ImageData | null>(null);
 
   // Преобразование координат окна в систему координат canvas
   const getCanvasCoordinates = (e: { clientX: number; clientY: number }) => {
@@ -501,12 +510,45 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    ctx.beginPath();
-    ctx.moveTo(x, y);
+    if (currentTool === 'pen') {
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+    } else if (currentTool === 'eraser') {
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+    } else if (currentTool === 'text') {
+      const id = crypto.randomUUID();
+      const fontSize = Math.max(12, brushSize * 4);
+      const newItem: BoardItem = { id, type: 'text', x, y, color: brushColor, fontSize, text: 'Текст', width: 200, height: fontSize + 6 };
+      setItems(prev => [...prev, newItem]);
+      // Нарисуем сразу
+      ctx.putImageData(history[historyIndex], 0, 0);
+      drawItems(ctx);
+      saveToHistory();
+      setIsDrawing(false);
+    } else if (currentTool === 'image') {
+      if (fileInputRef.current) {
+        (fileInputRef.current as any)._dropX = x;
+        (fileInputRef.current as any)._dropY = y;
+        fileInputRef.current.click();
+      }
+      setIsDrawing(false);
+    } else if (currentTool === 'pointer') {
+      // Захват элемента для перемещения
+      const it = hitTest(x, y);
+      if (it) {
+        setDragItemId(it.id);
+        setDragOffset({ x: x - it.x, y: y - it.y });
+        const snap = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        setDragSnapshot(snap);
+      }
+      setIsDrawing(false);
+    }
   };
 
   const draw = (e: React.MouseEvent) => {
-    if (!isDrawing || currentTool === 'hand') return;
+    if (currentTool === 'hand') return;
 
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -515,6 +557,21 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+
+    if (dragItemId && currentTool === 'pointer') {
+      // Перемещаем элемент
+      const base = items.find(i => i.id === dragItemId);
+      if (!base || !dragSnapshot) return;
+      ctx.putImageData(dragSnapshot, 0, 0);
+      const nx = x - dragOffset.x;
+      const ny = y - dragOffset.y;
+      const moved = items.map(i => i.id === dragItemId ? { ...i, x: nx, y: ny } as BoardItem : i);
+      setItems(moved);
+      drawItems(ctx);
+      return;
+    }
+
+    if (!isDrawing) return;
 
     if (currentTool === 'pen') {
       ctx.strokeStyle = brushColor;
@@ -535,6 +592,11 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
   };
 
   const stopDrawing = () => {
+    if (dragItemId && currentTool === 'pointer') {
+      setDragItemId(null);
+      saveToHistory();
+      return;
+    }
     setIsDrawing(false);
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -646,6 +708,29 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
     { id: 'eraser', icon: Eraser, label: 'Ластик' },
     { id: 'image', icon: Image, label: 'Изображение' }
   ];
+
+  const drawItems = (ctx: CanvasRenderingContext2D) => {
+    items.forEach((it) => {
+      if (it.type === 'text') {
+        ctx.fillStyle = it.color;
+        ctx.font = `${it.fontSize}px sans-serif`;
+        ctx.textBaseline = 'top';
+        ctx.fillText(it.text, it.x, it.y);
+      } else if (it.type === 'image') {
+        ctx.drawImage(it.img, it.x, it.y, it.width, it.height);
+      }
+    });
+  };
+
+  const hitTest = (x: number, y: number): BoardItem | null => {
+    for (let i = items.length - 1; i >= 0; i--) {
+      const it = items[i];
+      if (x >= it.x && y >= it.y && x <= it.x + it.width && y <= it.y + it.height) {
+        return it;
+      }
+    }
+    return null;
+  };
 
   return (
     <div className="flex-1 flex flex-col bg-white">
@@ -770,6 +855,39 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
                 transform: `translate(${canvasOffset.x}px, ${canvasOffset.y}px) scale(${zoom / 100})`,
                 transformOrigin: '0 0',
                 pointerEvents: 'none'
+              }}
+            />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = () => {
+                  const img = new Image();
+                  img.onload = () => {
+                    const canvas = canvasRef.current;
+                    if (!canvas) return;
+                    const ctx = canvas.getContext('2d');
+                    if (!ctx) return;
+                    const x = (fileInputRef.current as any)._dropX || 0;
+                    const y = (fileInputRef.current as any)._dropY || 0;
+                    const w = Math.min(600, img.width);
+                    const h = (img.height / img.width) * w;
+                    const id = crypto.randomUUID();
+                    const item: any = { id, type: 'image', x, y, width: w, height: h, img };
+                    setItems(prev => [...prev, item]);
+                    ctx.putImageData(history[historyIndex], 0, 0);
+                    drawItems(ctx);
+                    saveToHistory();
+                    if (fileInputRef.current) fileInputRef.current.value = '';
+                  };
+                  img.src = reader.result as string;
+                };
+                reader.readAsDataURL(file);
               }}
             />
             {/* Перехватываем события на оверлее, чтобы хиты работали на любом масштабе */}
