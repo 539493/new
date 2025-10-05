@@ -367,6 +367,33 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
   const [canvasOffset, setCanvasOffset] = useState({ x: 0, y: 0 });
   const viewportRef = useRef<HTMLDivElement>(null);
 
+  // Преобразование координат окна в систему координат canvas
+  const getCanvasCoordinates = (e: { clientX: number; clientY: number }) => {
+    const canvas = canvasRef.current;
+    const vp = viewportRef.current;
+    if (!canvas || !vp) return { x: 0, y: 0 };
+
+    const vpRect = vp.getBoundingClientRect();
+    const scale = Math.max(0.01, zoom / 100);
+
+    // Координаты внутри viewport (с учетом смещения панорамирования)
+    const localX = (e.clientX - vpRect.left) - canvasOffset.x;
+    const localY = (e.clientY - vpRect.top) - canvasOffset.y;
+
+    // Учитываем масштаб отображения
+    const unscaledX = localX / scale;
+    const unscaledY = localY / scale;
+
+    // Преобразуем из css-пикселей viewport в внутренние пиксели canvas
+    const cssToInternalX = canvas.width / (vp.clientWidth || 1);
+    const cssToInternalY = canvas.height / (vp.clientHeight || 1);
+
+    const x = unscaledX * cssToInternalX;
+    const y = unscaledY * cssToInternalY;
+
+    return { x, y };
+  };
+
   // Инициализация canvas
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -451,15 +478,7 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
     if (!canvas) return;
 
     // Координаты считаем относительно viewport с учетом масштаба и смещения
-    const vp = viewportRef.current;
-    if (!vp) return;
-    const vpRect = vp.getBoundingClientRect();
-    const scale = zoom / 100;
-    // Отношение внутренних пикселей canvas к его CSS-размеру (учитывает DPR)
-    const cssToInternalX = canvas.width / (canvas.offsetWidth || 1);
-    const cssToInternalY = canvas.height / (canvas.offsetHeight || 1);
-    const x = (((e.clientX - vpRect.left) - canvasOffset.x) / scale) * cssToInternalX;
-    const y = (((e.clientY - vpRect.top) - canvasOffset.y) / scale) * cssToInternalY;
+    const { x, y } = getCanvasCoordinates(e);
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -476,14 +495,7 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const vp = viewportRef.current;
-    if (!vp) return;
-    const vpRect = vp.getBoundingClientRect();
-    const scale = zoom / 100;
-    const cssToInternalX = canvas.width / (canvas.offsetWidth || 1);
-    const cssToInternalY = canvas.height / (canvas.offsetHeight || 1);
-    const x = (((e.clientX - vpRect.left) - canvasOffset.x) / scale) * cssToInternalX;
-    const y = (((e.clientY - vpRect.top) - canvasOffset.y) / scale) * cssToInternalY;
+    const { x, y } = getCanvasCoordinates(e);
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
