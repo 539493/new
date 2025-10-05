@@ -375,6 +375,9 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
   const [dragItemId, setDragItemId] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [dragSnapshot, setDragSnapshot] = useState<ImageData | null>(null);
+  const [textEditor, setTextEditor] = useState<{ visible: boolean; itemId: string | null; value: string; screenX: number; screenY: number }>(
+    { visible: false, itemId: null, value: '', screenX: 0, screenY: 0 }
+  );
 
   // Преобразование координат окна в систему координат canvas
   const getCanvasCoordinates = (e: { clientX: number; clientY: number }) => {
@@ -838,6 +841,16 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
               </button>
             );
           })}
+          {/* Доп. кнопки действий для активного инструмента */}
+          {currentTool === 'pen' && (
+            <div className="mt-4 flex flex-col items-center space-y-2">
+              <input type="color" value={brushColor} onChange={(e)=>setBrushColor(e.target.value)} className="w-7 h-7 p-0 border rounded" />
+              <input type="range" min={1} max={20} value={brushSize} onChange={(e)=>setBrushSize(Number(e.target.value))} className="w-12" />
+            </div>
+          )}
+          {currentTool === 'image' && (
+            <button onClick={()=>fileInputRef.current?.click()} className="mt-2 px-2 py-1 text-xs border rounded hover:bg-gray-100">Загрузить</button>
+          )}
         </div>
 
         {/* Основная область canvas */}
@@ -926,6 +939,26 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
 
           {/* Нижняя панель */}
           <div className="p-4 border-t border-gray-200 bg-gray-50">
+        {textEditor.visible && (
+          <div
+            className="absolute z-20"
+            style={{ left: textEditor.screenX, top: textEditor.screenY }}
+          >
+            <input
+              value={textEditor.value}
+              onChange={(e)=>setTextEditor(prev=>({...prev, value: e.target.value}))}
+              onKeyDown={(e)=>{
+                if(e.key==='Enter'){
+                  const canvas = canvasRef.current; if(!canvas) return; const ctx = canvas.getContext('2d'); if(!ctx) return;
+                  setItems(prev=>prev.map(it=> it.id===textEditor.itemId ? ({...it, text: textEditor.value}) as any : it));
+                  ctx.putImageData(history[historyIndex],0,0); drawItems(ctx); saveToHistory(); setTextEditor({visible:false,itemId:null,value:'',screenX:0,screenY:0});
+                }
+              }}
+              autoFocus
+              className="px-2 py-1 border rounded bg-white shadow"
+            />
+          </div>
+        )}
             <button 
               onClick={() => setShowStudentConnection(!showStudentConnection)}
               className="flex items-center space-x-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
