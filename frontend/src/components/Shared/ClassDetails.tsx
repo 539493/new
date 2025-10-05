@@ -393,8 +393,7 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
     // координаты попадают в "пустую" область viewport. Клампим их в границы
     // отображаемой области, чтобы рисование продолжалось по всему экрану
     // (вне зависимоти от того, меньше ли displayW/H ширины/высоты viewport).
-    const displayW = baseCssW * scale;
-    const displayH = baseCssH * scale;
+    // (повтор не нужен — используем ранее вычисленные displayW/displayH)
     localX = Math.max(0, Math.min(localX, displayW));
     localY = Math.max(0, Math.min(localY, displayH));
 
