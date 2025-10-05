@@ -370,7 +370,7 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
 
   type BoardItem =
     | { id: string; type: 'text'; x: number; y: number; color: string; fontSize: number; text: string; width: number; height: number }
-    | { id: string; type: 'image'; x: number; y: number; width: number; height: number; img: HTMLImageElement };
+    | { id: string; type: 'image'; x: number; y: number; width: number; height: number; img: HTMLImageElement; aspect: number };
   const [items, setItems] = useState<BoardItem[]>([]);
   const [dragItemId, setDragItemId] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -378,6 +378,13 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
   const [textEditor, setTextEditor] = useState<{ visible: boolean; itemId: string | null; value: string; screenX: number; screenY: number }>(
     { visible: false, itemId: null, value: '', screenX: 0, screenY: 0 }
   );
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [resizeData, setResizeData] = useState<null | {
+    itemId: string;
+    handle: 'nw' | 'ne' | 'sw' | 'se';
+    origin: { x: number; y: number; width: number; height: number; aspect?: number };
+    start: { x: number; y: number };
+  }>(null);
 
   // Преобразование координат окна в систему координат canvas
   const getCanvasCoordinates = (e: { clientX: number; clientY: number }) => {
@@ -538,13 +545,26 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
       }
       setIsDrawing(false);
     } else if (currentTool === 'pointer') {
-      // Захват элемента для перемещения
-      const it = hitTest(x, y);
-      if (it) {
-        setDragItemId(it.id);
-        setDragOffset({ x: x - it.x, y: y - it.y });
+      const hit = hitTest(x, y);
+      if (hit) {
+        const it = hit.item;
+        setSelectedId(it.id);
         const snap = ctx.getImageData(0, 0, canvas.width, canvas.height);
         setDragSnapshot(snap);
+        if (hit.zone === 'body') {
+          setDragItemId(it.id);
+          setDragOffset({ x: x - it.x, y: y - it.y });
+        } else {
+          // resize
+          setResizeData({
+            itemId: it.id,
+            handle: hit.zone,
+            origin: { x: it.x, y: it.y, width: it.width, height: it.height, aspect: (it as any).aspect },
+            start: { x, y }
+          });
+        }
+      } else {
+        setSelectedId(null);
       }
       setIsDrawing(false);
     }
@@ -560,6 +580,41 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+
+    if (resizeData && currentTool === 'pointer') {
+      const base = items.find(i => i.id === resizeData.itemId);
+      if (!base || base.type !== 'image' || !dragSnapshot) return;
+      ctx.putImageData(dragSnapshot, 0, 0);
+      // вычисляем новое w/h c сохранением пропорций
+      const dx = x - resizeData.start.x;
+      const dy = y - resizeData.start.y;
+      let nx = resizeData.origin.x;
+      let ny = resizeData.origin.y;
+      let nw = resizeData.origin.width;
+      let nh = resizeData.origin.height;
+      const aspect = base.aspect || (resizeData.origin.width / resizeData.origin.height);
+      if (resizeData.handle === 'se') {
+        nw = Math.max(20, resizeData.origin.width + dx);
+        nh = Math.max(20, nw / aspect);
+      } else if (resizeData.handle === 'ne') {
+        nw = Math.max(20, resizeData.origin.width + dx);
+        nh = Math.max(20, nw / aspect);
+        ny = resizeData.origin.y + (resizeData.origin.height - nh);
+      } else if (resizeData.handle === 'sw') {
+        nw = Math.max(20, resizeData.origin.width - dx);
+        nh = Math.max(20, nw / aspect);
+        nx = resizeData.origin.x + (resizeData.origin.width - nw);
+      } else if (resizeData.handle === 'nw') {
+        nw = Math.max(20, resizeData.origin.width - dx);
+        nh = Math.max(20, nw / aspect);
+        nx = resizeData.origin.x + (resizeData.origin.width - nw);
+        ny = resizeData.origin.y + (resizeData.origin.height - nh);
+      }
+      const resized = items.map(i => i.id === base.id ? ({ ...i, x: nx, y: ny, width: nw, height: nh } as BoardItem) : i);
+      setItems(resized);
+      drawItems(ctx);
+      return;
+    }
 
     if (dragItemId && currentTool === 'pointer') {
       // Перемещаем элемент
@@ -595,6 +650,11 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
   };
 
   const stopDrawing = () => {
+    if (resizeData && currentTool === 'pointer') {
+      setResizeData(null);
+      saveToHistory();
+      return;
+    }
     if (dragItemId && currentTool === 'pointer') {
       setDragItemId(null);
       saveToHistory();
@@ -721,15 +781,41 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
         ctx.fillText(it.text, it.x, it.y);
       } else if (it.type === 'image') {
         ctx.drawImage(it.img, it.x, it.y, it.width, it.height);
+        // Рисуем рамку выделения и ручки, если выбрано
+        if (selectedId === it.id) {
+          ctx.save();
+          ctx.strokeStyle = '#3b82f6';
+          ctx.lineWidth = 2;
+          ctx.setLineDash([6, 4]);
+          ctx.strokeRect(it.x, it.y, it.width, it.height);
+          ctx.setLineDash([]);
+          ctx.fillStyle = '#3b82f6';
+          const handleSize = 10;
+          // углы: nw, ne, sw, se
+          ctx.fillRect(it.x - handleSize/2, it.y - handleSize/2, handleSize, handleSize);
+          ctx.fillRect(it.x + it.width - handleSize/2, it.y - handleSize/2, handleSize, handleSize);
+          ctx.fillRect(it.x - handleSize/2, it.y + it.height - handleSize/2, handleSize, handleSize);
+          ctx.fillRect(it.x + it.width - handleSize/2, it.y + it.height - handleSize/2, handleSize, handleSize);
+          ctx.restore();
+        }
       }
     });
   };
 
-  const hitTest = (x: number, y: number): BoardItem | null => {
+  const hitTest = (x: number, y: number): { item: BoardItem; zone: 'body' | 'nw' | 'ne' | 'sw' | 'se' } | null => {
+    const handleSize = 14;
     for (let i = items.length - 1; i >= 0; i--) {
       const it = items[i];
       if (x >= it.x && y >= it.y && x <= it.x + it.width && y <= it.y + it.height) {
-        return it;
+        if (it.type === 'image') {
+          // Проверяем углы
+          const inRect = (cx: number, cy: number) => x >= cx - handleSize/2 && x <= cx + handleSize/2 && y >= cy - handleSize/2 && y <= cy + handleSize/2;
+          if (inRect(it.x, it.y)) return { item: it, zone: 'nw' };
+          if (inRect(it.x + it.width, it.y)) return { item: it, zone: 'ne' };
+          if (inRect(it.x, it.y + it.height)) return { item: it, zone: 'sw' };
+          if (inRect(it.x + it.width, it.y + it.height)) return { item: it, zone: 'se' };
+        }
+        return { item: it, zone: 'body' };
       }
     }
     return null;
@@ -888,10 +974,13 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
                     if (!ctx) return;
                     const x = (fileInputRef.current as any)._dropX || 0;
                     const y = (fileInputRef.current as any)._dropY || 0;
-                    const w = Math.min(600, img.width);
-                    const h = (img.height / img.width) * w;
+                    // Вставляем изображение крупнее по умолчанию, но сохраняем пропорции
+                    const targetMax = 1200; // базовый размер по ширине
+                    const scale = Math.min(1, targetMax / img.width);
+                    const w = Math.max(600, Math.floor(img.width * scale));
+                    const h = Math.floor((img.height / img.width) * w);
                     const id = crypto.randomUUID();
-                    const item: any = { id, type: 'image', x, y, width: w, height: h, img };
+                    const item: any = { id, type: 'image', x, y, width: w, height: h, img, aspect: img.width / img.height };
                     setItems(prev => [...prev, item]);
                     ctx.putImageData(history[historyIndex], 0, 0);
                     drawItems(ctx);
