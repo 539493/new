@@ -409,11 +409,9 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
     canvas.width = CANVAS_WIDTH;
     canvas.height = CANVAS_HEIGHT;
     
-    // Устанавливаем CSS размеры для отображения
-    canvas.style.width = '100%';
-    canvas.style.height = '100%';
-    canvas.style.maxWidth = '100%';
-    canvas.style.maxHeight = '100%';
+    // Начальные CSS размеры под текущий зум выставим ниже в эффекте на zoom
+    canvas.style.maxWidth = 'none';
+    canvas.style.maxHeight = 'none';
 
     // Настройки по умолчанию
     ctx.lineCap = 'round';
@@ -426,6 +424,21 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
     // Сохраняем начальное состояние в историю
     saveToHistory();
   }, []);
+
+  // Подгоняем CSS‑размер canvas так, чтобы после transform: scale()
+  // он занимал всю видимую область viewport при любом зуме
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const vp = viewportRef.current;
+    if (!canvas || !vp) return;
+
+    const scale = Math.max(0.01, zoom / 100);
+    const targetCssWidth = vp.clientWidth / scale;
+    const targetCssHeight = vp.clientHeight / scale;
+
+    canvas.style.width = `${targetCssWidth}px`;
+    canvas.style.height = `${targetCssHeight}px`;
+  }, [zoom]);
 
   // Функции для работы с историей
   const saveToHistory = () => {
