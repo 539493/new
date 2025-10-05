@@ -377,8 +377,10 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
     const scale = Math.max(0.01, zoom / 100);
 
     // Базовые CSS‑размеры canvas (до transform), у нас = размеру viewport
-    const baseCssW = canvas.offsetWidth || vp.clientWidth || 1;
-    const baseCssH = canvas.offsetHeight || vp.clientHeight || 1;
+    // Базовые CSS‑размеры считаем из исходных размеров canvas,
+    // а не из текущих offset (они могут быть влиянием transform)
+    const baseCssW = canvas.width;
+    const baseCssH = canvas.height;
     // Фактические отображаемые размеры после scale
     const displayW = baseCssW * scale;
     const displayH = baseCssH * scale;
@@ -425,19 +427,14 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
     saveToHistory();
   }, []);
 
-  // Подгоняем CSS‑размер canvas так, чтобы после transform: scale()
-  // он занимал всю видимую область viewport при любом зуме
+  // При смене масштаба оставляем canvas в базовом крупном размере,
+  // а эффект зума достигается только transform: scale(...).
+  // Так визуально доска уменьшается, но реальный холст остаётся большим.
   useEffect(() => {
     const canvas = canvasRef.current;
-    const vp = viewportRef.current;
-    if (!canvas || !vp) return;
-
-    const scale = Math.max(0.01, zoom / 100);
-    const targetCssWidth = vp.clientWidth / scale;
-    const targetCssHeight = vp.clientHeight / scale;
-
-    canvas.style.width = `${targetCssWidth}px`;
-    canvas.style.height = `${targetCssHeight}px`;
+    if (!canvas) return;
+    canvas.style.width = `${canvas.width}px`;
+    canvas.style.height = `${canvas.height}px`;
   }, [zoom]);
 
   // Функции для работы с историей
