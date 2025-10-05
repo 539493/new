@@ -485,8 +485,6 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
 
     ctx.beginPath();
     ctx.moveTo(x, y);
-    
-    console.log('Start drawing at:', { x, y, scaleX, scaleY, canvasWidth: canvas.width, canvasHeight: canvas.height });
   };
 
   const draw = (e: React.MouseEvent) => {
