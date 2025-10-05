@@ -455,8 +455,11 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
     if (!vp) return;
     const vpRect = vp.getBoundingClientRect();
     const scale = zoom / 100;
-    const x = ((e.clientX - vpRect.left) - canvasOffset.x) / scale;
-    const y = ((e.clientY - vpRect.top) - canvasOffset.y) / scale;
+    // Отношение внутренних пикселей canvas к его CSS-размеру (учитывает DPR)
+    const cssToInternalX = canvas.width / (canvas.offsetWidth || 1);
+    const cssToInternalY = canvas.height / (canvas.offsetHeight || 1);
+    const x = (((e.clientX - vpRect.left) - canvasOffset.x) / scale) * cssToInternalX;
+    const y = (((e.clientY - vpRect.top) - canvasOffset.y) / scale) * cssToInternalY;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -477,8 +480,10 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
     if (!vp) return;
     const vpRect = vp.getBoundingClientRect();
     const scale = zoom / 100;
-    const x = ((e.clientX - vpRect.left) - canvasOffset.x) / scale;
-    const y = ((e.clientY - vpRect.top) - canvasOffset.y) / scale;
+    const cssToInternalX = canvas.width / (canvas.offsetWidth || 1);
+    const cssToInternalY = canvas.height / (canvas.offsetHeight || 1);
+    const x = (((e.clientX - vpRect.left) - canvasOffset.x) / scale) * cssToInternalX;
+    const y = (((e.clientY - vpRect.top) - canvasOffset.y) / scale) * cssToInternalY;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
