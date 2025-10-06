@@ -1013,6 +1013,49 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
                 pointerEvents: 'none'
               }}
             />
+            {/* Инлайн-редактор текста над холстом */}
+            {textEditor.visible && (
+              <div
+                className="absolute z-40"
+                style={{ left: textEditor.screenX, top: textEditor.screenY }}
+              >
+                <input
+                  value={textEditor.value}
+                  onChange={(e)=>{
+                    const newVal = e.target.value;
+                    setTextEditor(prev=>({...prev, value: newVal}));
+                    const canvas = canvasRef.current; if(!canvas) return; const ctx = canvas.getContext('2d'); if(!ctx) return;
+                    const updated = items.map(it=>{
+                      if(it.id!==textEditor.itemId) return it as any;
+                      const weight = (it as any).fontWeight === 'bold' ? 'bold' : 'normal';
+                      const style = (it as any).fontStyle === 'italic' ? 'italic' : 'normal';
+                      ctx.font = `${style} ${weight} ${(it as any).fontSize}px sans-serif`;
+                      const w = Math.max(60, Math.floor(ctx.measureText(newVal).width || (it as any).width));
+                      return ({...it, text: newVal, width: w}) as any;
+                    });
+                    ctx.putImageData(history[historyIndex],0,0);
+                    drawItems(ctx, updated as any);
+                    setItems(updated as any);
+                  }}
+                  onKeyDown={(e)=>{
+                    if(e.key==='Enter'){
+                      const canvas = canvasRef.current; if(!canvas) return; const ctx = canvas.getContext('2d'); if(!ctx) return;
+                      const updated = items.map(it=> it.id===textEditor.itemId ? ({...it, text: textEditor.value}) as any : it);
+                      setItems(updated as any);
+                      ctx.putImageData(history[historyIndex],0,0); drawItems(ctx, updated as any); saveToHistory(); setTextEditor({visible:false,itemId:null,value:'',screenX:0,screenY:0});
+                    }
+                  }}
+                  onBlur={()=>{
+                    const canvas = canvasRef.current; if(!canvas) return; const ctx = canvas.getContext('2d'); if(!ctx) return;
+                    const updated = items.map(it=> it.id===textEditor.itemId ? ({...it, text: textEditor.value}) as any : it);
+                    setItems(updated as any);
+                    ctx.putImageData(history[historyIndex],0,0); drawItems(ctx, updated as any); saveToHistory(); setTextEditor({visible:false,itemId:null,value:'',screenX:0,screenY:0});
+                  }}
+                  autoFocus
+                  className="px-2 py-1 border rounded bg-white shadow"
+                />
+              </div>
+            )}
             {/* Панель форматирования для выбранного текстового элемента */}
             {(() => {
               const item = items.find(i => i.id === selectedId && i.type === 'text') as any;
@@ -1197,26 +1240,6 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
 
           {/* Нижняя панель */}
           <div className="p-4 border-t border-gray-200 bg-gray-50">
-        {textEditor.visible && (
-          <div
-            className="absolute z-20"
-            style={{ left: textEditor.screenX, top: textEditor.screenY }}
-          >
-            <input
-              value={textEditor.value}
-              onChange={(e)=>setTextEditor(prev=>({...prev, value: e.target.value}))}
-              onKeyDown={(e)=>{
-                if(e.key==='Enter'){
-                  const canvas = canvasRef.current; if(!canvas) return; const ctx = canvas.getContext('2d'); if(!ctx) return;
-                  setItems(prev=>prev.map(it=> it.id===textEditor.itemId ? ({...it, text: textEditor.value}) as any : it));
-                  ctx.putImageData(history[historyIndex],0,0); drawItems(ctx); saveToHistory(); setTextEditor({visible:false,itemId:null,value:'',screenX:0,screenY:0});
-                }
-              }}
-              autoFocus
-              className="px-2 py-1 border rounded bg-white shadow"
-            />
-          </div>
-        )}
             <button 
               onClick={() => setShowStudentConnection(!showStudentConnection)}
               className="flex items-center space-x-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
