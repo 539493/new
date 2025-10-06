@@ -371,7 +371,7 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
   const [textToInsert, setTextToInsert] = useState<string>('');
 
   type BoardItem =
-    | { id: string; type: 'text'; x: number; y: number; color: string; fontSize: number; text: string; width: number; height: number }
+    | { id: string; type: 'text'; x: number; y: number; color: string; fontSize: number; text: string; width: number; height: number; fontWeight?: 'normal' | 'bold'; fontStyle?: 'normal' | 'italic'; textDecoration?: 'none' | 'underline'; locked?: boolean }
     | { id: string; type: 'image'; x: number; y: number; width: number; height: number; img: HTMLImageElement; aspect: number };
   const [items, setItems] = useState<BoardItem[]>([]);
   const [dragItemId, setDragItemId] = useState<string | null>(null);
@@ -532,7 +532,7 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
     } else if (currentTool === 'text') {
       const id = crypto.randomUUID();
       const fontSize = Math.max(12, brushSize * 4);
-      const newItem: BoardItem = { id, type: 'text', x, y, color: brushColor, fontSize, text: (textToInsert || 'Текст'), width: 200, height: fontSize + 6 };
+      const newItem: BoardItem = { id, type: 'text', x, y, color: brushColor, fontSize, text: (textToInsert || 'Введите текст'), width: 200, height: fontSize + 6, fontWeight: 'normal', fontStyle: 'normal', textDecoration: 'none', locked: false };
       setItems(prev => [...prev, newItem]);
       // Нарисуем сразу
       ctx.putImageData(history[historyIndex], 0, 0);
@@ -585,7 +585,7 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    if (resizeData && currentTool === 'pointer') {
+      if (resizeData && currentTool === 'pointer') {
       const base = items.find(i => i.id === resizeData.itemId);
       if (!base || base.type !== 'image' || !dragSnapshot) return;
       ctx.putImageData(dragSnapshot, 0, 0);
@@ -624,6 +624,7 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
       // Перемещаем элемент
       const base = items.find(i => i.id === dragItemId);
       if (!base || !dragSnapshot) return;
+      if ((base as any).locked) return; // заблокированный не двигаем
       ctx.putImageData(dragSnapshot, 0, 0);
       const nx = x - dragOffset.x;
       const ny = y - dragOffset.y;
@@ -776,13 +777,42 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
     { id: 'image', icon: Image, label: 'Изображение' }
   ];
 
-  const drawItems = (ctx: CanvasRenderingContext2D) => {
-    items.forEach((it) => {
+  const drawItems = (ctx: CanvasRenderingContext2D, list: BoardItem[] = items) => {
+    list.forEach((it) => {
       if (it.type === 'text') {
         ctx.fillStyle = it.color;
-        ctx.font = `${it.fontSize}px sans-serif`;
+        const weight = it.fontWeight === 'bold' ? 'bold' : 'normal';
+        const style = it.fontStyle === 'italic' ? 'italic' : 'normal';
+        ctx.font = `${style} ${weight} ${it.fontSize}px sans-serif`;
         ctx.textBaseline = 'top';
         ctx.fillText(it.text, it.x, it.y);
+        if (it.textDecoration === 'underline') {
+          ctx.save();
+          ctx.strokeStyle = it.color;
+          ctx.lineWidth = Math.max(1, Math.floor(it.fontSize / 12));
+          const metrics = ctx.measureText(it.text);
+          const underlineY = it.y + it.fontSize + 2;
+          ctx.beginPath();
+          ctx.moveTo(it.x, underlineY);
+          ctx.lineTo(it.x + (metrics.width || it.width), underlineY);
+          ctx.stroke();
+          ctx.restore();
+        }
+        if (selectedId === it.id) {
+          ctx.save();
+          ctx.strokeStyle = '#3b82f6';
+          ctx.lineWidth = 2;
+          ctx.setLineDash([6, 4]);
+          ctx.strokeRect(it.x, it.y, it.width, it.height);
+          ctx.setLineDash([]);
+          ctx.fillStyle = '#3b82f6';
+          const handleSize = 10;
+          ctx.fillRect(it.x - handleSize/2, it.y - handleSize/2, handleSize, handleSize);
+          ctx.fillRect(it.x + it.width - handleSize/2, it.y - handleSize/2, handleSize, handleSize);
+          ctx.fillRect(it.x - handleSize/2, it.y + it.height - handleSize/2, handleSize, handleSize);
+          ctx.fillRect(it.x + it.width - handleSize/2, it.y + it.height - handleSize/2, handleSize, handleSize);
+          ctx.restore();
+        }
       } else if (it.type === 'image') {
         ctx.drawImage(it.img, it.x, it.y, it.width, it.height);
         // Рисуем рамку выделения и ручки, если выбрано
@@ -811,7 +841,7 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
     for (let i = items.length - 1; i >= 0; i--) {
       const it = items[i];
       if (x >= it.x && y >= it.y && x <= it.x + it.width && y <= it.y + it.height) {
-        if (it.type === 'image') {
+        if (it.type === 'image' || it.type === 'text') {
           // Проверяем углы
           const inRect = (cx: number, cy: number) => x >= cx - handleSize/2 && x <= cx + handleSize/2 && y >= cy - handleSize/2 && y <= cy + handleSize/2;
           if (inRect(it.x, it.y)) return { item: it, zone: 'nw' };
@@ -965,6 +995,109 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
                 pointerEvents: 'none'
               }}
             />
+            {/* Панель форматирования для выбранного текстового элемента */}
+            {(() => {
+              const item = items.find(i => i.id === selectedId && i.type === 'text') as any;
+              if (!item) return null;
+              const scale = Math.max(0.01, zoom / 100);
+              const left = item.x * scale + canvasOffset.x;
+              const top = Math.max(8, item.y * scale + canvasOffset.y - 56);
+              const applyAndRedraw = (updated: BoardItem[]) => {
+                const canvas = canvasRef.current; if(!canvas) return; const ctx = canvas.getContext('2d'); if(!ctx) return;
+                ctx.putImageData(history[historyIndex],0,0);
+                drawItems(ctx, updated);
+                saveToHistory();
+                setItems(updated);
+              };
+              return (
+                <div
+                  className="absolute z-30 bg-white border border-gray-200 shadow-lg rounded-xl p-2 flex items-center space-x-3"
+                  style={{ left, top }}
+                >
+                  {/* Цвет текста */}
+                  <input
+                    type="color"
+                    value={item.color}
+                    title="Цвет текста"
+                    onChange={(e)=>{
+                      const updated = items.map(it => it.id===item.id ? ({...it, color: e.target.value}) as any : it);
+                      applyAndRedraw(updated as any);
+                    }}
+                    className="w-8 h-8 p-0 border rounded"
+                  />
+                  {/* Размер шрифта */}
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="range"
+                      min={12}
+                      max={72}
+                      value={item.fontSize}
+                      onChange={(e)=>{
+                        const size = Number(e.target.value);
+                        const updated = items.map(it => {
+                          if (it.id!==item.id) return it as any;
+                          const canvas = document.createElement('canvas');
+                          const ctx = canvas.getContext('2d');
+                          if (ctx) {
+                            const weight = it.fontWeight === 'bold' ? 'bold' : 'normal';
+                            const style = it.fontStyle === 'italic' ? 'italic' : 'normal';
+                            ctx.font = `${style} ${weight} ${size}px sans-serif`;
+                            const w = ctx.measureText((it as any).text).width || (it as any).width;
+                            return ({...it, fontSize: size, width: Math.max(60, Math.floor(w))}) as any;
+                          }
+                          return ({...it, fontSize: size}) as any;
+                        });
+                        applyAndRedraw(updated as any);
+                      }}
+                      className="w-24"
+                    />
+                    <span className="text-xs text-gray-600 w-8 text-right">{item.fontSize}px</span>
+                  </div>
+                  <button
+                    className={`px-2 py-1 rounded ${item.fontWeight==='bold'?'bg-gray-200':''}`}
+                    title="Полужирный"
+                    onClick={() => {
+                      const updated = items.map(it => it.id===item.id ? ({...it, fontWeight: it.fontWeight==='bold'?'normal':'bold'}) as any : it);
+                      applyAndRedraw(updated as any);
+                    }}
+                  >B</button>
+                  <button
+                    className={`px-2 py-1 rounded ${item.fontStyle==='italic'?'bg-gray-200':''}`}
+                    title="Курсив"
+                    onClick={() => {
+                      const updated = items.map(it => it.id===item.id ? ({...it, fontStyle: it.fontStyle==='italic'?'normal':'italic'}) as any : it);
+                      applyAndRedraw(updated as any);
+                    }}
+                  ><span style={{ fontStyle: 'italic' }}>I</span></button>
+                  <button
+                    className={`px-2 py-1 rounded ${item.textDecoration==='underline'?'bg-gray-200':''}`}
+                    title="Подчёркнутый"
+                    onClick={() => {
+                      const updated = items.map(it => it.id===item.id ? ({...it, textDecoration: it.textDecoration==='underline'?'none':'underline'}) as any : it);
+                      applyAndRedraw(updated as any);
+                    }}
+                  ><span style={{ textDecoration: 'underline' }}>U</span></button>
+                  <button
+                    className={`px-2 py-1 rounded ${item.locked?'bg-gray-200':''}`}
+                    title={item.locked? 'Разблокировать' : 'Заблокировать'}
+                    onClick={() => {
+                      const updated = items.map(it => it.id===item.id ? ({...it, locked: !it.locked}) as any : it);
+                      applyAndRedraw(updated as any);
+                    }}
+                  >🔒</button>
+                  <button
+                    className="px-2 py-1 rounded text-white bg-red-500 hover:bg-red-600"
+                    title="Удалить"
+                    onClick={() => {
+                      const canvas = canvasRef.current; if(!canvas) return; const ctx = canvas.getContext('2d'); if(!ctx) return;
+                      setItems(prev => prev.filter(it => it.id !== item.id));
+                      setSelectedId(null);
+                      ctx.putImageData(history[historyIndex],0,0); drawItems(ctx); saveToHistory();
+                    }}
+                  >🗑</button>
+                </div>
+              );
+            })()}
             <input
               ref={fileInputRef}
               type="file"
@@ -1031,6 +1164,15 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
                 } else {
                   stopDrawing();
                 }
+              }}
+              onDoubleClick={(e) => {
+                // открыть инлайн-редактор для выбранного текста
+                const sel = items.find(i=>i.id===selectedId && i.type==='text') as any;
+                if (!sel) return;
+                const scale = Math.max(0.01, zoom / 100);
+                const screenX = sel.x * scale + canvasOffset.x;
+                const screenY = sel.y * scale + canvasOffset.y;
+                setTextEditor({ visible: true, itemId: sel.id, value: sel.text, screenX, screenY });
               }}
             />
           </div>
