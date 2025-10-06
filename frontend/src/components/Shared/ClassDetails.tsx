@@ -367,8 +367,7 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
   const [canvasOffset, setCanvasOffset] = useState({ x: 0, y: 0 });
   const viewportRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isTextModalOpen, setIsTextModalOpen] = useState(false);
-  const [textToInsert, setTextToInsert] = useState<string>('');
+  // для режима модалки больше не используем; инлайн-редактор ниже
 
   type BoardItem =
     | { id: string; type: 'text'; x: number; y: number; color: string; fontSize: number; text: string; width: number; height: number; fontWeight?: 'normal' | 'bold'; fontStyle?: 'normal' | 'italic'; textDecoration?: 'none' | 'underline'; locked?: boolean }
@@ -530,17 +529,19 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
       ctx.beginPath();
       ctx.moveTo(x, y);
     } else if (currentTool === 'text') {
+      // При клике на холст добавляем текст в точке клика и открываем инлайн-редактор
       const id = crypto.randomUUID();
       const fontSize = Math.max(12, brushSize * 4);
-      const newItem: BoardItem = { id, type: 'text', x, y, color: brushColor, fontSize, text: (textToInsert || 'Введите текст'), width: 200, height: fontSize + 6, fontWeight: 'normal', fontStyle: 'normal', textDecoration: 'none', locked: false };
-      setItems(prev => [...prev, newItem]);
-      // Нарисуем сразу
+      const newItem: BoardItem = { id, type: 'text', x, y, color: brushColor, fontSize, text: 'Введите текст', width: 240, height: fontSize + 6, fontWeight: 'normal', fontStyle: 'normal', textDecoration: 'none', locked: false };
+      const next = [...items, newItem];
+      setItems(next);
       ctx.putImageData(history[historyIndex], 0, 0);
-      drawItems(ctx);
+      drawItems(ctx, next);
       saveToHistory();
       setIsDrawing(false);
-      // сбросим текст после вставки
-      setTextToInsert('');
+      setSelectedId(id);
+      const scale = Math.max(0.01, zoom / 100);
+      setTextEditor({ visible: true, itemId: id, value: 'Введите текст', screenX: x * scale + canvasOffset.x, screenY: y * scale + canvasOffset.y });
     } else if (currentTool === 'image') {
       if (fileInputRef.current) {
         (fileInputRef.current as any)._dropX = x;
@@ -952,7 +953,24 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
                 onClick={() => {
                   setCurrentTool(tool.id);
                   if (tool.id === 'text') {
-                    setIsTextModalOpen(true);
+                    // При выборе текста сразу создаём текстовый блок по центру и открываем инлайн‑редактор
+                    const canvas = canvasRef.current; if(!canvas) return;
+                    const ctx = canvas.getContext('2d'); if(!ctx) return;
+                    const centerX = canvas.width / 2 - 150;
+                    const centerY = canvas.height / 2 - 16;
+                    const id = crypto.randomUUID();
+                    const fontSize = Math.max(14, brushSize * 4);
+                    const newItem: BoardItem = { id, type: 'text', x: centerX, y: centerY, color: brushColor, fontSize, text: 'Введите текст', width: 300, height: fontSize + 8, fontWeight: 'normal', fontStyle: 'normal', textDecoration: 'none', locked: false };
+                    const nextItems = [...items, newItem];
+                    setItems(nextItems);
+                    ctx.putImageData(history[historyIndex], 0, 0);
+                    drawItems(ctx, nextItems as any);
+                    saveToHistory();
+                    setSelectedId(id);
+                    const scale = Math.max(0.01, zoom / 100);
+                    const screenX = centerX * scale + canvasOffset.x;
+                    const screenY = centerY * scale + canvasOffset.y;
+                    setTextEditor({ visible: true, itemId: id, value: 'Введите текст', screenX, screenY });
                   }
                 }}
                 className={`p-3 rounded-lg transition-colors ${
@@ -1197,30 +1215,6 @@ const ClassBoard: React.FC<{ classId: string; userRole: 'teacher' | 'student'; c
               autoFocus
               className="px-2 py-1 border rounded bg-white shadow"
             />
-          </div>
-        )}
-        {/* Модальное окно для ввода текста инструмента "Текст" */}
-        {isTextModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-lg font-semibold text-gray-900">Введите текст</h3>
-                <button onClick={()=>setIsTextModalOpen(false)} className="text-gray-400 hover:text-gray-600">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              <textarea
-                value={textToInsert}
-                onChange={(e)=>setTextToInsert(e.target.value)}
-                rows={4}
-                placeholder="Введите текст, затем кликните по доске, чтобы поставить его"
-                className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <div className="mt-4 flex justify-end space-x-2">
-                <button onClick={()=>setIsTextModalOpen(false)} className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">Отмена</button>
-                <button onClick={()=>setIsTextModalOpen(false)} className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700">Готово</button>
-              </div>
-            </div>
           </div>
         )}
             <button 
