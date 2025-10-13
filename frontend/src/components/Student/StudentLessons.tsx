@@ -300,7 +300,7 @@ const StudentLessons: React.FC<StudentLessonsProps> = ({ setActiveTab }) => {
               </button>
               
               {lesson.format === 'online' && (
-                <button className="flex items-center justify-center space-x-1 px-3 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg text-sm font-medium hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5">
+                <button onClick={() => window.location.assign(`/lesson/${lesson.id}/video`)} className="flex items-center justify-center space-x-1 px-3 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg text-sm font-medium hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5">
                   <Video className="h-4 w-4" />
                   <span>Видеозвонок</span>
                 </button>

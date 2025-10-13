@@ -18,6 +18,7 @@ import TeacherProfilePage from './components/Student/TeacherProfilePage';
 import ChatList from './components/Shared/ChatList';
 import ProfileForm from './components/Shared/ProfileForm';
 import { Routes, Route } from 'react-router-dom';
+import VideoRoom from './components/Video/VideoRoom';
 import './index.css';
 
 const AppContent: React.FC = () => {
@@ -143,6 +144,7 @@ const App: React.FC = () => {
         <DataProvider>
           <Routes>
             <Route path="/teacher/:teacherId" element={<TeacherProfilePage teacher={{}} onClose={() => {}} onBookLesson={() => {}} />} />
+            <Route path="/lesson/:lessonId/video" element={<VideoRoom />} />
             <Route path="*" element={<AppContent />} />
           </Routes>
         </DataProvider>

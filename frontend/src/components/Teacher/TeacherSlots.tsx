@@ -568,10 +568,10 @@ const TeacherSlots: React.FC = () => {
                   </button>
                   {/* Видеозвонок */}
                   {selectedLesson.format === 'online' && (
-                    <div className="flex items-center space-x-1 px-3 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                    <button onClick={() => window.location.assign(`/lesson/${selectedLesson.id}/video`)} className="flex items-center space-x-1 px-3 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                       <VideoIcon className="h-4 w-4" />
                       <span className="text-sm">Видеозвонок</span>
-                    </div>
+                    </button>
                   )}
                   <button onClick={() => { completeLesson(selectedLesson.id); handleCloseModal(); }} className="flex items-center gap-2 bg-amber-100 text-amber-700 px-4 py-2 rounded-lg hover:bg-amber-200">
                     <CheckCircle className="w-5 h-5" /> Завершить урок

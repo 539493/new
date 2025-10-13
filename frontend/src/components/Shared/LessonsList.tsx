@@ -483,6 +483,7 @@ const LessonsList: React.FC<LessonsListProps> = ({
                       
                       {lesson.format === 'online' ? (
                         <button
+                          onClick={() => window.location.assign(`/lesson/${lesson.id}/video`)}
                           className="p-2 text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-xl transition-all duration-200"
                           title="Присоединиться к уроку"
                         >
