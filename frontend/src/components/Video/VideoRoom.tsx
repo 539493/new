@@ -13,6 +13,15 @@ const VideoRoom: React.FC = () => {
   React.useEffect(() => {
     if (!lessonId || !user) return;
 
+    // If using public meet.jit.si, avoid iframe embedding (5-min limit). Open full page instead.
+    const allowIframe = (import.meta as any).env?.VITE_JITSI_ALLOW_IFRAME === 'true';
+    if (JITSI_DOMAIN === 'meet.jit.si' && !allowIframe) {
+      const displayName = encodeURIComponent(user.name || user.nickname || 'User');
+      const url = `https://${JITSI_DOMAIN}/lesson_${lessonId}#userInfo.displayName=${displayName}`;
+      window.location.replace(url);
+      return;
+    }
+
     const existing = document.getElementById('jitsi-external-api');
     const ensureApi = () =>
       new Promise<void>((resolve, reject) => {
