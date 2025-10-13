@@ -4,6 +4,13 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+// Optional: JAAS JWT support
+let jsonwebtoken = null;
+try {
+  jsonwebtoken = require('jsonwebtoken');
+} catch (e) {
+  jsonwebtoken = null;
+}
 
 const app = express();
 const server = http.createServer(app);
@@ -89,6 +96,63 @@ app.get('/api/health', (req, res) => {
     timeSlots: timeSlots.length,
     lessons: lessons.length
   });
+});
+
+// === JAAS token mint endpoint (optional) ===
+// Requires env: JAAS_APP_ID, JAAS_API_KEY, JAAS_API_SECRET
+app.post('/api/jaas/token', (req, res) => {
+  try {
+    if (!jsonwebtoken) {
+      return res.status(501).json({ error: 'jsonwebtoken not installed on server' });
+    }
+    const { room, userId, userName } = req.body || {};
+    const appId = process.env.JAAS_APP_ID;
+    const apiKey = process.env.JAAS_API_KEY;
+    const apiSecret = process.env.JAAS_API_SECRET;
+
+    if (!appId || !apiKey || !apiSecret) {
+      return res.status(400).json({ error: 'JAAS env vars are not configured' });
+    }
+    if (!room) {
+      return res.status(400).json({ error: 'room is required' });
+    }
+
+    const now = Math.floor(Date.now() / 1000);
+    const payload = {
+      aud: 'jitsi',
+      iss: 'chat',
+      sub: appId,
+      room: room,
+      exp: now + 60 * 60,
+      nbf: now - 10,
+      context: {
+        user: {
+          id: userId || 'user',
+          name: userName || 'User',
+          moderator: true
+        },
+        features: {
+          livestreaming: true,
+          recording: true,
+          transcription: true,
+          outbound_call: true
+        }
+      }
+    };
+
+    const token = jsonwebtoken.sign(payload, apiSecret, {
+      algorithm: 'HS256',
+      header: {
+        kid: apiKey,
+        typ: 'JWT'
+      }
+    });
+
+    res.json({ token });
+  } catch (e) {
+    console.error('JAAS token error', e);
+    res.status(500).json({ error: 'Failed to mint JAAS token' });
+  }
 });
 
 // Обслуживание статических файлов фронтенда

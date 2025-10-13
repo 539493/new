@@ -1,7 +1,8 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { JITSI_DOMAIN } from '../../config';
+import { JITSI_DOMAIN, JAAS_ENABLED } from '../../config';
+import { SERVER_URL } from '../../config';
 
 const VideoRoom: React.FC = () => {
   const { lessonId } = useParams();
@@ -13,16 +14,17 @@ const VideoRoom: React.FC = () => {
   React.useEffect(() => {
     if (!lessonId || !user) return;
 
-    // If using public meet.jit.si, avoid iframe embedding (5-min limit). Open full page instead.
-    const allowIframe = (import.meta as any).env?.VITE_JITSI_ALLOW_IFRAME === 'true';
-    if (JITSI_DOMAIN === 'meet.jit.si' && !allowIframe) {
-      const displayName = encodeURIComponent(user.name || user.nickname || 'User');
-      const url = `https://${JITSI_DOMAIN}/lesson_${lessonId}#userInfo.displayName=${displayName}`;
-      window.location.replace(url);
-      return;
+    const useJaas = JAAS_ENABLED;
+    if (!useJaas) {
+      const allowIframe = (import.meta as any).env?.VITE_JITSI_ALLOW_IFRAME === 'true';
+      if (JITSI_DOMAIN === 'meet.jit.si' && !allowIframe) {
+        const displayName = encodeURIComponent(user.name || user.nickname || 'User');
+        const url = `https://${JITSI_DOMAIN}/lesson_${lessonId}#userInfo.displayName=${displayName}`;
+        window.location.replace(url);
+        return;
+      }
     }
 
-    const existing = document.getElementById('jitsi-external-api');
     const ensureApi = () =>
       new Promise<void>((resolve, reject) => {
         if ((window as any).JitsiMeetExternalAPI) {
@@ -40,11 +42,34 @@ const VideoRoom: React.FC = () => {
 
     let cleanup: (() => void) | null = null;
 
-    ensureApi()
-      .then(() => {
+    (async () => {
+      try {
+        await ensureApi();
         if (!containerRef.current) return;
-        const domain = JITSI_DOMAIN;
-        const options = {
+
+        let jwt: string | undefined = undefined;
+        if (useJaas) {
+          try {
+            const resp = await fetch(`${SERVER_URL}/api/jaas/token`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                room: `lesson_${lessonId}`,
+                userId: user.id,
+                userName: user.name || user.nickname || 'User'
+              })
+            });
+            const data = await resp.json();
+            jwt = data.token;
+          } catch (e) {
+            const displayName = encodeURIComponent(user.name || user.nickname || 'User');
+            const url = `https://${JITSI_DOMAIN}/lesson_${lessonId}#userInfo.displayName=${displayName}`;
+            window.location.replace(url);
+            return;
+          }
+        }
+
+        const options: any = {
           roomName: `lesson_${lessonId}`,
           parentNode: containerRef.current,
           width: '100%',
@@ -56,10 +81,11 @@ const VideoRoom: React.FC = () => {
           interfaceConfigOverwrite: {
             HIDE_INVITE_MORE_HEADER: true,
           },
-        } as any;
+        };
+        if (jwt) options.jwt = jwt;
 
         const JitsiAPI = (window as any).JitsiMeetExternalAPI;
-        apiRef.current = new JitsiAPI(domain, options);
+        apiRef.current = new JitsiAPI(JITSI_DOMAIN, options);
 
         apiRef.current.addListener('readyToClose', () => {
           navigate(-1);
@@ -71,11 +97,10 @@ const VideoRoom: React.FC = () => {
           } catch {}
           apiRef.current = null;
         };
-      })
-      .catch(() => {
-        // If Jitsi fails to load, navigate back
+      } catch {
         navigate(-1);
-      });
+      }
+    })();
 
     return () => {
       if (cleanup) cleanup();

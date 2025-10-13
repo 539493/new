@@ -18,6 +18,7 @@ export const EXTERNAL_VIDEO_CHAT_URL = getServerUrl();
 
 // Домен Jitsi (можно заменить на свой self-hosted домен)
 export const JITSI_DOMAIN = import.meta.env.VITE_JITSI_DOMAIN || 'meet.jit.si';
+export const JAAS_ENABLED = import.meta.env.VITE_JAAS_ENABLED === 'true';
 
 // Настройки Socket.IO для работы с сервером
 export const SOCKET_CONFIG = {
