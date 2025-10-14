@@ -62,8 +62,8 @@ const TeacherProfileModal: React.FC<TeacherProfileModalProps> = ({
         // Обновляем данные в контексте приложения
         refreshUsers();
         
-        // Синхронизируем записи с сервера
-        await forceSyncData();
+        // УБРАНО: forceSyncData() для предотвращения бесконечного цикла
+        // Данные обновляются через WebSocket события
         
         // Обновляем данные в модальном окне
         const updatedTeacher = {

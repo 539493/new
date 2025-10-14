@@ -262,63 +262,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(serverUser);
       saveUserToStorage(serverUser);
       
-      // Принудительно обновляем данные для синхронизации с другими клиентами
-      try {
-        // Запрашиваем обновленные данные с сервера
-        const syncResponse = await fetch(`${SERVER_URL}/api/sync`);
-        if (syncResponse.ok) {
-          const syncData = await syncResponse.json();
-          console.log('✅ Данные синхронизированы после регистрации');
-          
-          // Обновляем localStorage с новыми данными
-          if (syncData.teacherProfiles) {
-            localStorage.setItem('tutoring_teacherProfiles', JSON.stringify(syncData.teacherProfiles));
-          }
-          if (syncData.studentProfiles) {
-            localStorage.setItem('tutoring_studentProfiles', JSON.stringify(syncData.studentProfiles));
-          }
-          
-          // Обновляем список пользователей
-          const allUsers = [];
-          if (syncData.teacherProfiles) {
-            Object.entries(syncData.teacherProfiles).forEach(([id, profile]) => {
-              allUsers.push({
-                id,
-                email: profile.email || '',
-                name: profile.name || '',
-                nickname: profile.nickname || '',
-                role: 'teacher',
-                phone: profile.phone || '',
-                profile: profile
-              });
-            });
-          }
-          if (syncData.studentProfiles) {
-            Object.entries(syncData.studentProfiles).forEach(([id, profile]) => {
-              allUsers.push({
-                id,
-                email: profile.email || '',
-                name: profile.name || '',
-                nickname: profile.nickname || '',
-                role: 'student',
-                phone: profile.phone || '',
-                profile: profile
-              });
-            });
-          }
-          localStorage.setItem('tutoring_users', JSON.stringify(allUsers));
-          
-          // Отправляем кастомное событие для обновления в других компонентах
-          window.dispatchEvent(new CustomEvent('customStorage', {
-            detail: {
-              key: 'tutoring_users',
-              newValue: JSON.stringify(allUsers)
-            }
-          }));
-        }
-      } catch (syncError) {
-        console.warn('⚠️ Не удалось синхронизировать данные после регистрации:', syncError);
-      }
+      // УБРАНО: принудительная синхронизация после регистрации для предотвращения бесконечного цикла
+      // Данные синхронизируются через WebSocket события и явные действия пользователя
       
       return true;
     } catch (error) {
