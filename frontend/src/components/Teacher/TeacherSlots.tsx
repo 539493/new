@@ -7,7 +7,7 @@ import { TimeSlot, Lesson } from '../../types';
 // убираем локальный socket, используем глобальный из DataContext
 
 const TeacherSlots: React.FC = () => {
-  const { timeSlots, lessons, createSlot, cancelLesson, getOrCreateChat, completeLesson, deleteSlot, isConnected, socketRef } = useData() as any;
+  const { timeSlots, lessons, createSlot, cancelLesson, getOrCreateChat, completeLesson, deleteSlot, isConnected, socketRef, allUsers } = useData() as any;
   const { user } = useAuth();
   
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -88,10 +88,76 @@ const TeacherSlots: React.FC = () => {
   // Получаем слоты и уроки текущего преподавателя
   const teacherSlots = timeSlots.filter((slot: any) => slot.teacherId === user?.id);
   const availableSlots = teacherSlots.filter((slot: any) => !slot.isBooked);
+  
+  // Получаем забронированные слоты преподавателя
+  const bookedSlots = teacherSlots.filter((slot: any) => slot.isBooked);
+  
   // Получаем уроки преподавателя
   const teacherLessons = lessons.filter((lesson: any) => lesson.teacherId === user?.id);
-  const bookedLessons = teacherLessons.filter((lesson: any) => lesson.status === 'scheduled');
-  const completedLessons = teacherLessons.filter((lesson: any) => lesson.status === 'completed');
+  
+  // Преобразуем забронированные слоты в формат уроков для отображения
+  const bookedSlotsAsLessons = bookedSlots.map(slot => {
+    // Проверяем, есть ли уже урок для этого слота
+    const existingLesson = teacherLessons.find(lesson => 
+      lesson.teacherId === slot.teacherId &&
+      lesson.date === slot.date &&
+      lesson.startTime === slot.startTime &&
+      lesson.studentId === slot.bookedStudentId
+    );
+    
+    // Если урок уже есть, используем его, иначе создаем объект из слота
+    if (existingLesson) {
+      return existingLesson;
+    }
+    
+    // Получаем имя студента из allUsers, если оно не сохранено в слоте
+    let studentName = slot.bookedStudentName || 'Ученик';
+    if (!slot.bookedStudentName && slot.bookedStudentId) {
+      const student = allUsers?.find((u: any) => u.id === slot.bookedStudentId && u.role === 'student');
+      if (student) {
+        studentName = student.name || student.nickname || 'Ученик';
+      }
+    }
+    
+    // Создаем временный объект урока из слота
+    return {
+      id: `slot_${slot.id}`,
+      studentId: slot.bookedStudentId || '',
+      teacherId: slot.teacherId,
+      studentName: studentName,
+      teacherName: slot.teacherName,
+      subject: slot.subject,
+      date: slot.date,
+      startTime: slot.startTime,
+      endTime: slot.endTime,
+      duration: slot.duration,
+      format: slot.format,
+      status: 'scheduled' as const,
+      price: slot.price,
+      lessonType: slot.lessonType || 'regular',
+      comment: '',
+      slotId: slot.id // Сохраняем ID слота для связи
+    };
+  });
+  
+  // Объединяем уроки и забронированные слоты, убирая дубликаты
+  const allTeacherLessons = [...teacherLessons];
+  
+  // Добавляем забронированные слоты, которых нет в уроках
+  bookedSlotsAsLessons.forEach(slotLesson => {
+    const exists = allTeacherLessons.find(lesson => 
+      lesson.teacherId === slotLesson.teacherId &&
+      lesson.date === slotLesson.date &&
+      lesson.startTime === slotLesson.startTime &&
+      lesson.studentId === slotLesson.studentId
+    );
+    if (!exists) {
+      allTeacherLessons.push(slotLesson);
+    }
+  });
+  
+  const bookedLessons = allTeacherLessons.filter((lesson: any) => lesson.status === 'scheduled');
+  const completedLessons = allTeacherLessons.filter((lesson: any) => lesson.status === 'completed');
 
   // Сортировка по дате и времени (от ранних к поздним)
   const sortByDateTime = (a: any, b: any) => {

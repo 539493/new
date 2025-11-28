@@ -521,17 +521,19 @@ io.on('connection', (socket) => {
   socket.on('bookSlot', (data) => {
     const { slotId, lesson, bookedStudentId } = data;
     
-    console.log('📅 Бронирование слота:', { slotId, bookedStudentId, lessonId: lesson.id });
+    console.log('📅 Бронирование слота:', { slotId, bookedStudentId, lessonId: lesson.id, studentName: lesson.studentName });
     
-    // Обновляем статус слота и устанавливаем bookedStudentId
+    // Обновляем статус слота и устанавливаем bookedStudentId и bookedStudentName
     const slotIndex = timeSlots.findIndex(slot => slot.id === slotId);
     if (slotIndex !== -1) {
       timeSlots[slotIndex].isBooked = true;
       timeSlots[slotIndex].bookedStudentId = bookedStudentId || lesson.studentId;
+      timeSlots[slotIndex].bookedStudentName = lesson.studentName || '';
       console.log('✅ Слот обновлен на сервере:', { 
         slotId, 
         isBooked: timeSlots[slotIndex].isBooked, 
-        bookedStudentId: timeSlots[slotIndex].bookedStudentId 
+        bookedStudentId: timeSlots[slotIndex].bookedStudentId,
+        bookedStudentName: timeSlots[slotIndex].bookedStudentName
       });
     } else {
       console.warn('⚠️ Слот не найден при бронировании:', slotId);
@@ -574,11 +576,12 @@ io.on('connection', (socket) => {
   socket.on('cancelSlot', (data) => {
     const { slotId, lessonId } = data;
     
-    // Обновляем статус слота и очищаем bookedStudentId
+    // Обновляем статус слота и очищаем bookedStudentId и bookedStudentName
     const slotIndex = timeSlots.findIndex(slot => slot.id === slotId);
     if (slotIndex !== -1) {
       timeSlots[slotIndex].isBooked = false;
       timeSlots[slotIndex].bookedStudentId = undefined;
+      timeSlots[slotIndex].bookedStudentName = undefined;
     }
     
     // Удаляем урок

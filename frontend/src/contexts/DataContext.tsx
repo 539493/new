@@ -903,13 +903,25 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     });
 
     // Слушаем обновления бронирования
-    newSocket.on('slotBooked', (data: { slotId: string; lesson: Lesson; bookedStudentId?: string }) => {
+    newSocket.on('slotBooked', (data: { slotId: string; lesson: Lesson; bookedStudentId?: string; updatedSlot?: any }) => {
         console.log('📡 Получено событие slotBooked:', data);
         console.log('🔍 Обновляем слоты и уроки...');
         setTimeSlots(prev => {
-          const updated = prev.map(slot => 
-          slot.id === data.slotId ? { ...slot, isBooked: true, bookedStudentId: data.bookedStudentId || data.lesson.studentId } : slot
-      );
+          const updated = prev.map(slot => {
+            if (slot.id === data.slotId) {
+              // Используем данные из updatedSlot, если они есть, иначе используем данные из data
+              if (data.updatedSlot) {
+                return { ...slot, ...data.updatedSlot };
+              }
+              return { 
+                ...slot, 
+                isBooked: true, 
+                bookedStudentId: data.bookedStudentId || data.lesson.studentId,
+                bookedStudentName: data.lesson.studentName || ''
+              };
+            }
+            return slot;
+          });
           saveToStorage('tutoring_timeSlots', updated);
           return updated;
         });
@@ -931,7 +943,12 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         console.log('Slot cancelled via WebSocket:', data);
         setTimeSlots(prev => {
           const updated = prev.map(slot => 
-          slot.id === data.slotId ? { ...slot, isBooked: false, bookedStudentId: undefined } : slot
+          slot.id === data.slotId ? { 
+            ...slot, 
+            isBooked: false, 
+            bookedStudentId: undefined,
+            bookedStudentName: undefined
+          } : slot
           );
           saveToStorage('tutoring_timeSlots', updated);
           return updated;
@@ -1896,11 +1913,16 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     // --- КОНЕЦ СТАТИСТИКИ ---
 
 
-    // Отмечаем слот как забронированный и сохраняем bookedStudentId (синхронно)
+    // Отмечаем слот как забронированный и сохраняем bookedStudentId и bookedStudentName (синхронно)
     setTimeSlots(prev => {
-      const updated = prev.map(s => s.id === slotId ? { ...s, isBooked: true, bookedStudentId: studentId } : s);
+      const updated = prev.map(s => s.id === slotId ? { 
+        ...s, 
+        isBooked: true, 
+        bookedStudentId: studentId,
+        bookedStudentName: studentName
+      } : s);
       saveToStorage('tutoring_timeSlots', updated);
-      console.log('✅ Слот помечен как забронированный локально:', slotId);
+      console.log('✅ Слот помечен как забронированный локально:', slotId, { studentId, studentName });
       return updated;
     });
 
@@ -1956,10 +1978,15 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     // Удаляем урок
     setLessons(prev => prev.filter(l => l.id !== lessonId));
 
-    // Освобождаем слот и очищаем bookedStudentId
+    // Освобождаем слот и очищаем bookedStudentId и bookedStudentName
     if (slot) {
       setTimeSlots(prev => 
-        prev.map(s => s.id === slot.id ? { ...s, isBooked: false, bookedStudentId: undefined } : s)
+        prev.map(s => s.id === slot.id ? { 
+          ...s, 
+          isBooked: false, 
+          bookedStudentId: undefined,
+          bookedStudentName: undefined
+        } : s)
       );
 
       // Отправляем информацию об отмене на сервер

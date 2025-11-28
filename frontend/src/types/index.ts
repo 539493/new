@@ -92,6 +92,7 @@ export interface TimeSlot {
   grades: string[];
   rating?: number;
   bookedStudentId?: string;
+  bookedStudentName?: string;
 }
 
 export interface Lesson {
