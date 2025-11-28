@@ -50,7 +50,7 @@ interface StudentClass {
 }
 
 const StudentLessons: React.FC<StudentLessonsProps> = ({ setActiveTab }) => {
-  const { lessons, cancelLesson, rescheduleLesson, getOrCreateChat } = useData();
+  const { lessons, cancelLesson, rescheduleLesson, getOrCreateChat, timeSlots } = useData();
   const { user } = useAuth();
 
   const [activeSubTab, setActiveSubTab] = useState<'lessons' | 'classes'>('lessons');
@@ -65,9 +65,76 @@ const StudentLessons: React.FC<StudentLessonsProps> = ({ setActiveTab }) => {
   const [newDate, setNewDate] = useState('');
   const [newTime, setNewTime] = useState('');
 
-  const userLessons = lessons.filter(lesson => lesson.studentId === user?.id);
-  const scheduledLessons = userLessons.filter(lesson => lesson.status === 'scheduled');
-  const completedLessons = userLessons.filter(lesson => lesson.status === 'completed');
+  // Получаем забронированные слоты для этого ученика
+  const bookedSlots = timeSlots.filter(slot => {
+    const isBookedByMe = slot.isBooked && slot.bookedStudentId === user?.id;
+    if (isBookedByMe) {
+      console.log('✅ Найден забронированный слот для ученика:', {
+        slotId: slot.id,
+        bookedStudentId: slot.bookedStudentId,
+        userId: user?.id,
+        subject: slot.subject,
+        date: slot.date
+      });
+    }
+    return isBookedByMe;
+  });
+  
+  console.log('📅 Забронированные слоты для ученика:', bookedSlots.length, bookedSlots.map(s => ({ id: s.id, subject: s.subject })));
+
+  // Преобразуем забронированные слоты в формат уроков для отображения
+  const bookedSlotsAsLessons = bookedSlots.map(slot => {
+    // Проверяем, есть ли уже урок для этого слота
+    const existingLesson = lessons.find(lesson => 
+      lesson.teacherId === slot.teacherId &&
+      lesson.date === slot.date &&
+      lesson.startTime === slot.startTime &&
+      lesson.studentId === user?.id
+    );
+    
+    // Если урок уже есть, используем его, иначе создаем объект из слота
+    if (existingLesson) {
+      return existingLesson;
+    }
+    
+    // Создаем временный объект урока из слота
+    return {
+      id: `slot_${slot.id}`,
+      studentId: user?.id || '',
+      teacherId: slot.teacherId,
+      studentName: user?.name || '',
+      teacherName: slot.teacherName,
+      subject: slot.subject,
+      date: slot.date,
+      startTime: slot.startTime,
+      endTime: slot.endTime,
+      duration: slot.duration,
+      format: slot.format,
+      status: 'scheduled' as const,
+      price: slot.price,
+      lessonType: slot.lessonType || 'regular',
+      comment: '',
+      slotId: slot.id // Сохраняем ID слота для связи
+    };
+  });
+
+  // Объединяем уроки и забронированные слоты, убирая дубликаты
+  const allUserLessons = [...lessons.filter(lesson => lesson.studentId === user?.id)];
+  
+  // Добавляем забронированные слоты, которых нет в уроках
+  bookedSlotsAsLessons.forEach(slotLesson => {
+    const exists = allUserLessons.find(lesson => 
+      lesson.teacherId === slotLesson.teacherId &&
+      lesson.date === slotLesson.date &&
+      lesson.startTime === slotLesson.startTime
+    );
+    if (!exists) {
+      allUserLessons.push(slotLesson);
+    }
+  });
+
+  const scheduledLessons = allUserLessons.filter(lesson => lesson.status === 'scheduled');
+  const completedLessons = allUserLessons.filter(lesson => lesson.status === 'completed');
 
   // Загрузка классов ученика
   useEffect(() => {
@@ -597,7 +664,7 @@ const StudentLessons: React.FC<StudentLessonsProps> = ({ setActiveTab }) => {
                   <TrendingUp className="h-6 w-6 text-purple-600" />
                 </div>
                 <div>
-                  <p className="text-xl font-bold text-gray-900">{userLessons.length}</p>
+                  <p className="text-xl font-bold text-gray-900">{allUserLessons.length}</p>
                   <p className="text-sm text-gray-600">Всего уроков</p>
                 </div>
               </div>
