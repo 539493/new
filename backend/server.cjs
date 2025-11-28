@@ -56,6 +56,131 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Функции для работы с данными
+const DATA_FILE = path.join(__dirname, 'server_data.json');
+
+function loadServerData() {
+  try {
+    console.log('Loading server data from:', DATA_FILE);
+    if (fs.existsSync(DATA_FILE)) {
+      const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+      console.log('Loaded server data:', {
+        teacherProfilesCount: Object.keys(data.teacherProfiles || {}).length,
+        studentProfilesCount: Object.keys(data.studentProfiles || {}).length,
+        timeSlotsCount: (data.timeSlots || []).length,
+        lessonsCount: (data.lessons || []).length
+      });
+      return data;
+    } else {
+      console.log('No server data file found, creating default structure');
+      return {
+        teacherProfiles: {},
+        studentProfiles: {},
+        overbookingRequests: [],
+        timeSlots: [],
+        lessons: [],
+        chats: [],
+        posts: [],
+        notifications: [],
+        classes: []
+      };
+    }
+  } catch (error) {
+    console.error('Error loading server data:', error);
+    return {
+      teacherProfiles: {},
+      studentProfiles: {},
+      overbookingRequests: [],
+      timeSlots: [],
+      lessons: [],
+      chats: [],
+      posts: [],
+      notifications: [],
+      classes: []
+    };
+  }
+}
+
+function saveServerData() {
+  try {
+    const data = {
+      teacherProfiles,
+      studentProfiles,
+      overbookingRequests,
+      timeSlots,
+      lessons,
+      chats,
+      posts,
+      notifications,
+      classes
+    };
+    
+    console.log('Saving server data:', {
+      teacherProfilesCount: Object.keys(teacherProfiles).length,
+      studentProfilesCount: Object.keys(studentProfiles).length,
+      timeSlotsCount: timeSlots.length,
+      lessonsCount: lessons.length
+    });
+    
+    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+    console.log('Server data saved successfully');
+  } catch (error) {
+    console.error('Error saving server data:', error);
+    console.error('Error details:', error.message);
+    console.error('Error stack:', error.stack);
+  }
+}
+
+// Загружаем данные при запуске сервера
+const serverData = loadServerData();
+
+// Хранилище для профилей преподавателей (объект)
+let teacherProfiles = serverData.teacherProfiles && typeof serverData.teacherProfiles === 'object' ? serverData.teacherProfiles : {};
+// Хранилище для профилей учеников (объект)
+let studentProfiles = serverData.studentProfiles && typeof serverData.studentProfiles === 'object' ? serverData.studentProfiles : {};
+// Хранилище для слотов
+let timeSlots = Array.isArray(serverData.timeSlots) ? serverData.timeSlots : [];
+// Хранилище для уроков
+let lessons = Array.isArray(serverData.lessons) ? serverData.lessons : [];
+// Хранилище для чатов
+let chats = Array.isArray(serverData.chats) ? serverData.chats : [];
+// Хранилище для заявок на овербукинг
+let overbookingRequests = Array.isArray(serverData.overbookingRequests) ? serverData.overbookingRequests : [];
+// Добавляем хранилище для отложенных заявок по teacherId
+let pendingOverbookingForTeacher = {};
+// Хранилище для постов
+let posts = Array.isArray(serverData.posts) ? serverData.posts : [];
+// Хранилище для уведомлений
+let notifications = Array.isArray(serverData.notifications) ? serverData.notifications : [];
+// Хранилище для классов
+let classes = Array.isArray(serverData.classes) ? serverData.classes : [];
+
+// Функция для очистки старых слотов (старше 30 дней)
+function cleanupOldSlots() {
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  
+  const oldSlots = timeSlots.filter(slot => {
+    const slotDate = new Date(slot.date);
+    return slotDate < thirtyDaysAgo;
+  });
+  
+  if (oldSlots.length > 0) {
+    timeSlots = timeSlots.filter(slot => {
+      const slotDate = new Date(slot.date);
+      return slotDate >= thirtyDaysAgo;
+    });
+    
+    saveServerData();
+  }
+}
+
+// Тестовое сохранение при запуске для проверки работы функции
+saveServerData();
+
+// Очищаем старые слоты при запуске сервера
+cleanupOldSlots();
+
 // ������� �������� API �������
 app.get('/api/test', (req, res) => {
   res.json({ message: 'API ��������!', timestamp: new Date().toISOString() });
@@ -92,9 +217,9 @@ app.get('/api/health', (req, res) => {
   res.json({ 
     message: 'Tutoring Platform WebSocket Server',
     status: 'running',
-    connectedClients: io.engine.clientsCount,
-    timeSlots: timeSlots.length,
-    lessons: lessons.length
+    connectedClients: io ? io.engine.clientsCount : 0,
+    timeSlots: timeSlots ? timeSlots.length : 0,
+    lessons: lessons ? lessons.length : 0
   });
 });
 
@@ -185,108 +310,6 @@ const io = new Server(server, {
   }
 });
 
-// Функции для работы с данными
-const DATA_FILE = path.join(__dirname, 'server_data.json');
-
-function loadServerData() {
-  try {
-    console.log('Loading server data from:', DATA_FILE);
-    if (fs.existsSync(DATA_FILE)) {
-      const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
-      console.log('Loaded server data:', {
-        teacherProfilesCount: Object.keys(data.teacherProfiles || {}).length,
-        studentProfilesCount: Object.keys(data.studentProfiles || {}).length,
-        timeSlotsCount: (data.timeSlots || []).length,
-        lessonsCount: (data.lessons || []).length
-      });
-      return data;
-    } else {
-      console.log('No server data file found, creating default structure');
-      return {
-        teacherProfiles: {},
-        studentProfiles: {},
-        overbookingRequests: [],
-        timeSlots: [],
-        lessons: [],
-        chats: [],
-        posts: [],
-        notifications: []
-      };
-    }
-  } catch (error) {
-    console.error('Error loading server data:', error);
-    return {
-      teacherProfiles: {},
-      studentProfiles: {},
-      overbookingRequests: [],
-      timeSlots: [],
-      lessons: [],
-      chats: [],
-      posts: [],
-      notifications: []
-    };
-  }
-}
-
-function saveServerData() {
-  try {
-    const data = {
-      teacherProfiles,
-      studentProfiles,
-      overbookingRequests,
-      timeSlots,
-      lessons,
-      chats,
-      posts,
-      notifications,
-      classes
-    };
-    
-    console.log('Saving server data:', {
-      teacherProfilesCount: Object.keys(teacherProfiles).length,
-      studentProfilesCount: Object.keys(studentProfiles).length,
-      timeSlotsCount: timeSlots.length,
-      lessonsCount: lessons.length
-    });
-    
-    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
-    console.log('Server data saved successfully');
-  } catch (error) {
-    console.error('Error saving server data:', error);
-    console.error('Error details:', error.message);
-    console.error('Error stack:', error.stack);
-  }
-}
-
-// Загружаем данные при запуске сервера
-const serverData = loadServerData();
-
-// Хранилище для профилей преподавателей (объект)
-let teacherProfiles = serverData.teacherProfiles && typeof serverData.teacherProfiles === 'object' ? serverData.teacherProfiles : {};
-// Хранилище для профилей учеников (объект)
-let studentProfiles = serverData.studentProfiles && typeof serverData.studentProfiles === 'object' ? serverData.studentProfiles : {};
-// Хранилище для слотов
-let timeSlots = Array.isArray(serverData.timeSlots) ? serverData.timeSlots : [];
-// Хранилище для уроков
-let lessons = Array.isArray(serverData.lessons) ? serverData.lessons : [];
-// Хранилище для чатов
-let chats = Array.isArray(serverData.chats) ? serverData.chats : [];
-// Хранилище для заявок на овербукинг
-let overbookingRequests = Array.isArray(serverData.overbookingRequests) ? serverData.overbookingRequests : [];
-// Добавляем хранилище для отложенных заявок по teacherId
-let pendingOverbookingForTeacher = {};
-// Хранилище для постов
-let posts = Array.isArray(serverData.posts) ? serverData.posts : [];
-// Хранилище для уведомлений
-let notifications = Array.isArray(serverData.notifications) ? serverData.notifications : [];
-// Хранилище для классов
-let classes = Array.isArray(serverData.classes) ? serverData.classes : [];
-
-// Тестовое сохранение при запуске для проверки работы функции
-saveServerData();
-
-// Очищаем старые слоты при запуске сервера
-cleanupOldSlots();
 
 // Хранилище для связи teacherId с socketId (ОБЫЧНЫЙ ОБЪЕКТ)
 let teacherSocketMap = {};
@@ -1182,26 +1205,6 @@ io.on('connection', (socket) => {
     console.log('✅ Репетиторы остаются видимыми независимо от отключения WebSocket');
   });
 });
-
-// Функция для очистки старых слотов (старше 30 дней)
-function cleanupOldSlots() {
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  
-  const oldSlots = timeSlots.filter(slot => {
-    const slotDate = new Date(slot.date);
-    return slotDate < thirtyDaysAgo;
-  });
-  
-  if (oldSlots.length > 0) {
-    timeSlots = timeSlots.filter(slot => {
-      const slotDate = new Date(slot.date);
-      return slotDate >= thirtyDaysAgo;
-    });
-    
-    saveServerData();
-  }
-}
 
 // Функция для поиска всех преподавателей с включённым овербукингом и свободным временем
 function findAvailableTeachers(request) {
