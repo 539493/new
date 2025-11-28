@@ -77,9 +77,6 @@ const ProfileForm: React.FC = () => {
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [pushModalOpen, setPushModalOpen] = useState(false);
   const [accountModalOpen, setAccountModalOpen] = useState(false);
-  const [stories] = useState<Array<{id: number, avatar: string, name: string}>>([
-    { id: 1, avatar: user?.profile?.avatar || '', name: user?.name || '' }
-  ]);
   const [showPostEditor, setShowPostEditor] = useState(false);
   const [theme, setTheme] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -1125,40 +1122,6 @@ const ProfileForm: React.FC = () => {
           </button>
         </div>
       </Modal>
-      {/* --- STORIES --- */}
-      <div className="bg-white rounded-xl shadow p-4 mb-6">
-        <div className="flex items-center justify-between mb-2">
-          <div className="font-bold text-base">Истории</div>
-          <button className="text-blue-500 text-xs font-medium hover:underline" onClick={() => alert('Скоро можно будет добавлять истории!')}>Добавить</button>
-        </div>
-        <div className="flex gap-4 overflow-x-auto pb-2">
-          {/* Кнопка добавить свою историю */}
-          <div className="flex flex-col items-center cursor-pointer group">
-            <div className="relative h-14 w-14 rounded-full bg-gradient-to-tr from-blue-400 to-purple-500 flex items-center justify-center overflow-hidden border-2 border-blue-400 group-hover:scale-105 transition">
-              {(user.role === 'student' ? studentProfile.avatar : user.profile?.avatar) ? (
-                <img src={user.role === 'student' ? studentProfile.avatar : user.profile?.avatar} alt="avatar" className="h-14 w-14 object-cover rounded-full" />
-              ) : (
-                <UserIcon className="h-7 w-7 text-white" />
-              )}
-              <span className="absolute bottom-0 right-0 bg-blue-500 text-white rounded-full h-5 w-5 flex items-center justify-center text-xs border-2 border-white">+</span>
-            </div>
-            <span className="text-xs mt-1 text-gray-700">Ваша история</span>
-          </div>
-          {/* Сторис других пользователей */}
-          {stories.map(story => (
-            <div key={story.id} className="flex flex-col items-center cursor-pointer group">
-              <div className="h-14 w-14 rounded-full bg-gradient-to-tr from-pink-400 to-yellow-400 flex items-center justify-center overflow-hidden border-2 border-pink-400 group-hover:scale-105 transition">
-                {story.avatar ? (
-                  <img src={story.avatar} alt={story.name} className="h-14 w-14 object-cover rounded-full" />
-                ) : (
-                  <UserIcon className="h-7 w-7 text-white" />
-                )}
-              </div>
-              <span className="text-xs mt-1 text-gray-700 truncate max-w-[60px]">{story.name}</span>
-            </div>
-          ))}
-        </div>
-      </div>
       {/* --- POSTS --- */}
       <div className="bg-white rounded-xl shadow p-4 mb-6">
         <div className="flex items-center justify-between mb-4">
