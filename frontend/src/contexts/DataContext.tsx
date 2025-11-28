@@ -800,8 +800,40 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
       // Слушаем всех пользователей при подключении для синхронизации
       newSocket.on('allUsers', (allUsers: User[]) => {
+        console.log('👥 Получены все пользователи с сервера:', allUsers.length);
         setAllUsers(allUsers);
         saveToStorage('tutoring_users', allUsers);
+        
+        // Обновляем профили преподавателей из полученных пользователей
+        const teacherProfilesFromUsers: Record<string, TeacherProfile> = {};
+        const studentProfilesFromUsers: Record<string, StudentProfile> = {};
+        
+        allUsers.forEach((user: User) => {
+          if (user.role === 'teacher' && user.profile) {
+            teacherProfilesFromUsers[user.id] = user.profile as TeacherProfile;
+          } else if (user.role === 'student' && user.profile) {
+            studentProfilesFromUsers[user.id] = user.profile as StudentProfile;
+          }
+        });
+        
+        // Объединяем с существующими профилями
+        if (Object.keys(teacherProfilesFromUsers).length > 0) {
+          setTeacherProfiles(prev => {
+            const updated = { ...prev, ...teacherProfilesFromUsers };
+            saveToStorage('tutoring_teacherProfiles', updated);
+            console.log('👨‍🏫 Обновлены профили преподавателей:', Object.keys(updated).length);
+            return updated;
+          });
+        }
+        
+        if (Object.keys(studentProfilesFromUsers).length > 0) {
+          setStudentProfiles(prev => {
+            const updated = { ...prev, ...studentProfilesFromUsers };
+            saveToStorage('tutoring_studentProfiles', updated);
+            console.log('👨‍🎓 Обновлены профили студентов:', Object.keys(updated).length);
+            return updated;
+          });
+        }
       });
 
       // Запрашиваем все слоты при подключении
@@ -1258,6 +1290,120 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       });
 
       // (dedup) Повторный обработчик studentProfiles удалён
+    
+    // Обработчик полной синхронизации данных при подключении
+    newSocket.on('fullSync', (data: {
+      teacherProfiles: Record<string, TeacherProfile>;
+      studentProfiles: Record<string, StudentProfile>;
+      timeSlots: TimeSlot[];
+      lessons: Lesson[];
+      chats: Chat[];
+      posts: Post[];
+      notifications: Notification[];
+      overbookingRequests: any[];
+    }) => {
+      console.log('📡 Получена полная синхронизация данных с сервера');
+      
+      // Обновляем профили преподавателей
+      if (data.teacherProfiles) {
+        console.log('👨‍🏫 Загружаем профили преподавателей:', Object.keys(data.teacherProfiles).length);
+        setTeacherProfiles(data.teacherProfiles);
+        saveToStorage('tutoring_teacherProfiles', data.teacherProfiles);
+        
+        // Обновляем список пользователей
+        const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
+        const updatedUsers = [...users];
+        
+        Object.entries(data.teacherProfiles).forEach(([teacherId, profile]) => {
+          const existingUserIndex = updatedUsers.findIndex((u: User) => u.id === teacherId);
+          if (existingUserIndex >= 0) {
+            updatedUsers[existingUserIndex] = { ...updatedUsers[existingUserIndex], profile };
+          } else {
+            updatedUsers.push({
+              id: teacherId,
+              email: profile.email || '',
+              name: profile.name || '',
+              nickname: profile.nickname || '',
+              role: 'teacher',
+              phone: profile.phone || '',
+              profile
+            });
+          }
+        });
+        
+        localStorage.setItem('tutoring_users', JSON.stringify(updatedUsers));
+        setAllUsers(updatedUsers);
+      }
+      
+      // Обновляем профили студентов
+      if (data.studentProfiles) {
+        console.log('👨‍🎓 Загружаем профили студентов:', Object.keys(data.studentProfiles).length);
+        setStudentProfiles(data.studentProfiles);
+        saveToStorage('tutoring_studentProfiles', data.studentProfiles);
+        
+        // Обновляем список пользователей
+        const users = JSON.parse(localStorage.getItem('tutoring_users') || '[]');
+        const updatedUsers = [...users];
+        
+        Object.entries(data.studentProfiles).forEach(([studentId, profile]) => {
+          const existingUserIndex = updatedUsers.findIndex((u: User) => u.id === studentId);
+          if (existingUserIndex >= 0) {
+            updatedUsers[existingUserIndex] = { ...updatedUsers[existingUserIndex], profile };
+          } else {
+            updatedUsers.push({
+              id: studentId,
+              email: profile.email || '',
+              name: profile.name || '',
+              nickname: profile.nickname || '',
+              role: 'student',
+              phone: profile.phone || '',
+              profile
+            });
+          }
+        });
+        
+        localStorage.setItem('tutoring_users', JSON.stringify(updatedUsers));
+        setAllUsers(updatedUsers);
+      }
+      
+      // Обновляем слоты
+      if (data.timeSlots) {
+        console.log('📅 Загружаем слоты:', data.timeSlots.length);
+        setTimeSlots(data.timeSlots);
+        saveToStorage('tutoring_timeSlots', data.timeSlots);
+      }
+      
+      // Обновляем уроки
+      if (data.lessons) {
+        console.log('📚 Загружаем уроки:', data.lessons.length);
+        setLessons(data.lessons);
+        saveToStorage('tutoring_lessons', data.lessons);
+      }
+      
+      // Обновляем чаты
+      if (data.chats) {
+        console.log('💬 Загружаем чаты:', data.chats.length);
+        setChats(data.chats);
+        saveToStorage('tutoring_chats', data.chats);
+      }
+      
+      // Обновляем посты
+      if (data.posts) {
+        console.log('📝 Загружаем посты:', data.posts.length);
+        setPosts(data.posts);
+        saveToStorage('tutoring_posts', data.posts);
+      }
+      
+      // Обновляем уведомления
+      if (data.notifications) {
+        console.log('🔔 Загружаем уведомления:', data.notifications.length);
+        setNotifications(data.notifications);
+        saveToStorage('tutoring_notifications', data.notifications);
+      }
+      
+      console.log('✅ Полная синхронизация данных завершена');
+    });
+    
     newSocket.on('studentProfileUpdated', (data: { studentId: string; profile: StudentProfile }) => {
       setStudentProfiles(prev => ({ ...prev, [data.studentId]: data.profile }));
     });
@@ -1750,10 +1896,13 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     // --- КОНЕЦ СТАТИСТИКИ ---
 
 
-    // Отмечаем слот как забронированный и сохраняем bookedStudentId
-    setTimeSlots(prev => 
-      prev.map(s => s.id === slotId ? { ...s, isBooked: true, bookedStudentId: studentId } : s)
-    );
+    // Отмечаем слот как забронированный и сохраняем bookedStudentId (синхронно)
+    setTimeSlots(prev => {
+      const updated = prev.map(s => s.id === slotId ? { ...s, isBooked: true, bookedStudentId: studentId } : s);
+      saveToStorage('tutoring_timeSlots', updated);
+      console.log('✅ Слот помечен как забронированный локально:', slotId);
+      return updated;
+    });
 
     // Создаем урок
     const newLesson: Lesson = {
